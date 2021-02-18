@@ -68,7 +68,7 @@ def detrend(X, deg=1):
     C = np.polynomial.polynomial.polyfit(
             x, X.T.reshape(X.shape[-1], -1), deg=deg)
     return (X - np.polynomial.polynomial.polyval(
-        x, C).T.reshape(X.T.shape).T)
+            x, C).T.reshape(X.T.shape).T)
 
 
 def DFA(x, windows, deg=1, l1=False):
@@ -108,6 +108,7 @@ def DFA(x, windows, deg=1, l1=False):
     #############################
     # Start Calculation of DFA #
     # calculate the cumulative sum after removing the mean /
+    # Moritz: when is the mean removed? at the end of function? before the input?
     if l1:
         x = np.cumsum(detrend_l1(x, deg=0), axis=-1)
     else:
