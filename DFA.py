@@ -68,7 +68,7 @@ def detrend(X, deg=1):
     C = np.polynomial.polynomial.polyfit(
             x, X.T.reshape(X.shape[-1], -1), deg=deg)
     return (X - np.polynomial.polynomial.polyval(
-            x, C).T.reshape(X.T.shape).T)
+        x, C).T.reshape(X.T.shape).T)
 
 
 def DFA(x, windows, deg=1, l1=False):
@@ -108,7 +108,6 @@ def DFA(x, windows, deg=1, l1=False):
     #############################
     # Start Calculation of DFA #
     # calculate the cumulative sum after removing the mean /
-    # Moritz: when is the mean removed? at the end of function? before the input?
     if l1:
         x = np.cumsum(detrend_l1(x, deg=0), axis=-1)
     else:
@@ -160,58 +159,56 @@ def DFA_exponent(windows, dfa):
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
     # generate noise, exponent should be 0.5
-    x = np.random.randn(100000)
+    size = 100000
+    x = np.random.randn(size)
     # generate windows (linearly ascending in log-log space)
     windows = np.exp(np.linspace(np.log(5), np.log(10000), 20)).astype(int)
     dfa = DFA(x, windows)
     exp, R2 = DFA_exponent(windows, dfa)
 
-    fig, ax = plt.subplots(ncols=3, figsize=[20, 5])
+    fig, ax = plt.subplots(2, 3, figsize=[20, 10])
     # plot data
-    ax[0].plot(x)
-    ax[0].set_title('Gausian Noise without outliers')
-    ax[0].set_xlabel('time')
-    ax[0].set_ylabel('amplitude')
+    ax[0, 0].plot(x)
+    ax[0, 0].set_title('Gausian Noise without outliers')
+    ax[0, 0].set_xlabel('time')
+    ax[0, 0].set_ylabel('amplitude')
     # plot histogram of x values
-    ax[1].hist(x, 500)
-    ax[1].set_xlabel('amplitude')
-    ax[1].set_xlabel('count')
-    ax[1].set_title('Histogram of data values')
+    ax[0, 1].hist(x, 500)
+    ax[0, 1].set_xlabel('amplitude')
+    ax[0, 1].set_xlabel('count')
+    ax[0, 1].set_title('Histogram of data values')
     # plot dfa log-log-plot
-    ax[2].loglog(windows, dfa, 'bo-',
+    ax[0, 2].loglog(windows, dfa, 'bo-',
                  label='$exp={0:.2f}$, $R^2={1:.2f}$'.format(exp, R2))
-    ax[2].axis('equal')
-    ax[2].set_title('DFA slope estimate')
-    ax[2].set_xlabel('window')
-    ax[2].set_ylabel('fluctuation per window')
-    ax[2].legend()
-    fig.tight_layout()
-    plt.show()
+#    ax[0, 2].axis('equal')
+    ax[0, 2].set_title('DFA slope estimate')
+    ax[0, 2].set_xlabel('window')
+    ax[0, 2].set_ylabel('fluctuation per window')
+    ax[0, 2].legend()
 
-    x = np.load("subj1_on_R7_raw.npy")[0].T
+    import colorednoise as cn
+    slope = 0.5
+    x = cn.powerlaw_psd_gaussian(slope, size)
     # generate windows (linearly ascending in log-log space)
     windows = np.exp(np.linspace(np.log(5), np.log(10000), 20)).astype(int)
     dfa = DFA(x, windows)
     exp, R2 = DFA_exponent(windows, dfa)
-
-    fig, ax = plt.subplots(ncols=3, figsize=[20, 5])
-    # plot data
-    ax[0].plot(x)
-    ax[0].set_title('Gausian Noise without outliers')
-    ax[0].set_xlabel('time')
-    ax[0].set_ylabel('amplitude')
+    ax[1, 0].plot(x)
+    ax[1, 0].set_title(f'Pink 1/{slope}-noise without outliers')
+    ax[1, 0].set_xlabel('time')
+    ax[1, 0].set_ylabel('amplitude')
     # plot histogram of x values
-    ax[1].hist(x, 500)
-    ax[1].set_xlabel('amplitude')
-    ax[1].set_xlabel('count')
-    ax[1].set_title('Histogram of data values')
+    ax[1, 1].hist(x, 500)
+    ax[1, 1].set_xlabel('amplitude')
+    ax[1, 1].set_xlabel('count')
+    ax[1, 1].set_title('Histogram of data values')
     # plot dfa log-log-plot
-    ax[2].loglog(windows, dfa, 'bo-',
+    ax[1, 2].loglog(windows, dfa, 'bo-',
                  label='$exp={0:.2f}$, $R^2={1:.2f}$'.format(exp, R2))
-    ax[2].axis('equal')
-    ax[2].set_title('DFA slope estimate')
-    ax[2].set_xlabel('window')
-    ax[2].set_ylabel('fluctuation per window')
-    ax[2].legend()
+#    ax[1, 2].axis('equal')
+    ax[1, 2].set_title('DFA slope estimate')
+    ax[1, 2].set_xlabel('window')
+    ax[1, 2].set_ylabel('fluctuation per window')
+    ax[1, 2].legend()
     fig.tight_layout()
     plt.show()
