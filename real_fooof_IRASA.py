@@ -3,22 +3,21 @@ import numpy as np
 import scipy.signal as sig
 from scipy.stats import norm
 import matplotlib.pyplot as plt
-import matplotlib.ticker
+# import matplotlib.ticker
 from fooof import FOOOF, FOOOFGroup
 from fooof.sim.gen import gen_aperiodic
 import yasa  # IRASA
-from pathlib import Path
-import pandas as pd
-import B_config
-import mne
-from C_fooof import load_fif
-from plot_spectra import load_psd
+# from pathlib import Path
+# import pandas as pd
+# import mne
+from helper import load_fif
+from helper import load_psd
 
 params = {'legend.fontsize': 12.2,
-          'axes.labelsize': 'medium',
-          'axes.titlesize': 'medium',
-          'xtick.labelsize': 'medium',
-          'ytick.labelsize': 'medium',
+          'axes.labelsize': 'x-large',
+          'axes.titlesize': 'x-large',
+          'xtick.labelsize': 'x-large',
+          'ytick.labelsize': 'x-large',
           'xtick.minor.size': 0,
           'xtick.major.size': 5,
           'ytick.major.size': 5,
@@ -179,13 +178,13 @@ win_sec = 1
 nperseg = int(win_sec * srate)
 
 # Path
-fig_path = B_config.fig_sim_fooof_IRASA
+fig_path = "plots/"
 
 # Colors
-c_on = B_config.plot_params["c_on"]
-c_off = B_config.plot_params["c_off"]
+c_on = "#E66101"
+c_off = "#5E3C99"
 
-# %%   Test osc_signals.py
+# %% Simulate PSD
 slope_truth_on = 1.15
 freq_osc_on = [2, 4, 6.9, 14, 27]
 amp_on = [8, 0.3, 0.4, .35, .4]
@@ -201,16 +200,18 @@ signal_sim_on = osc_signals(samples, slope_truth_on,
 signal_sim_off = osc_signals(samples, slope_truth_off,
                              freq_osc_off, amp_off, width=width_off)
 signal_sim_on_ap = osc_signals(samples, slope_truth_on,
-                            None,None, width=None)
+                               None, None, width=None)
 signal_sim_off_ap = osc_signals(samples, slope_truth_off,
-                             None, None, width=None)
+                                None, None, width=None)
 signal_sim_on_osc = osc_signals(samples, 0,
-                            freq_osc_on, amp_on, width=width_on)
+                                freq_osc_on, amp_on, width=width_on)
 signal_sim_off_osc = osc_signals(samples, 0,
-                             freq_osc_off, amp_off, width=width_off)
+                                 freq_osc_off, amp_off, width=width_off)
 
+# Calc PSD
 frequencies, psd_sim_on = psds_pink(signal_sim_on, srate, nperseg)
 frequencies, psd_sim_off = psds_pink(signal_sim_off, srate, nperseg)
+
 frequencies, psd_sim_on_ap = psds_pink(signal_sim_on_ap, srate, nperseg)
 frequencies, psd_sim_off_ap = psds_pink(signal_sim_off_ap, srate, nperseg)
 
@@ -219,6 +220,7 @@ frequencies, psd_sim_off_osc = psds_pink(signal_sim_off_osc, srate, nperseg)
 
 # make freqs equivalent to loaded real data
 pre_mask = (frequencies >= 1) & (frequencies <= 600)
+
 frequencies = frequencies[pre_mask]
 psd_sim_on = psd_sim_on[pre_mask]
 psd_sim_off = psd_sim_off[pre_mask]
@@ -228,393 +230,446 @@ psd_sim_on_osc = psd_sim_on_osc[pre_mask]
 psd_sim_off_osc = psd_sim_off_osc[pre_mask]
 
 
-# %%
-
-i = 0
-
-freq_ranges = [[1, 45], [2, 45], [5, 45], [10, 45], [15, 45], [20, 45],
-               [30, 45], [35, 45], [40, 45], [40, 60]]
-
-best_fooof_params = [{"peak_width_limits": (1, 12), "peak_threshold": 1}]
-best_IRASA_params = [{"hset_max": 1.9, "win_sec_i": .5, "num": 5}]
-
-freq_range = freq_ranges[i]
-
-# Normalize power offset
-low = np.where(frequencies == freq_range[0])[0][0]
-
-psd_on = psd_on / psd_on[low]
-psd_off = psd_off / (psd_off[low] * 10)
-psd_sim_on = psd_sim_on / psd_sim_on[low]
-psd_sim_off = psd_sim_off / (psd_sim_off[low] * 10)
-psd_sim_on_ap = psd_sim_on_ap / psd_sim_on_ap[low]
-psd_sim_off_ap = psd_sim_off_ap / (psd_sim_off_ap[low] * 10)
-#psd_sim_on_osc = psd_sim_on_osc / psd_sim_on_osc[low]
-#psd_sim_off_osc = psd_sim_off_osc / (psd_sim_off_osc[low] * 10)
-
-mask = (freqs >= freq_range[0]) & (freqs <= freq_range[1])
-
-
-# Fit Params
-peak_width_min = 1
-fooof_params = {"peak_width_limits": (1, 12),
-#                "max_n_peaks": np.inf,
-#                "min_peak_height": 0,
-                "peak_threshold": 1}#,
-#                "aperiodic_mode": "fixed"}
-# hset_max = srate / 8 / freq_range[1]
-hset_max = 1.9
-win_sec_i = .5
-num = 5
-irasa_params = {"sf": srate, "band": freq_range,
-                "kwargs_welch": {'average': 'median'},
-                "win_sec": win_sec_i,
-                "hset": np.linspace(1.1, hset_max, num=num)}
-
-IRASA_real_on = yasa.irasa(data=signal_on, **irasa_params)
-IRASA_real_off = yasa.irasa(data=signal_off, **irasa_params)
-IRASA_sim_on = yasa.irasa(data=signal_sim_on, **irasa_params)
-IRASA_sim_off = yasa.irasa(data=signal_sim_off, **irasa_params)
-
-freq, aperiodic_on, osc_on, params_on = IRASA_real_on
-freq, aperiodic_off, osc_off, params_off = IRASA_real_off
-freq, aperiodic_sim_on, osc_sim_on, params_sim_on = IRASA_sim_on
-freq, aperiodic_sim_off, osc_sim_off, params_sim_off = IRASA_sim_off
-
-# Normalize power offset
-low = 0
-sum_on = aperiodic_on[0] + osc_on[0]
-sum_on_max = sum_on[low]
-sum_on /= sum_on_max
-sum_off = aperiodic_off[0] + osc_off[0]
-sum_off_max = sum_off[low]
-sum_off /= (sum_off_max * 10)
-sum_sim_on = aperiodic_sim_on[0] + osc_sim_on[0]
-sum_sim_on_max = sum_sim_on[low]
-sum_sim_on /= sum_sim_on_max
-sum_sim_off = aperiodic_sim_off[0] + osc_sim_off[0]
-sum_sim_off_max = sum_sim_off[low]
-sum_sim_off /= (sum_sim_off_max * 10)
-
-osc_on = osc_on[0] / osc_on[0].max()
-osc_off = osc_off[0] / osc_off[0].max()
-osc_sim_on = osc_sim_on[0] / osc_sim_on[0].max()
-osc_sim_off = osc_sim_off[0] / osc_sim_off[0].max()
-
-aperiodic_on = aperiodic_on[0] / sum_on_max
-aperiodic_sim_on = aperiodic_sim_on[0] / sum_sim_on_max
-aperiodic_off = aperiodic_off[0] / (sum_off_max * 10)
-aperiodic_sim_off = aperiodic_sim_off[0] / (sum_sim_off_max * 10)
-
-# Extract Fit
-offset_on = params_on["Intercept"].iloc[0]
-slope_on = -params_on["Slope"].iloc[0]
-offset_off = params_off["Intercept"].iloc[0]
-slope_off = -params_off["Slope"].iloc[0]
-offset_sim_on = params_sim_on["Intercept"].iloc[0]
-slope_sim_on = -params_sim_on["Slope"].iloc[0]
-offset_sim_off = params_sim_off["Intercept"].iloc[0]
-slope_sim_off = -params_sim_off["Slope"].iloc[0]
-
-# Calc fit
-freq_fit = np.r_[0, freq]  # we need to start at 0
-fit_on = 10**offset_on / freq_fit ** slope_on
-fit_off = 10**offset_off / freq_fit ** slope_off
-fit_sim_on = 10**offset_sim_on / freq_fit ** slope_sim_on
-fit_sim_off = 10**offset_sim_off / freq_fit ** slope_sim_off
-
-# Normalize
-fit_on /= fit_on[1]
-fit_off /= fit_off[1] * 10
-fit_sim_on /= fit_sim_on[1]
-fit_sim_off /= fit_sim_off[1] * 10
-
-# Extract params
-r_squ_on = params_on["R^2"].iloc[0]
-r_squ_off = params_off["R^2"].iloc[0]
-r_squ_sim_on = params_sim_on["R^2"].iloc[0]
-r_squ_sim_off = params_sim_off["R^2"].iloc[0]
-
-R2_mean_I = np.mean([r_squ_on, r_squ_off, r_squ_sim_on, r_squ_sim_off])
-
-# Labels
-label_on = f"Real on 1/f {slope_on:.2f}"
-label_off = f"Real off 1/f {slope_off:.2f}"
-label_sim_on = f"Sim on 1/f {slope_sim_on:.2f}"
-label_sim_off = f"Sim off 1/f {slope_sim_off:.2f}"
-
-# % Plot Both
-
-real_on = (freqs[mask], psd_on[mask])
-kwgs_on = {"c": c_on, "label": "Real On"}
-real_off = (freqs[mask], psd_off[mask])
-kwgs_off = {"c": c_off, "label": "Real Off"}
-
-sim_on = (freqs[mask], psd_sim_on[mask], "--")
-kwgs_sim_on = {"c": c_on, "label": f"Sim On 1/f={slope_truth_on}"}
-sim_on_ap = (freqs[mask], psd_sim_on_ap[mask], "b--")
-sim_on_osc = (freqs[mask], psd_sim_on_osc[mask], "--")
-kwgs_sim_on_osc = {"c": c_on, "label": "Sim osc ground truth On"}
-
-sim_off = (freqs[mask], psd_sim_off[mask], "--")
-kwgs_sim_off = {"c": c_off, "label": f"Sim Off 1/f={slope_truth_off}"}
-sim_off_ap = (freqs[mask], psd_sim_off_ap[mask], "b--")
-kwgs_sim_off_ap = {"label": "Sim Aperiodic"}
-sim_off_osc = (freqs[mask], psd_sim_off_osc[mask]-4e-9, "--")
-kwgs_sim_off_osc = {"c": c_off, "label": "Sim osc ground truth Off"}
-
-
-fig, axes = plt.subplots(3, 3, figsize=[20, 20])
-
-ax = axes[0, 0]
-ax.loglog(*real_on, **kwgs_on)
-ax.loglog(*real_off, **kwgs_off)
-ax.loglog(*sim_on, **kwgs_sim_on)
-ax.loglog(*sim_on_ap)
-ax.loglog(*sim_off, **kwgs_sim_off)
-ax.loglog(*sim_off_ap, **kwgs_sim_off_ap)
-
-ax.set_ylabel("Log Power a.u.")
-ax.set_xlabel("log(Frequency)")
-ax.set_title("Original PSD")
-ax.legend()
-
-ax = axes[1, 0]
-ax.semilogy(*real_on, **kwgs_on)
-ax.semilogy(*real_off, **kwgs_off)
-ax.semilogy(*sim_on, **kwgs_sim_on)
-ax.semilogy(*sim_on_ap)
-ax.semilogy(*sim_off, **kwgs_sim_off)
-ax.semilogy(*sim_off_ap, **kwgs_sim_off_ap)
-
-ax.set_ylabel("Log Power a.u.")
-ax.set_xticklabels("")
-ax.legend()
-
-ax = axes[2, 0]
-ax.plot(*sim_on_osc, **kwgs_sim_on_osc)
-ax.plot(*sim_off_osc, **kwgs_sim_off_osc)
-
-ax.set_title(f"Welch: {win_sec}s")
-ax.set_ylabel("Power a.u.")
-ax.set_xlabel("Frequency")
-ax.legend()
-
-# fooof
-ax = axes[0, 1]
-fm_on = FOOOF(**fooof_params)  # Init fooof
-fm_on.fit(freqs, psd_on, freq_range)
-fm_on.plot(plt_log=True, ax=ax,
-           model_kwargs={"color": c_on},
-           data_kwargs={"alpha": 0})
-exponent_on = fm_on.get_params('aperiodic_params', 'exponent')
-r_squ_on = fm_on.get_params('r_squared')
-
-
-fm_off = FOOOF(**fooof_params)  # Init fooof
-fm_off.fit(freqs, psd_off, freq_range)
-fm_off.plot(plt_log=True, ax=ax,
-            model_kwargs={"color": c_off},
-            data_kwargs={"alpha": 0})
-exponent_off = fm_off.get_params('aperiodic_params', 'exponent')
-r_squ_off = fm_off.get_params('r_squared')
-
-fm_on_sim = FOOOF(**fooof_params)  # Init fooof
-fm_on_sim.fit(freqs, psd_sim_on, freq_range)
-fm_on_sim.plot(plt_log=True, ax=ax,
-               model_kwargs={"color": c_on, "linestyle": "--"},
-               data_kwargs={"alpha": 0})
-exponent_sim_on = fm_on_sim.get_params('aperiodic_params', 'exponent')
-r_squ_sim_on = fm_on_sim.get_params('r_squared')
-
-fm_off_sim = FOOOF(**fooof_params)  # Init fooof
-fm_off_sim.fit(freqs, psd_sim_off, freq_range)
-fm_off_sim.plot(plt_log=True, ax=ax,
-                model_kwargs={"color": c_off, "linestyle": "--"},
-                data_kwargs={"alpha": 0})
-exponent_sim_off = fm_off_sim.get_params('aperiodic_params', 'exponent')
-r_squ_sim_off = fm_off_sim.get_params('r_squared')
-
-ax.set_ylabel("")
-R2_mean_F = np.mean([r_squ_on, r_squ_off, r_squ_sim_on, r_squ_sim_off])
-ax.set_title(f"fooof R^2 mean: {R2_mean_F:.2f}")
-handles, labels = ax.get_legend_handles_labels()
-handles = handles[1::3] + [handles[-1]]
-label_on = f"Real On 1/f={exponent_on:.2f}"
-label_off = f"Real Off 1/f={exponent_off:.2f}"
-label_sim_on = f"Sim On 1/f={exponent_sim_on:.2f}"
-label_sim_off = f"Sim Off 1/f={exponent_sim_off:.2f}"
-labels = [label_on, label_off, label_sim_on, label_sim_off, "Aperiodic Fit"]
-ax.legend(handles, labels)
-ax.grid(False)
-
-ax = axes[1, 1]
-error_fooof = (abs(slope_truth_on - exponent_on) +
-               abs(slope_truth_on - exponent_sim_on) +
-               abs(slope_truth_off - exponent_off) +
-               abs(slope_truth_off - exponent_sim_off))
-ax.set_title(f"Fooof estimated error: {error_fooof:.2f}")
-fm_on.plot(plt_log=False, ax=ax,
-           model_kwargs={"color": c_on, "linestyle": "-"},
-           data_kwargs={"alpha": 0})
-fm_off.plot(plt_log=False, ax=ax,
-            model_kwargs={"color": c_off, "linestyle": "-"},
-            data_kwargs={"alpha": 0})
-fm_on_sim.plot(plt_log=False, ax=ax,
-               model_kwargs={"color": c_on, "linestyle": "--"},
-               data_kwargs={"alpha": 0})
-fm_off_sim.plot(plt_log=False, ax=ax,
-                model_kwargs={"color": c_off, "linestyle": "--"},
-                data_kwargs={"alpha": 0})
-
-ax.grid(False)
-ax.set_xticklabels("")
-ax.set_ylabel("")
-ax.set_xlabel("")
-ax.legend(handles, labels)
-
-ax = axes[2, 1]
-ap_fit_on = gen_aperiodic(fm_on.freqs, fm_on.aperiodic_params_)
-fooof_osc_on = fm_on.power_spectrum - ap_fit_on
-ax.plot(fm_on.freqs, fooof_osc_on, c=c_on, label="osc on")
-
-ap_fit_off = gen_aperiodic(fm_off.freqs, fm_off.aperiodic_params_)
-fooof_osc_off = fm_off.power_spectrum - ap_fit_off
-ax.plot(fm_off.freqs, fooof_osc_off-.8, c=c_off, label="osc off")
-
-ap_fit_sim_on = gen_aperiodic(fm_on_sim.freqs, fm_on_sim.aperiodic_params_)
-fooof_osc_sim_on = fm_on_sim.power_spectrum - ap_fit_sim_on
-ax.plot(fm_on_sim.freqs, fooof_osc_sim_on, "--", c=c_on, label="osc sim on")
-ap_fit_sim_off = gen_aperiodic(fm_off_sim.freqs, fm_off_sim.aperiodic_params_)
-fooof_osc_sim_off = fm_off_sim.power_spectrum - ap_fit_sim_off
-ax.plot(fm_off_sim.freqs, fooof_osc_sim_off-.8, "--", c=c_off, label="osc sim off")
-
-
-ax.set_title(f"Welch: {win_sec}s, min peak width: {peak_width_min}Hz")
-ax.set_xlabel('Frequency')
-ax.legend()
-
-# IRASA
-ax = axes[0, 2]
-
-# Labels
-label_on = f"Real on 1/f {slope_on:.2f}"
-label_off = f"Real off 1/f {slope_off:.2f}"
-label_sim_on = f"Sim on 1/f {slope_sim_on:.2f}"
-label_sim_off = f"Sim off 1/f {slope_sim_off:.2f}"
-
-ir_on = (freq, sum_on, c_on)
-ir_off = (freq, sum_off, c_off)
-ir_sim_on = (freq, sum_sim_on, "--")
-ir_sim_off = (freq, sum_sim_off, "--")
-ir_ap_on = (freq, aperiodic_on, "darkgreen")
-ir_ap_off = (freq, aperiodic_off, "darkgreen")
-ir_ap_sim_on = (freq, aperiodic_sim_on, "--")
-ir_ap_sim_off = (freq, aperiodic_sim_off, "--")
-
-ax.loglog(*ir_on, label=label_on)
-ax.loglog(*ir_off, label=label_off)
-ax.loglog(*ir_sim_on, c=c_on, label=label_sim_on)
-ax.loglog(*ir_sim_off, c=c_off, label=label_sim_off)
-
-# Fits
-p_fit_on = (freq_fit, fit_on, "b--")
-p_fit_off = (freq_fit, fit_off, "b--")
-p_fit_sim_on = (freq_fit, fit_sim_on, "b--")
-p_fit_sim_off = (freq_fit, fit_sim_off, "b--")
-
-ax.loglog(*ir_ap_on, label="Aperiodic")
-ax.loglog(*ir_ap_off)
-ax.loglog(*ir_ap_sim_on, c="darkgreen")
-ax.loglog(*ir_ap_sim_off, c="darkgreen")
-
-ax.loglog(*p_fit_on, label="Aperiodic Fit")
-ax.loglog(*p_fit_off)
-ax.loglog(*p_fit_sim_on)
-ax.loglog(*p_fit_sim_off)
-
-ax.set_title(f"IRASA R^2 mean: {R2_mean_I:.2f}")
-ax.set_xlabel("log(Frequency)")
-
-handles, labels = ax.get_legend_handles_labels()
-ax.legend(handles, labels)
-
-
-ax = axes[1, 2]
-error_IRASA = (abs(slope_truth_on - slope_on) +
-               abs(slope_truth_on - slope_sim_on) +
-               abs(slope_truth_off - slope_off) +
-               abs(slope_truth_off - slope_sim_off))
-ax.set_title(f"IRASA estimated error: {error_IRASA:.2f}")
-
-ax.semilogy(*ir_on, label=label_on)
-ax.semilogy(*ir_ap_on, label="aperiodic")
-ax.semilogy(*ir_off, label=label_off)
-ax.semilogy(*ir_ap_off, label="aperiodic off")
-ax.semilogy(*ir_sim_on, c=c_on, label=label_sim_on)
-ax.semilogy(*ir_ap_sim_on, c="darkgreen", label="aperiodic sim on")
-ax.semilogy(*ir_sim_off, c=c_off, label=label_sim_off)
-ax.semilogy(*ir_ap_sim_off, c="darkgreen", label="aperiodic sim off")
-ax.semilogy(*p_fit_on, label="Aperiodic fit")
-ax.semilogy(*p_fit_off)
-ax.semilogy(*p_fit_sim_on)
-ax.semilogy(*p_fit_sim_off)
-ax.set_xticklabels("")
-handles, labels = ax.get_legend_handles_labels()
-ax.legend()
-
-
-ax = axes[2, 2]
-ax.plot(freq, osc_on, c_on, label="osc on")
-ax.plot(freq, osc_off-1, c_off, label="osc off")
-ax.plot(freq, osc_sim_on, "--", c=c_on, label="osc sim")
-ax.plot(freq, osc_sim_off-1, "--", c=c_off, label="osc sim")
-
-ax.set_title(f"Welch: {win_sec_i}s, hmax={hset_max}, num={num}")
-ax.set_xlabel("Frequency")
-ax.legend()
-
-freq_name = f"{freq_range[0]}-{freq_range[1]}Hz"
-plt.suptitle(f"Fit Range: {freq_name}")
-for ax in axes.flatten():
-    ax.set_yticklabels("")
-plt.tight_layout()
-plt.show()
-
-
-
-# =============================================================================
-# TO DO:
-#     - CALC SOME DIFFICULT CASES
-#     -> SHOW WRONG
-#     -> BAD DATA
-
-# Questions: can IRASA deal with bad segments? -> seems like it? reall? why
-# such a big difference between average=mean and median?
-# IRASA: knickt ab bei niedrigen frequenzen -> Artefakt. Option1 : 
-    # wähle hset_max niedrig -> nicht alle oszis werden entdeckt
-    # wähle höhere minimum frequenz bereich
-# =============================================================================
-
-# %%
-# =============================================================================
-# DELETE
-# freq = np.fft.fftfreq(signal_on[:10000].size, 1/srate)
-# psd = np.fft.fft(signal_on[:10000])
-# 
-# mask = (freq < 100) & (freq > 0)
-# plt.plot(freq[mask], abs(psd[mask]))
-# plt.show()
-# plt.loglog(freq[mask], abs(psd[mask]))
-# plt.show()
-# 
-# plt.plot(freq[mask], psd[mask])
-# plt.show()
-# plt.loglog(freq[mask], psd[mask])
-# plt.show()
-# 
-# plt.plot(freq[mask], psd[mask].imag)
-# plt.show()
-# plt.loglog(freq[mask], psd[mask].imag)
-# plt.show()
-# =============================================================================
+# %% Tune Parameters
+
+for i in range(9):
+
+        fit_params = {
+            0: {"IRASA": {"band": [1, 45],
+                          "sf": srate, "win_sec": 0.5,
+                          "hset": np.linspace(1.1, 1.9, num=5),
+                          "kwargs_welch": {'average': 'median'}},
+                "fooof": {"peak_width_limits": (1, 12), "peak_threshold": 1,
+                          "max_n_peaks": np.inf, "min_peak_height": 0,
+                          "aperiodic_mode": "fixed"}},
+
+            1: {"IRASA": {"band": [2, 45],
+                          "sf": srate, "win_sec": 0.5,
+                          "hset": np.linspace(1.1, 1.9, num=5),
+                          "kwargs_welch": {'average': 'median'}},
+                "fooof": {"peak_width_limits": (1, 12), "peak_threshold": 1,
+                          "max_n_peaks": np.inf, "min_peak_height": 0,
+                          "aperiodic_mode": "fixed"}},
+
+            2: {"IRASA": {"band": [5, 45],
+                          "sf": srate, "win_sec": 1,
+                          "hset": np.linspace(1.1, 2.9, num=5),
+                          "kwargs_welch": {'average': 'median'}},
+                "fooof": {"peak_width_limits": (1, 12), "peak_threshold": 1,
+                          "max_n_peaks": np.inf, "min_peak_height": 0,
+                          "aperiodic_mode": "fixed"}},
+
+            3: {"IRASA": {"band": [10, 45],
+                          "sf": srate, "win_sec": 1,
+                          "hset": np.linspace(1.1, 2.9, num=5),
+                          "kwargs_welch": {'average': 'median'}},
+                "fooof": {"peak_width_limits": (1, 12), "peak_threshold": 1,
+                          "max_n_peaks": np.inf, "min_peak_height": 0,
+                          "aperiodic_mode": "fixed"}},
+
+            4: {"IRASA": {"band": [15, 45],
+                          "sf": srate, "win_sec": 1,
+                          "hset": np.linspace(1.1, 2.9, num=5),
+                          "kwargs_welch": {'average': 'median'}},
+                "fooof": {"peak_width_limits": (1, 12), "peak_threshold": 1,
+                          "max_n_peaks": np.inf, "min_peak_height": 0,
+                          "aperiodic_mode": "fixed"}},
+
+            5: {"IRASA": {"band": [20, 45],
+                          "sf": srate, "win_sec": 1,
+                          "hset": np.linspace(1.1, 2.9, num=7),
+                          "kwargs_welch": {'average': 'median'}},
+                "fooof": {"peak_width_limits": (1, 12), "peak_threshold": 1,
+                          "max_n_peaks": np.inf, "min_peak_height": 0,
+                          "aperiodic_mode": "fixed"}},
+
+            6: {"IRASA": {"band": [30, 45],
+                          "sf": srate, "win_sec": 1,
+                          "hset": np.linspace(1.1, 2.9, num=5),
+                          "kwargs_welch": {'average': 'median'}},
+                "fooof": {"peak_width_limits": (1, 12), "peak_threshold": 1,
+                          "max_n_peaks": np.inf, "min_peak_height": 0,
+                          "aperiodic_mode": "fixed"}},
+
+            7: {"IRASA": {"band": [35, 45],
+                          "sf": srate, "win_sec": 1,
+                          "hset": np.linspace(1.1, 1.9, num=5),
+                          "kwargs_welch": {'average': 'median'}},
+                "fooof": {"peak_width_limits": (1, 12), "peak_threshold": 1,
+                          "max_n_peaks": np.inf, "min_peak_height": 0,
+                          "aperiodic_mode": "fixed"}},
+
+            8: {"IRASA": {"band": [40, 60],
+                          "sf": srate, "win_sec": .5,
+                          "hset": np.linspace(1.1, 3.9, num=5),
+                          "kwargs_welch": {'average': 'median'}},
+                "fooof": {"peak_width_limits": (1, 12), "peak_threshold": 1,
+                          "max_n_peaks": np.inf, "min_peak_height": 0,
+                          "aperiodic_mode": "fixed"}}
+                        }
+
+        # if peak is wide, num should be smaller!
+        # if freq range is narrow, haset_max should be smaller!
+        # small win_sec enables better 1/f fitting but worse oscillation extraction
+        # fooof needs little tuning
+
+        freq_range = fit_params[i]["IRASA"]["band"]
+
+        # Normalize power offset for plotting
+        psd_on = psd_on / psd_on[0]
+        psd_off = psd_off / (psd_off[0] * 10)  # different offset for off
+        psd_sim_on = psd_sim_on / psd_sim_on[0]
+        psd_sim_off = psd_sim_off / (psd_sim_off[0] * 10)
+        psd_sim_on_ap = psd_sim_on_ap / psd_sim_on_ap[0]
+        psd_sim_off_ap = psd_sim_off_ap / (psd_sim_off_ap[0] * 10)
+        
+
+        mask = (freqs >= freq_range[0]) & (freqs <= freq_range[1])
+        
+        
+        fooof_params = fit_params[i]["fooof"]
+        irasa_params = fit_params[i]["IRASA"]
+
+        irasa_params = {"band": freq_range,
+                        "sf": srate, "win_sec": 1,
+                        "hset": np.linspace(1.1, 1.9, num=5),
+                        "kwargs_welch": {'average': 'median'}}
+        
+        # % Calc and Plot
+        
+        # IRASA
+        IRASA_real_on = yasa.irasa(data=signal_on, **irasa_params)
+        IRASA_real_off = yasa.irasa(data=signal_off, **irasa_params)
+        IRASA_sim_on = yasa.irasa(data=signal_sim_on, **irasa_params)
+        IRASA_sim_off = yasa.irasa(data=signal_sim_off, **irasa_params)
+        
+        freq, aperiodic_on, osc_on, params_on = IRASA_real_on
+        freq, aperiodic_off, osc_off, params_off = IRASA_real_off
+        freq, aperiodic_sim_on, osc_sim_on, params_sim_on = IRASA_sim_on
+        freq, aperiodic_sim_off, osc_sim_off, params_sim_off = IRASA_sim_off
+        
+        # Normalize power offset
+        sum_on = aperiodic_on[0] + osc_on[0]
+        sum_on_max = sum_on[0]
+        sum_on /= sum_on_max
+        sum_off = aperiodic_off[0] + osc_off[0]
+        sum_off_max = sum_off[0]
+        sum_off /= (sum_off_max * 10)
+        sum_sim_on = aperiodic_sim_on[0] + osc_sim_on[0]
+        sum_sim_on_max = sum_sim_on[0]
+        sum_sim_on /= sum_sim_on_max
+        sum_sim_off = aperiodic_sim_off[0] + osc_sim_off[0]
+        sum_sim_off_max = sum_sim_off[0]
+        sum_sim_off /= (sum_sim_off_max * 10)
+        
+        # IRASA sim and real needs correct scaling
+        scale = sum_on_max / sum_sim_on_max
+        osc_on = osc_on[0]# / osc_on[0].max()
+        osc_off = osc_off[0] - .015  # subtract for offset diff
+        osc_sim_on = osc_sim_on[0] * scale
+        osc_sim_off = osc_sim_off[0] * scale - .015
+        
+        aperiodic_on = aperiodic_on[0] / sum_on_max
+        aperiodic_sim_on = aperiodic_sim_on[0] / sum_sim_on_max
+        aperiodic_off = aperiodic_off[0] / (sum_off_max * 10)
+        aperiodic_sim_off = aperiodic_sim_off[0] / (sum_sim_off_max * 10)
+        
+        # Extract Fit Params
+        offset_on = params_on["Intercept"].iloc[0]
+        slope_on = -params_on["Slope"].iloc[0]
+        offset_off = params_off["Intercept"].iloc[0]
+        slope_off = -params_off["Slope"].iloc[0]
+        offset_sim_on = params_sim_on["Intercept"].iloc[0]
+        slope_sim_on = -params_sim_on["Slope"].iloc[0]
+        offset_sim_off = params_sim_off["Intercept"].iloc[0]
+        slope_sim_off = -params_sim_off["Slope"].iloc[0]
+        
+        # Calc fit
+        freq_fit = np.r_[0, freq]  # we need to start at 0
+        fit_on = 10**offset_on / freq_fit ** slope_on
+        fit_off = 10**offset_off / freq_fit ** slope_off
+        fit_sim_on = 10**offset_sim_on / freq_fit ** slope_sim_on
+        fit_sim_off = 10**offset_sim_off / freq_fit ** slope_sim_off
+        
+        # Normalize Fit
+        fit_on /= fit_on[1]
+        fit_off /= fit_off[1] * 10
+        fit_sim_on /= fit_sim_on[1]
+        fit_sim_off /= fit_sim_off[1] * 10
+        
+        # Extract error params
+        r_squ_on = params_on["R^2"].iloc[0]
+        r_squ_off = params_off["R^2"].iloc[0]
+        r_squ_sim_on = params_sim_on["R^2"].iloc[0]
+        r_squ_sim_off = params_sim_off["R^2"].iloc[0]
+        
+        # Calc mean error
+        R2_mean_I = np.mean([r_squ_on, r_squ_off, r_squ_sim_on, r_squ_sim_off])
+        
+        # Labels
+        label_on = f"Real on 1/f {slope_on:.2f}"
+        label_off = f"Real off 1/f {slope_off:.2f}"
+        label_sim_on = f"Sim on 1/f {slope_sim_on:.2f}"
+        label_sim_off = f"Sim off 1/f {slope_sim_off:.2f}"
+        
+        # % Plot Both
+        
+        # IRASA Plot arguments
+        real_on = (freqs[mask], psd_on[mask])
+        kwgs_on = {"c": c_on, "label": "Real On"}
+        real_off = (freqs[mask], psd_off[mask])
+        kwgs_off = {"c": c_off, "label": "Real Off"}
+        
+        sim_on = (freqs[mask], psd_sim_on[mask], "--")
+        kwgs_sim_on = {"c": c_on, "label": f"Sim On 1/f={slope_truth_on}"}
+        sim_on_ap = (freqs[mask], psd_sim_on_ap[mask], "b--")
+        sim_on_osc = (freqs[mask], psd_sim_on_osc[mask], "--")
+        kwgs_sim_on_osc = {"c": c_on, "label": "Sim osc ground truth On"}
+        
+        sim_off = (freqs[mask], psd_sim_off[mask], "--")
+        kwgs_sim_off = {"c": c_off, "label": f"Sim Off 1/f={slope_truth_off}"}
+        sim_off_ap = (freqs[mask], psd_sim_off_ap[mask], "b--")
+        kwgs_sim_off_ap = {"label": "Sim Aperiodic"}
+        sim_off_osc = (freqs[mask], psd_sim_off_osc[mask]-4e-9, "--")
+        kwgs_sim_off_osc = {"c": c_off, "label": "Sim osc ground truth Off"}
+        
+        #
+        
+        fig, axes = plt.subplots(3, 3, figsize=[20, 15])
+        
+        ax = axes[0, 0]
+        ax.loglog(*real_on, **kwgs_on)
+        ax.loglog(*real_off, **kwgs_off)
+        ax.loglog(*sim_on, **kwgs_sim_on)
+        ax.loglog(*sim_on_ap)
+        ax.loglog(*sim_off, **kwgs_sim_off)
+        ax.loglog(*sim_off_ap, **kwgs_sim_off_ap)
+        
+        ax.set_ylabel("Log Power a.u.")
+        ax.set_xlabel("log(Frequency)")
+        ax.set_title("Original PSD")
+        ax.legend()
+        
+        ax = axes[1, 0]
+        ax.semilogy(*real_on, **kwgs_on)
+        ax.semilogy(*real_off, **kwgs_off)
+        ax.semilogy(*sim_on, **kwgs_sim_on)
+        ax.semilogy(*sim_on_ap)
+        ax.semilogy(*sim_off, **kwgs_sim_off)
+        ax.semilogy(*sim_off_ap, **kwgs_sim_off_ap)
+        
+        ax.set_ylabel("Log Power a.u.")
+        ax.set_xticklabels("")
+        ax.legend()
+        
+        ax = axes[2, 0]
+        ax.plot(*sim_on_osc, **kwgs_sim_on_osc)
+        ax.plot(*sim_off_osc, **kwgs_sim_off_osc)
+        
+        ax.set_title(f"Welch: {win_sec}s")
+        ax.set_ylabel("Power a.u.")
+        ax.set_xlabel("Frequency")
+        ax.legend()
+        
+        # fooof
+        ax = axes[0, 1]
+        fm_on = FOOOF(**fooof_params)  # Init fooof
+        fm_on.fit(freqs, psd_on, freq_range)
+        fm_on.plot(plt_log=True, ax=ax,
+                   model_kwargs={"color": c_on, "alpha": 1, "linewidth": 2},
+                   data_kwargs={"alpha": 0})
+        exponent_on = fm_on.get_params('aperiodic_params', 'exponent')
+        r_squ_on = fm_on.get_params('r_squared')
+        
+        
+        fm_off = FOOOF(**fooof_params)  # Init fooof
+        fm_off.fit(freqs, psd_off, freq_range)
+        fm_off.plot(plt_log=True, ax=ax,
+                    model_kwargs={"color": c_off, "alpha": 1, "linewidth": 2},
+                    data_kwargs={"alpha": 0})
+        exponent_off = fm_off.get_params('aperiodic_params', 'exponent')
+        r_squ_off = fm_off.get_params('r_squared')
+        
+        fm_on_sim = FOOOF(**fooof_params)  # Init fooof
+        fm_on_sim.fit(freqs, psd_sim_on, freq_range)
+        fm_on_sim.plot(plt_log=True, ax=ax,
+                       model_kwargs={"color": c_on, "linestyle": "--", "alpha": 1,
+                                     "linewidth": 2},
+                       data_kwargs={"alpha": 0})
+        exponent_sim_on = fm_on_sim.get_params('aperiodic_params', 'exponent')
+        r_squ_sim_on = fm_on_sim.get_params('r_squared')
+        
+        fm_off_sim = FOOOF(**fooof_params)  # Init fooof
+        fm_off_sim.fit(freqs, psd_sim_off, freq_range)
+        fm_off_sim.plot(plt_log=True, ax=ax,
+                        model_kwargs={"color": c_off, "linestyle": "--", "alpha": 1,
+                                      "linewidth": 2},
+                        data_kwargs={"alpha": 0})
+        exponent_sim_off = fm_off_sim.get_params('aperiodic_params', 'exponent')
+        r_squ_sim_off = fm_off_sim.get_params('r_squared')
+        
+        ax.set_ylabel("")
+        R2_mean_F = np.mean([r_squ_on, r_squ_off, r_squ_sim_on, r_squ_sim_off])
+        ax.set_title(f"fooof R^2 mean: {R2_mean_F:.2f}")
+        handles, labels = ax.get_legend_handles_labels()
+        handles = handles[1::3] + [handles[-1]]
+        label_on = f"Real On 1/f={exponent_on:.2f}"
+        label_off = f"Real Off 1/f={exponent_off:.2f}"
+        label_sim_on = f"Sim On 1/f={exponent_sim_on:.2f}"
+        label_sim_off = f"Sim Off 1/f={exponent_sim_off:.2f}"
+        labels = [label_on, label_off, label_sim_on, label_sim_off, "Aperiodic Fit"]
+        ax.legend(handles, labels)
+        ax.grid(False)
+
+        ax = axes[1, 1]
+        error_fooof_sim = (abs(slope_truth_on - exponent_sim_on) +
+                           abs(slope_truth_off - exponent_sim_off))
+        error_fooof = (abs(slope_truth_on - exponent_on) +
+                       abs(slope_truth_off - exponent_off))
+        ax.set_title(f"Fooof error sim: {error_fooof_sim:.2f}, "
+                     f"real: {error_fooof:.2f}")
+        fm_on.plot(plt_log=False, ax=ax,
+                   model_kwargs={"color": c_on, "linestyle": "-", "alpha": 1,
+                                 "linewidth": 2},
+                   data_kwargs={"alpha": 0})
+        fm_off.plot(plt_log=False, ax=ax,
+                    model_kwargs={"color": c_off, "linestyle": "-", "alpha": 1,
+                                  "linewidth": 2},
+                    data_kwargs={"alpha": 0})
+        fm_on_sim.plot(plt_log=False, ax=ax,
+                       model_kwargs={"color": c_on, "linestyle": "--", "alpha": 1,
+                                     "linewidth": 2},
+                       data_kwargs={"alpha": 0})
+        fm_off_sim.plot(plt_log=False, ax=ax,
+                        model_kwargs={"color": c_off, "linestyle": "--", "alpha": 1,
+                                      "linewidth": 2},
+                        data_kwargs={"alpha": 0})
+        
+        ax.grid(False)
+        ax.set_xticklabels("")
+        ax.set_ylabel("")
+        ax.set_xlabel("")
+        ax.legend(handles, labels)
+        
+        ax = axes[2, 1]
+        ap_fit_on = gen_aperiodic(fm_on.freqs, fm_on.aperiodic_params_)
+        fooof_osc_on = fm_on.power_spectrum - ap_fit_on
+        ax.plot(fm_on.freqs, fooof_osc_on, c=c_on, label="osc on")
+        
+        ap_fit_off = gen_aperiodic(fm_off.freqs, fm_off.aperiodic_params_)
+        fooof_osc_off = fm_off.power_spectrum - ap_fit_off
+        ax.plot(fm_off.freqs, fooof_osc_off-.8, c=c_off, label="osc off")
+        
+        ap_fit_sim_on = gen_aperiodic(fm_on_sim.freqs, fm_on_sim.aperiodic_params_)
+        fooof_osc_sim_on = fm_on_sim.power_spectrum - ap_fit_sim_on
+        ax.plot(fm_on_sim.freqs, fooof_osc_sim_on, "--", c=c_on, label="osc sim on")
+        ap_fit_sim_off = gen_aperiodic(fm_off_sim.freqs, fm_off_sim.aperiodic_params_)
+        fooof_osc_sim_off = fm_off_sim.power_spectrum - ap_fit_sim_off
+        ax.plot(fm_off_sim.freqs, fooof_osc_sim_off-.8, "--", c=c_off,
+                label="osc sim off")
+        
+        peak_width_min = fooof_params["peak_width_limits"][0]
+        ax.set_title(f"Welch: {win_sec}s, min peak width: {peak_width_min}Hz")
+        ax.set_xlabel('Frequency')
+        ax.legend()
+        
+        # IRASA
+        ax = axes[0, 2]
+        
+        # Labels
+        label_on = f"Real on 1/f {slope_on:.2f}"
+        label_off = f"Real off 1/f {slope_off:.2f}"
+        label_sim_on = f"Sim on 1/f {slope_sim_on:.2f}"
+        label_sim_off = f"Sim off 1/f {slope_sim_off:.2f}"
+        
+        ir_on = (freq, sum_on, c_on)
+        ir_off = (freq, sum_off, c_off)
+        ir_sim_on = (freq, sum_sim_on, "--")
+        ir_sim_off = (freq, sum_sim_off, "--")
+        ir_ap_on = (freq, aperiodic_on, "darkgreen")
+        ir_ap_off = (freq, aperiodic_off, "darkgreen")
+        ir_ap_sim_on = (freq, aperiodic_sim_on, "--")
+        ir_ap_sim_off = (freq, aperiodic_sim_off, "--")
+        
+        ax.loglog(*ir_on, label=label_on)
+        ax.loglog(*ir_off, label=label_off)
+        ax.loglog(*ir_sim_on, c=c_on, label=label_sim_on)
+        ax.loglog(*ir_sim_off, c=c_off, label=label_sim_off)
+        
+        # Fits
+        p_fit_on = (freq_fit, fit_on, "b--")
+        p_fit_off = (freq_fit, fit_off, "b--")
+        p_fit_sim_on = (freq_fit, fit_sim_on, "b--")
+        p_fit_sim_off = (freq_fit, fit_sim_off, "b--")
+        
+        ax.loglog(*ir_ap_on, label="Aperiodic")
+        ax.loglog(*ir_ap_off)
+        ax.loglog(*ir_ap_sim_on, c="darkgreen")
+        ax.loglog(*ir_ap_sim_off, c="darkgreen")
+        
+        ax.loglog(*p_fit_on, label="Aperiodic Fit")
+        ax.loglog(*p_fit_off)
+        ax.loglog(*p_fit_sim_on)
+        ax.loglog(*p_fit_sim_off)
+        
+        ax.set_title(f"IRASA R^2 mean: {R2_mean_I:.2f}")
+        ax.set_xlabel("log(Frequency)")
+        
+        handles, labels = ax.get_legend_handles_labels()
+        ax.legend(handles, labels)
+        
+        
+        ax = axes[1, 2]
+        error_IRASA_sim = (abs(slope_truth_on - slope_sim_on) +
+                           abs(slope_truth_off - slope_sim_off))
+        error_IRASA = (abs(slope_truth_on - slope_on) +
+                       abs(slope_truth_off - slope_off))
+        ax.set_title(f"IRASA error sim: {error_IRASA_sim:.2f}, "
+                     f"real: {error_IRASA:.2f}")
+        
+        ax.semilogy(*ir_on)
+        ax.semilogy(*ir_ap_on)
+        ax.semilogy(*ir_off)
+        ax.semilogy(*ir_ap_off)
+        ax.semilogy(*ir_sim_on, c=c_on)
+        ax.semilogy(*ir_ap_sim_on, c="darkgreen")
+        ax.semilogy(*ir_sim_off, c=c_off)
+        ax.semilogy(*ir_ap_sim_off, c="darkgreen")
+        ax.semilogy(*p_fit_on)
+        ax.semilogy(*p_fit_off)
+        ax.semilogy(*p_fit_sim_on)
+        ax.semilogy(*p_fit_sim_off)
+        ax.set_xticklabels("")
+        ax.legend(handles, labels)
+        
+        
+        ax = axes[2, 2]
+        ax.plot(freq, osc_on, c_on, label="osc on")
+        ax.plot(freq, osc_off, c_off, label="osc off")
+        ax.plot(freq, osc_sim_on, "--", c=c_on, label="osc sim")
+        ax.plot(freq, osc_sim_off, "--", c=c_off, label="osc sim")
+        
+        win_sec_i = irasa_params["win_sec"]
+        hset = irasa_params["hset"]
+        hset_max = hset[-1]
+        num = hset.size
+        ax.set_title(f"Welch: {win_sec_i}s, hmax={hset_max}, num={num}")
+        ax.set_xlabel("Frequency")
+        ax.legend()
+        
+        freq_name = f"{freq_range[0]}-{freq_range[1]}Hz"
+        plt.suptitle(f"Fit Range: {freq_name}", fontsize=20)
+        for ax in axes.flatten():
+            ax.set_yticklabels("")
+        plt.tight_layout()
+        plt.show()
+        
+        
+        # save errors as df and plot
+
+        # Questions: can IRASA deal with bad segments? -> seems like it? reall? why
+        # such a big difference between average=mean and median?
+        # IRASA: knickt ab bei niedrigen frequenzen -> Artefakt. Option1 : 
+            # wähle hset_max niedrig -> nicht alle oszis werden entdeckt
+            # wähle höhere minimum frequenz bereich
+        # =============================================================================
