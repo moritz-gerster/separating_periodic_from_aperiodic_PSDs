@@ -25,7 +25,7 @@ from fooof import FOOOFGroup
 import yasa  # IRASA
 from pathlib import Path
 import pandas as pd
-import B_config
+
 
 params = {'legend.fontsize': 12.2,
           'axes.labelsize': 'x-large',
@@ -70,16 +70,6 @@ def osc_signals(samples, slope, freq_osc, amp, width=None, seed=True):
     pink_noise : ndarray of size slope.size X samples
         Return signal.
     """
-    
-    
-# =============================================================================
-#     
-#     IMPORTANT: FIRST CALC 1/f, THEN ADD OSCILLATIONS PEAKS!!!
-#     
-#     OSCILLATIONS DONT DECAY WITH 1/F!
-# =============================================================================
-
-
     if seed:
         np.random.seed(10)
     # Make fourier amplitudes
@@ -299,39 +289,39 @@ def plot_all(freq, noise_psds, IRASA, slopes, freq_range, white_ratio,
     ax.set_ylim(np.log10(ylim))
     ax.grid(False)
 
-    if IRASA:
-        ax = axes[2]
-        freq_i, aperiodic, osc, params = IRASA
-        # normalize
-        # if normalize:
-        #    aperiodic /= aperiodic.max(1)[:, np.newaxis]
-        for i in range(slopes.size):
-            ax.loglog(freq_i, aperiodic[i], "b", linestyle="--", lw=2,
-                      label="aperiodic")
-            if plot_osc:
-                ax.loglog(freq_i, osc[i] + aperiodic[i], "r", lw=2,
-                          label="osc", alpha=.5)
-        handles, _ = ax.get_legend_handles_labels()
-        labels = [f"1/f={-params['Slope'].iloc[i]:.2f}"
-                        # f"     Offset={params['Intercept'].iloc[i]:.2f}"
-                        for i in range(slopes.size)]
+
+    ax = axes[2]
+    freq_i, aperiodic, osc, params = IRASA
+    # normalize
+    # if normalize:
+    #    aperiodic /= aperiodic.max(1)[:, np.newaxis]
+    for i in range(slopes.size):
+        ax.loglog(freq_i, aperiodic[i], "b", linestyle="--", lw=2,
+                  label="aperiodic")
         if plot_osc:
-            labels = labels + ["osc"]
-            handles = handles[::2] + [handles[-1]]
-        else:
-            handles = handles[::2]
-        ax.legend(handles, labels, title="IRASA", loc=3, ncol=2,
-                  bbox_transform=fig.transFigure,
-                  bbox_to_anchor=[0.525, -.285])
-        # ax.set_ylim([ymin, ymax])
-        # ax.set_xlim([1, 600])
-        ax.set_title(f"IRASA error: {err_sum_i:.2f}")
-        ax.set_xlabel('Frequency')
-        ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
-        ax.set_xticks(xticks)
-        ax.set_xticklabels(xticklabels)
-        # ax.set_yticks(yticks)
-        ax.set_yticklabels(yticklabels)
+            ax.loglog(freq_i, osc[i] + aperiodic[i], "r", lw=2,
+                      label="osc", alpha=.5)
+    handles, _ = ax.get_legend_handles_labels()
+    labels = [f"1/f={-params['Slope'].iloc[i]:.2f}"
+                    # f"     Offset={params['Intercept'].iloc[i]:.2f}"
+                    for i in range(slopes.size)]
+    if plot_osc:
+        labels = labels + ["osc"]
+        handles = handles[::2] + [handles[-1]]
+    else:
+        handles = handles[::2]
+    ax.legend(handles, labels, title="IRASA", loc=3, ncol=2,
+              bbox_transform=fig.transFigure,
+              bbox_to_anchor=[0.525, -.285])
+    # ax.set_ylim([ymin, ymax])
+    # ax.set_xlim([1, 600])
+    ax.set_title(f"IRASA error: {err_sum_i:.2f}")
+    ax.set_xlabel('Frequency')
+    ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+    ax.set_xticks(xticks)
+    ax.set_xticklabels(xticklabels)
+    # ax.set_yticks(yticks)
+    ax.set_yticklabels(yticklabels)
 
     ax = axes[3]
     ax.plot(slopes, slopes-slopes, "k", label="Ground Truth")
@@ -528,222 +518,8 @@ irasa_params = {"sf": srate, "ch_names": slopes, "win_sec": win_sec,
                 "kwargs_welch": {'average': 'mean'}}
 
 # Path
-fig_path = B_config.fig_sim_fooof_IRASA
+fig_path = "../plots/"
 white_ratio = 0
-# %% PyEMD
-from PyEMD import EMD, EEMD, CEEMDAN
-import pylab as plt
-
-emd_params = {
-              # max number of iterations for each IMF.
-              # Default 0 -> no max number, check for other conditions.
-              "FIXE": 0,
-
-              # min number of iterations for each IMF.
-              # Default 0 -> no min number, check for other conditions.
-              "FIXE_H": 0,
-
-              # Maximum number of iterations per single sifting in EMD.
-              # Default 1000.
-              "MAX_ITERATION": 1000,
-
-              # Threshold value on energy ratio per IMF check. Default 0.2.
-              "energy_ratio_thr": 0.2,
-
-              # Threshold value on standard deviation per IMF check.
-              # Default 0.2.
-              "std_thr": 0.2,
-
-              # Threshold value on scaled variance per IMF check.
-              # Default 0.001.
-              "svar_thr": 0.001,
-
-              # Threshold value on total power per EMD decomposition.
-              # Default 0.005.
-              "total_power_thr": 0.005,
-
-              # Threshold for amplitude range (after scaling) per EMD
-              # decomposition. Default 0.001.
-              "range_thr": 0.001,
-
-              # Method used to finding extrema. Default "simple". 
-              # Alternativ "parabol".
-              "extrema_detection": "simple",
-
-              # Data type used. Default np.float64.
-              # Change to np.float16 to increase speed:
-              "DTYPE": np.float64
-              }
-
-emd = EMD(**emd_params)
-
-# %% EMD Default play around
-
-emd = CEEMDAN(**emd_params)
-
-t = np.linspace(0, 1, 100)
-s = np.cos(11*2*np.pi*t) - 12*t + np.cos(2*np.pi*t) + np.cos(6*2*np.pi*t)
-
-IMF = emd.emd(s, t)
-N = IMF.shape[0] + 1
-
-plt.figure(figsize=[5, 8])
-plt.subplot(N, 1, 1)
-plt.title("Applied to Toy Example of sine waves")
-plt.plot(t, s, 'r')
-plt.xlabel("Freq [Hz]")
-
-for n, imf in enumerate(IMF):
-    plt.subplot(N, 1, n+2)
-    plt.plot(t, imf, 'g')
-    plt.title("IMF "+str(n+1))
-plt.xlabel("Time [s]")
-plt.tight_layout()
-plt.savefig("/Users/moritzgerster/Desktop/sinewaves.pdf")
-plt.show()
-
-
-# %% EMD Applied to PSD
-freq_osc = [3, 6, 10, 20]  # Hz
-amp = [4, 4, 4, 7]
-width = [.5, .3, .5, 3]
-
-signals = osc_signals(samples, slopes, freq_osc, amp, width=width)
-freq, noise_psds = psds_pink(signals, srate, nperseg)
-
-freq_range = [1, 50]
-mask = (freq >= freq_range[0]) & (freq <= freq_range[1])
-f, psd = freq[mask], noise_psds[5, mask]
-
-plt.loglog(f, psd)
-
-IMF = emd.emd(f, psd)
-N = IMF.shape[0] + 1
-
-plt.subplot(N, 1, 1)
-plt.title("Applied to Toy PSD")
-plt.semilogy(f, psd, 'r')
-plt.xlabel("Freq [Hz]")
-
-for n, imf in enumerate(IMF):
-    plt.subplot(N, 1, n+2)
-    plt.plot(f, imf, 'g')
-    plt.title("IMF "+str(n+1))
-plt.xlabel("Time [s]")
-plt.tight_layout()
-plt.savefig("/Users/moritzgerster/Desktop/psd.pdf")
-plt.show()
-
-
-# %% EMD applied to signal
-
-emd = CEEMDAN(**emd_params)
-
-
-freq_osc = [4, 8]
-amp = [400, 200]
-width = .3 # [1]
-
-signals = osc_signals(samples, slopes, freq_osc, amp, width=width)
-freq, noise_psds = psds_pink(signals, srate, nperseg)
-
-freq_range = [1, 50]
-mask = (freq >= freq_range[0]) & (freq <= freq_range[1])
-f, psd = freq[mask], noise_psds[5, mask]
-
-#plt.loglog(f, psd)
-#plt.show()
-
-
-
-t, sign = time[:-2][:srate], signals[0, :srate]
-
-plt.plot(t, sign)
-
-emd = EMD(**emd_params)
-
-IMF = emd.emd(t, sign)
-N = IMF.shape[0] + 1
-
-plt.subplot(N, 1, 1)
-plt.plot(t, sign, 'r')
-plt.title("Applied to 1s of 1/f simulated signal")
-xticks = plt.gca().get_xticks()
-xticklabels = [np.round(xtick/srate, 2) for xtick in xticks]
-plt.gca().set_xticklabels(xticklabels)
-plt.xlabel("Time [s]")
-
-for n, imf in enumerate(IMF):
-    plt.subplot(N, 1, n+2)
-    plt.plot(t, sign, 'g')
-    plt.title("IMF "+str(n+1))
-    plt.gca().set_xticklabels(xticklabels)
-    plt.xlabel("Time [s]")
-plt.savefig("/Users/moritzgerster/Desktop/signal.pdf")
-plt.tight_layout()
-plt.show()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# =============================================================================
-# %%
-# EMD
-folder = "EMD"
-save_path = fig_path + f"{folder}/"
-freq_range = [1, 100]
-welch_windows = [0.25, 0.5, 1, 2, 4, 8]
-
-# Make noise
-noises = osc_signals(samples, slopes, None, None)
-white_ratio = 0
-
-# Initilaiize
-freq, noise_psds = psds_pink(noises, srate, nperseg)
-save_name = f"welch_window={win_sec}.pdf"
-IRASA = yasa.irasa(data=noises, band=freq_range, **irasa_params)
-
-plot_all(freq, noise_psds, IRASA, slopes, freq_range, white_ratio,
-         save_path=save_path, save_name=save_name)
-
-plt.subplot
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1318,50 +1094,150 @@ plt.show()
 
 
 
+# %% IRASA fucks up when highpass filtering
+
+
+fig_path = "../plots/"
+
+folder = "highpass"
+save_path = fig_path + f"{folder}/"
+freq_range = [5, 95]
+white_ratio = 0
+win_sec = 4
+
+
+# Oscillation
+freq_osc = [10, 25]  # Hz
+amp = [2, 10]
+
+
+hset_max = srate / 4 / freq_range[1]
+hset_max = 9.9
+
+irasa_params = {"sf": srate, "ch_names": slopes, "win_sec": win_sec,
+                "kwargs_welch": {'average': 'mean'},
+                "hset": np.linspace(1.1, hset_max, num=5)}
+# beta_widths = [0.1, 2, 4]
+beta_width = 2
+width = [0.5, beta_width]
+signals = osc_signals(samples, slopes, freq_osc, amp, width=width)
+
+# highpass filter
+sos = sig.butter(10, 1, btype="hp", fs=srate, output='sos')
+signals = sig.sosfilt(sos, signals)
+freq_name = f"{freq_range[0]}-{freq_range[1]}Hz"
+save_name = (f"{freq_name}_beta_width={beta_width}_"
+             f"hset_max={hset_max:.2f}.pdf")
+add_title = f"beta width={beta_width} SDs, hmax={hset_max:.2f}"
+freq, noise_psds = psds_pink(signals, srate, nperseg)
+IRASA = yasa.irasa(data=signals, band=freq_range, **irasa_params)
+
+plot_all(freq, noise_psds, IRASA, slopes, freq_range, white_ratio,
+         plot_osc=True,
+         save_path=save_path, save_name=save_name, add_title=add_title)
+
+# %% IRASA fucks up when noise floor
+
+
+fig_path = "../plots/"
+
+folder = "noise_floor"
+save_path = fig_path + f"{folder}/"
+freq_range = [15, 200]
+white_ratio = .6
+win_sec = 1
+nperseg = int(win_sec * srate)
+
+slopes = np.array([1, 1.6])
+# Oscillation
+freq_osc = 50  # Hz
+amp = 1
+w_noise = noise_white([slopes.size, samples-2])
+
+
+# hset_max = srate / 4 / freq_range[1]
+hset_max = 9.9
+
+irasa_params = {"sf": srate, "ch_names": slopes, "win_sec": win_sec,
+                "kwargs_welch": {'average': 'mean'},
+                "hset": np.linspace(1.1, hset_max, num=5)}
+
+width = 6
+signals = osc_signals(samples, slopes, freq_osc, amp, width=width)
+signals = signals + white_ratio * w_noise
+
+# highpass filter
+sos = sig.butter(10, 1, btype="hp", fs=srate, output='sos')
+signals = sig.sosfilt(sos, signals)
+freq_name = f"{freq_range[0]}-{freq_range[1]}Hz"
+save_name = (f"{freq_name}_beta_width={width}_"
+             f"hset_max={hset_max:.2f}.pdf")
+add_title = f"beta width={width} SDs, hmax={hset_max:.2f}"
+freq, noise_psds = psds_pink(signals, srate, nperseg)
+IRASA = yasa.irasa(data=signals, band=freq_range, **irasa_params)
+
+plot_all(freq, noise_psds, IRASA, slopes, freq_range, white_ratio,
+         plot_osc=True,
+         save_path=save_path, save_name=save_name, add_title=add_title)
 
 
 
+# %% IRASA fine when using intermediate ranges?
 
 
+fig_path = "../plots/"
+
+folder = "IRASA_works"
+save_path = fig_path + f"{folder}/"
+freq_range = [15, 30]
+white_ratio = 0
+win_sec = 4
+nperseg = int(win_sec * srate)
 
 
+slopes = np.arange(0, 4.5, .5)
+
+# Oscillation
+freq_osc = [14, 18, 27]
+amp = [1, 1, 1]
+width = [4, 2, 4]
+
+slopes = np.array([.8, 1.2])
 
 
+# hset_max = srate / 4 / freq_range[1]
+hset_max = 9.9
+
+irasa_params = {"sf": srate, "ch_names": slopes, "win_sec": win_sec,
+                "kwargs_welch": {'average': 'mean'},
+                "hset": np.linspace(1.1, hset_max, num=15)}
+
+signals = osc_signals(samples, slopes, freq_osc, amp, width=width)
 
 
+# highpass filter
+sos = sig.butter(10, 1, btype="hp", fs=srate, output='sos')
+signals = sig.sosfilt(sos, signals)
+freq_name = f"{freq_range[0]}-{freq_range[1]}Hz"
+save_name = (f"{freq_name}_beta_width={width}_"
+             f"hset_max={hset_max:.2f}.pdf")
+add_title = f"beta width={width} SDs, hmax={hset_max:.2f}"
+freq, noise_psds = psds_pink(signals, srate, nperseg)
+IRASA = yasa.irasa(data=signals, band=freq_range, **irasa_params)
 
+plot_all(freq, noise_psds, IRASA, slopes, freq_range, white_ratio,
+         plot_osc=True,
+         save_path=save_path, save_name=save_name, add_title=add_title)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# %%
+hset_max = 2
+freq, noise_psds = psds_pink(signals, srate, nperseg)
+freq2, noise_psds2 = psds_pink(signals, srate/hset_max, nperseg)
+freq3, noise_psds3 = psds_pink(signals, srate*hset_max, nperseg)
+plt.plot(freq[:150], noise_psds[3][:150]/noise_psds[3][:150].max(),
+         freq2[:150], noise_psds2[3][:150]/noise_psds2[3][:150].max(),
+         freq3[:150], noise_psds3[3][:150]/noise_psds3[3][:150].max())
+plt.xticks(np.arange(0, 80, 10))
 
 # %% Old
 
