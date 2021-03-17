@@ -9,9 +9,7 @@ from fooof.sim.gen import gen_aperiodic
 # from pathlib import Path
 import pandas as pd
 # import mne
-from helper import load_fif
-from helper import load_psd
-from helper import irasa
+from helper import load_fif, load_psd, irasa
 
 params = {'legend.fontsize': 12.2,
           'axes.labelsize': 'x-large',
