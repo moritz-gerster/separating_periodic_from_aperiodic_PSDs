@@ -11,8 +11,8 @@ n_sub = 14
 task = "rest"
 
 # Paths
-load_folder = "../../Hypo1-1/2021-03-03_Wrap_Up/"
-fif_path = f'../../Hypo1-1/data/1_raw_clean_fif/{task}/'
+load_folder = "../../Litvak11/2021-03-03_Wrap_Up/"
+fif_path = f'../../Litvak11/data/1_raw_clean_fif/{task}/'
 psd_path = load_folder + f"data/{task}/PSD_arrays/"
 
 # Names
