@@ -266,7 +266,7 @@ fig, axes = plt.subplots(2, 3, figsize=[20, 12])
 j = 0
 
 
-for i in range(9, 12):
+for i in range(5, 8):
 
     psd = psds[hard[i][2]][hard[i][0], hard[i][1]]
     data = raw_conds[hard[i][2]][hard[i][0]]

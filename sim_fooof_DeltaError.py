@@ -1,27 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Mar  7 08:43:58 2021
-
-@author: moritzgerster
-"""
-"""
-Simulate 1/f power spectra to compare fooof 1/f-estimation vs. IRASA.
-
-1. Create 1/f noise for different exponents.
-2. Fit fooof and IRASA. Test how well they obtain the 1/f-exponents.
-4. Vary parameters such as nperseg in Welch
-3. Add Gaussian white noise. Test how the noise affects the 1/f estimate
-   for different frequency ranges.
-5. Add one very strong sine peak. Test if 1/f is still fitted well.
-   Test if fooof and IRASA detect the peak power and frequency and width
-   correctly.
-6. Vary the amplitude (SNR) and width of the peak.
-7. Vary fitting ranges.
-8. Add more peaks. Some strong, some weak, some wide, small sharp, some
-   overlapping, some distinct. Which algorithm performs best?
-9. Add noise to peaks
-"""
+"""Simulate fooof error in the presence of delta peaks."""
 import numpy as np
 import scipy.signal as sig
 from scipy.stats import norm
@@ -139,7 +116,7 @@ def osc_signals(samples, slope, freq_osc, amp, width=None, seed=True):
 
 def psds_pink(noises, srate, nperseg, normalize=False):
     """
-    Return freqs, and psds of noises array.
+    Return freqs and psds of noises array.
 
     Parameters
     ----------
@@ -174,7 +151,7 @@ def slope_error(slopes, freq, noise_psds, freq_range):
     Calculate fooof and IRASA slope estimation difference to ground truth.
 
     Fooof needs to be calculated to obtain an array of all estimates,
-    RASA need to be calculated before.
+    IRASA need to be calculated before.
 
     Parameters
     ----------
@@ -196,7 +173,7 @@ def slope_error(slopes, freq, noise_psds, freq_range):
 
     """
     # fg = FOOOFGroup(**fooof_params)  # Init fooof
-    fg = FOOOFGroup()  # Init fooof
+    fg = FOOOFGroup(verbose=False)  # Init fooof
     fg.fit(freq, noise_psds, freq_range)
     slopes_f = fg.get_params("aperiodic", "exponent")
     return slopes-slopes_f
@@ -260,15 +237,14 @@ def plot_all(freq, noise_psds, slopes, freq_range,
     for i, noise_psd in enumerate(noise_psds):
         print(f"...fitting fooof {i+1} of {len(slopes)}")
         # fm = FOOOF(**fooof_params)  # Init fooof
-        fm = FOOOF()  # Init fooof
-        try:
-            fm.fit(freq, noise_psd, freq_range)
-            fm.plot(plt_log=True, ax=ax)
-            exponent = fm.get_params('aperiodic_params', 'exponent')
-            labels.append(f" 1/f={exponent:.2f}")
-        except:
-            # offset = fm.get_params('aperiodic_params', 'offset')
-            labels.append(" 1/f=failed")
+        fm = FOOOF(verbose=False)  # Init fooof
+        # try:
+        fm.fit(freq, noise_psd, freq_range)
+        fm.plot(plt_log=True, ax=ax)
+        exponent = fm.get_params('aperiodic_params', 'exponent')
+        labels.append(f" 1/f={exponent:.2f}")
+        # except:
+        # labels.append(" 1/f=failed")
     handles, _ = ax.get_legend_handles_labels()
     handles = handles[2::3] + [handles[-2]]
     labels = labels + ["osc"]
@@ -333,9 +309,6 @@ fig_path = "../plots/"
 white_ratio = 0
 
 
-
-
-
 # %% fooof Delta Oscis
 
 
@@ -344,8 +317,6 @@ save_path = fig_path + f"{folder}/"
 freq_range = [1, 45]
 win_sec = 1
 nperseg = int(win_sec * srate)
-
-
 
 # Oscillation
 width = .7
@@ -367,7 +338,8 @@ for delta_present in [0, 1]:
 
         amp_scaled = amp * scale
 
-        signals = osc_signals(samples, slopes, freq_osc, amp_scaled, width=width)
+        signals = osc_signals(samples, slopes, freq_osc, amp_scaled,
+                              width=width)
         freq_name = f"{freq_range[0]}-{freq_range[1]}Hz"
         osc_name = [f"{osc} Hz" for osc in freq_osc]
         save_name = (f"{freq_name}_osc_freqs={osc_name}_amp={amp_scaled}.pdf")
@@ -381,8 +353,7 @@ for delta_present in [0, 1]:
         err_f = slope_error(slopes, freq, noise_psds, freq_range)
         errs_f.append(np.sum(np.abs(err_f)))
 
-        plot_all(freq, noise_psds, slopes, freq_range,
-                 plot_osc=True,
+        plot_all(freq, noise_psds, slopes, freq_range, plot_osc=True,
                  save_path=save_path, save_name=save_name, add_title=add_title)
 
     data = {"freq_range": [freq_range] * len(scaling),
@@ -394,12 +365,12 @@ for delta_present in [0, 1]:
             "width": [width] * len(scaling),
             "delta_present": [delta_present] * len(scaling),
             "amp_scale": np.arange(0, 12, 2),
-           }
+            }
     temp = pd.DataFrame(data)
     df = df.append(temp)
 
 
-# %%
+# %% Plot fooof Delta Error
 save_path = fig_path + folder + "/"
 Path(save_path).mkdir(parents=True, exist_ok=True)
 save_name = f"df_{folder}.pkl"
@@ -408,11 +379,11 @@ df.to_pickle(save_path + save_name)
 
 fig, ax = plt.subplots(1, 1)
 
-df0 = df[df.delta_present==0]
+df0 = df[df.delta_present == 0]
 ax.plot(df0["amp_scale"], df0["err_f"], "r--",
         alpha=1, label="fooof without Delta")
 
-df1 = df[df.delta_present==1]
+df1 = df[df.delta_present == 1]
 ax.plot(df1["amp_scale"], df1["err_f"], "b--",
         alpha=1, label="fooof with 1Hz peak")
 
@@ -421,7 +392,7 @@ ax.set_ylabel("Fitting error")
 ax.legend()
 # plt.title(f"IRASA hmin={1/hset_max:.1f}")
 plt.tight_layout()
-plt.savefig(fig_path + folder + ".pdf", bbox_inches="tight")
+plt.savefig(save_path + folder + ".pdf", bbox_inches="tight")
 plt.show()
 
 

@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Mar  6 16:24:50 2021
-
-@author: moritzgerster
-"""
 """Compare fooof with IRASA on real data."""
 import numpy as np
 # import scipy.signal as sig
