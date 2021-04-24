@@ -146,7 +146,7 @@ for win_sec in welch_windows:
                     "kwargs_welch": {'average': 'mean'}}
 
     save_name = f"welch_window={win_sec}.pdf"
-    IRASA = yasa.irasa(data=noises, band=freq_range, **irasa_params)
+    IRASA = irasa(data=noises, band=freq_range, **irasa_params)
 
     fooof_params = dict(max_n_peaks=0, verbose=False)  # no oscillations
     err_f, err_i = slope_error(slopes, freq, noise_psds, freq_range, IRASA,
@@ -200,7 +200,7 @@ for freq_range in freq_ranges:
     freq_name = f"{freq_range[0]}-{freq_range[1]}Hz"
     save_name = f"{freq_name}.pdf"
     freq_f, noise_psds_f = psds_pink(noises, srate, nperseg_fooof)
-    IRASA = yasa.irasa(data=noises, band=freq_range, **irasa_params)
+    IRASA = irasa(data=noises, band=freq_range, **irasa_params)
 
     fooof_params = dict(max_n_peaks=0, verbose=False)  # no oscillations
     err_f, err_i = slope_error(slopes, freq_f, noise_psds_f, freq_range, IRASA,
@@ -259,7 +259,7 @@ freq, noise_psds = psds_pink(signals, srate, nperseg)
 freq_f, noise_psds_f = psds_pink(signals, srate, nperseg_fooof)
 freq_name = f"{freq_range[0]}-{freq_range[1]}Hz"
 save_name = f"{freq_name}.pdf"
-# IRASA = yasa.irasa(data=signals, band=freq_range, **irasa_params)
+# IRASA = irasa(data=signals, band=freq_range, **irasa_params)
 
 plot_all(freq, noise_psds, freq_f, noise_psds_f, IRASA, slopes, freq_range,
          white_ratio, plot_osc=True, save_path=save_path, save_name=save_name)
@@ -299,7 +299,7 @@ for hset_max in hset_maxis:
         freq, noise_psds = psds_pink(signals, srate, nperseg)
 
         freq_f, noise_psds_f = psds_pink(signals, srate, nperseg_fooof)
-        IRASA = yasa.irasa(data=signals, band=freq_range, **irasa_params)
+        IRASA = irasa(data=signals, band=freq_range, **irasa_params)
 
         fooof_params = dict(max_n_peaks=0, verbose=False)  # no oscillations
         err_f, err_i = slope_error(slopes, freq_f, noise_psds_f, freq_range,
@@ -383,11 +383,10 @@ for freq_range in freq_ranges:
     signals = osc_signals(samples, slopes, freq_osc, amp, width=width)
     freq, noise_psds = psds_pink(signals, srate, nperseg)
     freq_f, noise_psds_f = psds_pink(signals, srate, nperseg_fooof)
-    IRASA = yasa.irasa(data=signals, band=freq_range, **irasa_params)
+    IRASA = irasa(data=signals, band=freq_range, **irasa_params)
 
-    fooof_params = dict(max_n_peaks=0, verbose=False)  # no oscillations
     err_f, err_i = slope_error(slopes, freq_f, noise_psds_f, freq_range, IRASA,
-                               fooof_params=fooof_params)
+                               fooof_params=None)
     errs_f.append(np.sum(np.abs(err_f)))
     errs_i.append(np.sum(np.abs(err_i)))
 
@@ -461,7 +460,7 @@ for amp_mod in amp_mods:
     signals = osc_signals(samples, slopes, freq_osc, amp*amp_mod, width=width)
     freq, noise_psds = psds_pink(signals, srate, nperseg)
     freq_f, noise_psds_f = psds_pink(signals, srate, nperseg_fooof)
-    IRASA = yasa.irasa(data=signals, band=freq_range, **irasa_params)
+    IRASA = irasa(data=signals, band=freq_range, **irasa_params)
 
     fooof_params = dict(max_n_peaks=0, verbose=False)  # no oscillations
     err_f, err_i = slope_error(slopes, freq, noise_psds, freq_range, IRASA,
@@ -533,7 +532,7 @@ for white_ratio in white_ratios:
     signals += white_ratio * w_noise
     freq, noise_psds = psds_pink(signals, srate, nperseg)
     freq_f, noise_psds_f = psds_pink(signals, srate, nperseg_fooof)
-    IRASA = yasa.irasa(data=signals, band=freq_range, **irasa_params)
+    IRASA = irasa(data=signals, band=freq_range, **irasa_params)
 
     fooof_params = dict(max_n_peaks=0, verbose=False)  # no oscillations
     err_f, err_i = slope_error(slopes, freq_f, noise_psds_f, freq_range, IRASA,
@@ -616,7 +615,7 @@ save_name = (f"{freq_name}_beta_width={beta_width}_"
              f"hset_max={hset_max:.2f}.pdf")
 add_title = f"beta width={beta_width} SDs, hmax={hset_max:.2f}"
 freq, noise_psds = psds_pink(signals, srate, nperseg)
-IRASA = yasa.irasa(data=signals, band=freq_range, **irasa_params)
+IRASA = irasa(data=signals, band=freq_range, **irasa_params)
 
 plot_all(freq, noise_psds, freq, noise_psds, IRASA, slopes, freq_range,
          white_ratio, plot_osc=True,
@@ -660,7 +659,7 @@ save_name = (f"{freq_name}_beta_width={width}_"
              f"hset_max={hset_max:.2f}.pdf")
 add_title = f"beta width={width} SDs, hmax={hset_max:.2f}"
 freq, noise_psds = psds_pink(signals, srate, nperseg)
-IRASA = yasa.irasa(data=signals, band=freq_range, **irasa_params)
+IRASA = irasa(data=signals, band=freq_range, **irasa_params)
 
 plot_all(freq, noise_psds, freq, noise_psds, IRASA, slopes, freq_range,
          white_ratio,
@@ -708,7 +707,7 @@ save_name = (f"{freq_name}_beta_width={width}_"
              f"hset_max={hset_max:.2f}.pdf")
 add_title = f"beta width={width} SDs, hmax={hset_max:.2f}"
 freq, noise_psds = psds_pink(signals, srate, nperseg)
-IRASA = yasa.irasa(data=signals, band=freq_range, **irasa_params)
+IRASA = irasa(data=signals, band=freq_range, **irasa_params)
 
 plot_all(freq, noise_psds, freq, noise_psds, IRASA, slopes, freq_range,
          white_ratio,

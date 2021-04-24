@@ -20,7 +20,7 @@ def noise_white(samples, seed=True):
 
 
 def osc_signals(samples, slope, freq_osc, amp, width=None, seed=True,
-                srate=2400):
+                srate=2400, normalize=True):
     """
     Generate a mixture of 1/f-aperiodic and periodic signals.
 
@@ -61,6 +61,8 @@ def osc_signals(samples, slope, freq_osc, amp, width=None, seed=True,
         width = [width] * peaks
     elif isinstance(width, list):
         assert peaks == len(width), "input lists must be of the same length"
+
+
     # add Gaussian peaks to the spectrum
     if isinstance(width, list):
         for i in range(peaks):
@@ -89,8 +91,11 @@ def osc_signals(samples, slope, freq_osc, amp, width=None, seed=True,
         amps *= np.exp(1j * random_phases)
         # Transform back to get pink noise time series
         noise = np.fft.irfft(amps)
-        # normalize
-        return (noise - noise.mean()) / noise.std()
+        if normalize:
+            # normalize
+            return (noise - noise.mean()) / noise.std()
+        else:
+            return noise
     elif isinstance(slope, (np.ndarray, list)):
         pink_noises = np.zeros([len(slope), samples-2])
         for i in range(len(slope)):
@@ -99,9 +104,78 @@ def osc_signals(samples, slope, freq_osc, amp, width=None, seed=True,
             amps_i *= np.exp(1j * random_phases)
             # Transform back to get pink noise time series
             noise = np.fft.irfft(amps_i)
-            # normalize
-            pink_noises[i] = (noise - noise.mean()) / noise.std()
+            if normalize:
+                # normalize
+                pink_noises[i] = (noise - noise.mean()) / noise.std()
+            else:
+                pink_noises[i] = noise
         return pink_noises
+
+
+def osc_signals_correct(samples, slopes, freq_osc=[], amp=[], width=[],
+                        seed=False,
+                        srate=2400, normalize=False):
+    """
+    Generate a mixture of 1/f-aperiodic and periodic signals.
+
+    EDIT: First make 1/f, THEN add peaks.
+
+    Parameters
+    ----------
+    samples : int
+        Number of signal samples.
+    freq_osc : list of floats
+        Peak frequencies.
+    amp : list of floats
+        Amplitudes in relation to noise.
+    slope : list of floats
+        1/f-slope values.
+    width : list of floats
+        Standard deviation of Gaussian peaks. The default is None which
+        corresponds to sharp delta peaks.
+
+    Returns
+    -------
+    pink_noise : ndarray of size slope.size X samples
+        Return signal.
+    """
+    if seed:
+        np.random.seed(seed)
+    # Initialize output
+    noises = np.zeros([len(slopes), samples-2])
+    # Make fourier amplitudes
+    amps = np.ones(samples//2 + 1, complex)
+    freqs = np.fft.rfftfreq(samples, d=1/srate)
+
+    # Make 1/f
+    amps, freqs, = amps[1:], freqs[1:]  # avoid divison by 0
+    # Generate random phases
+    random_phases = np.random.uniform(0, 2*np.pi, size=amps.shape)
+    print(seed)
+    print(random_phases[0])
+    
+
+    for j, slope in enumerate(slopes):
+        # Multiply Amp Spectrum by 1/f
+        amps = amps / freqs ** (slope / 2)  # half slope needed: 1/f^2 in power spectrum = sqrt(1/f^2)=1/f^2*0.5=1/f in amp spectrum
+        amps *= np.exp(1j * random_phases)
+
+        for i in range(len(freq_osc)):
+            freq_idx = np.abs(freqs - freq_osc[i]).argmin()
+            # make Gaussian peak
+            amp_dist = norm(freq_osc[i], width[i]).pdf(freqs)
+            # amp_dist /= np.max(amp_dist)    # check ich nciht
+            amps += amp[i] * amp_dist
+
+        noises[j] = np.fft.irfft(amps)
+    return noises
+
+
+
+
+
+
+
 
 
 def psds_pink(noises, srate, nperseg, normalize=False):
@@ -171,11 +245,13 @@ def slope_error(slopes, freq, noise_psds, freq_range, IRASA,
         fg = FOOOFGroup()  # Init fooof
     fg.fit(freq, noise_psds, freq_range)
     slopes_f = fg.get_params("aperiodic", "exponent")
-    _, _, _, slopes_i = IRASA
-    slopes_i = slopes_i["Slope"].to_numpy()
-    slopes_i = -slopes_i  # make fooof and IRASA slopes comparable
-    return slopes-slopes_f, slopes-slopes_i
-
+    if IRASA:
+        _, _, _, slopes_i = IRASA
+        slopes_i = slopes_i["Slope"].to_numpy()
+        slopes_i = -slopes_i  # make fooof and IRASA slopes comparable
+        return slopes-slopes_f, slopes-slopes_i
+    else:
+        return slopes-slopes_f, None
 
 def plot_all(freq, noise_psds, freq_f, noise_psds_f, IRASA, slopes, freq_range,
              white_ratio, plot_osc=False, save_path=None, save_name=None,
@@ -235,7 +311,7 @@ def plot_all(freq, noise_psds, freq_f, noise_psds_f, IRASA, slopes, freq_range,
     fooof_params = dict(max_n_peaks=0, verbose=False)  # no oscillations
     err_f, err_i = slope_error(slopes, freq_f, noise_psds_f, freq_range, IRASA,
                                fooof_params=fooof_params)
-    err_sum_f, err_sum_i = np.sum(np.abs(err_f)), np.sum(np.abs(err_i))
+    err_sum_f = np.sum(np.abs(err_f))
 
     ax = axes[1]
     labels = []
@@ -268,42 +344,45 @@ def plot_all(freq, noise_psds, freq_f, noise_psds_f, IRASA, slopes, freq_range,
     ax.grid(False)
 
     ax = axes[2]
-    freq_i, aperiodic, osc, params = IRASA
-    # normalize
-    # if normalize:
-    #    aperiodic /= aperiodic.max(1)[:, np.newaxis]
-    for i in range(slopes.size):
-        ax.loglog(freq_i, aperiodic[i], "b", linestyle="--", lw=2,
-                  label="aperiodic")
+    if IRASA:
+        freq_i, aperiodic, osc, params = IRASA
+        # normalize
+        # if normalize:
+        #    aperiodic /= aperiodic.max(1)[:, np.newaxis]
+        for i in range(slopes.size):
+            ax.loglog(freq_i, aperiodic[i], "b", linestyle="--", lw=2,
+                      label="aperiodic")
+            if plot_osc:
+                ax.loglog(freq_i, osc[i] + aperiodic[i], "r", lw=2,
+                          label="osc", alpha=.5)
+        handles, _ = ax.get_legend_handles_labels()
+        labels = [f"1/f={-params['Slope'].iloc[i]:.2f}"
+                  # f"     Offset={params['Intercept'].iloc[i]:.2f}"
+                  for i in range(slopes.size)]
         if plot_osc:
-            ax.loglog(freq_i, osc[i] + aperiodic[i], "r", lw=2,
-                      label="osc", alpha=.5)
-    handles, _ = ax.get_legend_handles_labels()
-    labels = [f"1/f={-params['Slope'].iloc[i]:.2f}"
-              # f"     Offset={params['Intercept'].iloc[i]:.2f}"
-              for i in range(slopes.size)]
-    if plot_osc:
-        labels = labels + ["osc"]
-        handles = handles[::2] + [handles[-1]]
-    else:
-        pass
-    ax.legend(handles, labels, title="IRASA", loc=3, ncol=2,
-              bbox_transform=fig.transFigure,
-              bbox_to_anchor=[0.525, -.285])
-    # ax.set_ylim([ymin, ymax])
-    # ax.set_xlim([1, 600])
-    ax.set_title(f"IRASA error: {err_sum_i:.2f}")
-    ax.set_xlabel('Frequency')
-    ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
-    ax.set_xticks(xticks)
-    ax.set_xticklabels(xticklabels)
-    # ax.set_yticks(yticks)
-    ax.set_yticklabels(yticklabels)
+            labels = labels + ["osc"]
+            handles = handles[::2] + [handles[-1]]
+        else:
+            pass
+        ax.legend(handles, labels, title="IRASA", loc=3, ncol=2,
+                  bbox_transform=fig.transFigure,
+                  bbox_to_anchor=[0.525, -.285])
+        # ax.set_ylim([ymin, ymax])
+        # ax.set_xlim([1, 600])
+        err_sum_i = np.sum(np.abs(err_i))
+        ax.set_title(f"IRASA error: {err_sum_i:.2f}")
+        ax.set_xlabel('Frequency')
+        ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+        ax.set_xticks(xticks)
+        ax.set_xticklabels(xticklabels)
+        # ax.set_yticks(yticks)
+        ax.set_yticklabels(yticklabels)
 
     ax = axes[3]
     ax.plot(slopes, slopes-slopes, "k", label="Ground Truth")
     ax.plot(slopes, err_f, "r", label="fooof")
-    ax.plot(slopes, err_i, "b", label="IRASA")
+    if IRASA:
+        ax.plot(slopes, err_i, "b", label="IRASA")
     ax.legend()
     ax.set_xticks(slopes[::2])
     yticks = ax.get_yticks()
