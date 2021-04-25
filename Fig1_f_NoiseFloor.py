@@ -8,18 +8,126 @@ Print ground truth and fit values.
 B: Real spectra. Subj 12 no oscillations, maybe a subj with oscillations in
 that range and an potentially early noise floor too,
 maybe a full spectrum with low noise amplifier.
+
+Vielleicht noch vertikale Linien für max fitting range einzeichen?
+Dann leichter zu erkennen. Vielleicht Legende weglassen und a Werte direkt
+in den Plot schreiben
+
+Evt Panel C zufügen mit Simulartion wo Noise Floor verschoben wird
 """
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.signal as sig
 import mne
 from pathlib import Path
-from noise_helper import noise_white, osc_signals
 from fooof import FOOOF
 from fooof.sim.gen import gen_aperiodic
 from mne.time_frequency import psd_welch
 import seaborn as sns
+from scipy.stats import norm
 sns.set()
+
+
+def noise_white(samples, seed=True):
+    """Create White Noise of N samples."""
+    if seed:
+        np.random.seed(10)
+    noise = np.random.normal(0, 1, size=samples)
+    return noise
+
+
+def osc_signals(samples, slope, freq_osc, amp, width=None, seed=True,
+                srate=2400, normalize=True):
+    """
+    Generate a mixture of 1/f-aperiodic and periodic signals.
+
+    Parameters
+    ----------
+    samples : int
+        Number of signal samples.
+    freq_osc : float or list of floats
+        Peak frequencies.
+    amp : float or list of floats
+        Amplitudes in relation to noise.
+    slope : nd.array
+        1/f-slope values.
+    width : None or float or list of floats, optional
+        Standard deviation of Gaussian peaks. The default is None which
+        corresponds to sharp delta peaks.
+
+    Returns
+    -------
+    pink_noise : ndarray of size slope.size X samples
+        Return signal.
+    """
+    if seed:
+        np.random.seed(10)
+    # Make fourier amplitudes
+    amps = np.ones(samples//2 + 1, complex)
+    freqs = np.fft.rfftfreq(samples, d=1/srate)
+
+    # check if input is float or lists
+    if isinstance(freq_osc, (int, float)):
+        freq_osc = [freq_osc]  # if float, make iterable
+    if isinstance(freq_osc, list):
+        peaks = len(freq_osc)
+    if isinstance(amp, (int, float)):
+        amp = [amp] * peaks
+        assert peaks == len(amp), "input lists must be of the same length"
+    if isinstance(width, (int, float)):
+        width = [width] * peaks
+    elif isinstance(width, list):
+        assert peaks == len(width), "input lists must be of the same length"
+
+
+    # add Gaussian peaks to the spectrum
+    if isinstance(width, list):
+        for i in range(peaks):
+            freq_idx = np.abs(freqs - freq_osc[i]).argmin()
+            # make Gaussian peak
+            if width:
+                amp_dist = norm(freq_osc[i], width[i]).pdf(freqs)
+                amp_dist /= np.max(amp_dist)
+                amps += amp[i] * amp_dist
+    # if width is none, add pure sine peaks
+    elif isinstance(freq_osc, list):
+        for i in range(peaks):
+            freq_idx = np.abs(freqs - freq_osc[i]).argmin()
+            amps[freq_idx] += amp[i]
+    elif freq_osc is None:
+        msg = ("what the fuck do you want? peaks or no peaks? "
+               "freq_osc is None but amp is {}".format(type(amp).__name__))
+        assert amp is None, msg
+
+    amps, freqs, = amps[1:], freqs[1:]  # avoid divison by 0
+    # Generate random phases
+    random_phases = np.random.uniform(0, 2*np.pi, size=amps.shape)
+    if isinstance(slope, (int, float)):
+        # Multiply Amp Spectrum by 1/f
+        amps = amps / freqs ** (slope / 2)  # half slope needed
+        amps *= np.exp(1j * random_phases)
+        # Transform back to get pink noise time series
+        noise = np.fft.irfft(amps)
+        if normalize:
+            # normalize
+            return (noise - noise.mean()) / noise.std()
+        else:
+            return noise
+    elif isinstance(slope, (np.ndarray, list)):
+        pink_noises = np.zeros([len(slope), samples-2])
+        for i in range(len(slope)):
+            # Multiply Amp Spectrum by 1/f
+            amps_i = amps / freqs ** (slope[i] / 2)  # half slope needed
+            amps_i *= np.exp(1j * random_phases)
+            # Transform back to get pink noise time series
+            noise = np.fft.irfft(amps_i)
+            if normalize:
+                # normalize
+                pink_noises[i] = (noise - noise.mean()) / noise.std()
+            else:
+                pink_noises[i] = noise
+        return pink_noises
+
 
 
 def detect_noise_floor(freq, psd, f_start=1, f_range=50, thresh=0.05):
@@ -62,7 +170,7 @@ slope = 2
 nperseg = srate  # welch
 
 # Load data
-path = "../data/Fig1"
+path = "../data/Fig1/"
 fname12 = "subj12_off_R7_raw.fif"
 fname9 = "subj9_off_R1_raw.fif"
 
@@ -242,7 +350,7 @@ ax.set_xlabel("Frequency in Hz")
 ax.set_ylabel(r"Power in $\mu$V/Hz")
 ax.legend(loc=0)
 plt.tight_layout()
-plt.savefig(fig_path + fig_name, bbox_inches="tight")
+#plt.savefig(fig_path + fig_name, bbox_inches="tight")
 plt.show()
 
 
