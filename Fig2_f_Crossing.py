@@ -12,9 +12,7 @@ Panel B show subj 10 huge beta:
 (other subs:
     40-60Hz very flat, strong impact by noise: don't fit 40-60Hz if a<1?)
 
-Panel C: Show simulation of this spectrum.
-    Show noise dependence of 1/f
-Pandel D:
+Pandel C:
     Show delta error, eliminate normalization
 
 Supp. Mat. 2a): Show simulated and real time series 10 seconds
@@ -31,36 +29,6 @@ from mne.time_frequency import psd_welch
 from fooof.sim.gen import gen_aperiodic
 import seaborn as sns
 sns.set()
-
-
-def detect_noise_floor(freq, psd, f_start=1, f_range=50, thresh=0.05):
-    """
-    Detect the onset of the noise floor.
-
-    The noise floor is defined by having a slopes below 0.05.
-
-    Parameters
-    ----------
-    freq : ndarray
-        Freq array.
-    psd : ndarray
-        PSD array.
-    f_start : float
-        Starting frequency for the search.
-
-    Returns
-    -------
-    n_start : float
-        Onset frequency of the noise floor.
-    """
-    n_start = f_start - 1
-    exp = 1
-    while exp > thresh:
-        n_start += 1
-        fm = FOOOF(max_n_peaks=1, verbose=False)
-        fm.fit(freq, psd, [n_start, n_start + f_range])
-        exp = fm.get_params('aperiodic_params', 'exponent')
-    return n_start + f_range // 2
 
 
 def noise_white(samples, seed=True):
@@ -196,71 +164,13 @@ def osc_signals(samples, slope, freq_osc, amp, width=None, seed=True,
         return pink_noises
 
 
-def osc_signals_correct(samples, slopes, freq_osc=[], amp=[], width=[],
-                        seed=False,
-                        srate=2400, normalize=False):
-    """
-    Generate a mixture of 1/f-aperiodic and periodic signals.
-
-    EDIT: First make 1/f, THEN add peaks.
-
-    Parameters
-    ----------
-    samples : int
-        Number of signal samples.
-    freq_osc : list of floats
-        Peak frequencies.
-    amp : list of floats
-        Amplitudes in relation to noise.
-    slope : list of floats
-        1/f-slope values.
-    width : list of floats
-        Standard deviation of Gaussian peaks. The default is None which
-        corresponds to sharp delta peaks.
-
-    Returns
-    -------
-    pink_noise : ndarray of size slope.size X samples
-        Return signal.
-    """
-    if seed:
-        np.random.seed(seed)
-    # Initialize output
-    noises = np.zeros([len(slopes), samples-2])
-    # Make fourier amplitudes
-    amps = np.ones(samples//2 + 1, complex)
-    freqs = np.fft.rfftfreq(samples, d=1/srate)
-
-    # Make 1/f
-    amps, freqs, = amps[1:], freqs[1:]  # avoid divison by 0
-    # Generate random phases
-    random_phases = np.random.uniform(0, 2*np.pi, size=amps.shape)
-    print(seed)
-    print(random_phases[0])
-
-    for j, slope in enumerate(slopes):
-        # Multiply Amp Spectrum by 1/f
-        amps = amps / freqs ** (slope / 2)  # half slope needed: 1/f^2 in power spectrum = sqrt(1/f^2)=1/f^2*0.5=1/f in amp spectrum
-        amps *= np.exp(1j * random_phases)
-
-        for i in range(len(freq_osc)):
-            freq_idx = np.abs(freqs - freq_osc[i]).argmin()
-            # make Gaussian peak
-            amp_dist = norm(freq_osc[i], width[i]).pdf(freqs)
-            # amp_dist /= np.max(amp_dist)    # check ich nciht
-            amps += amp[i] * amp_dist
-
-        noises[j] = np.fft.irfft(amps)
-    return noises
-
-
 # %% PARAMETERS
 
 # Signal
 srate = 2400
 time = np.arange(180 * srate)
 samples = time.size
-slopes = np.arange(1, 4.5, 1)
+slope = 1
 
 # WELCH
 nperseg = srate  # 4*srate too high resolution for fooof
@@ -275,51 +185,61 @@ up = 100
 lower = np.arange(0, 80, 1)
 
 freq_osc = [4, 11, 23]  # Hz
-amp = [30, 30, 10]
+amp = [20, 20, 7]
 width = [0.1, 1, 2]
 
-signals = osc_signals(samples, slopes, freq_osc, amp, width=width)
-freq, noise_psds = psds_pink(signals, srate, nperseg)
+signals = osc_signals(samples, slope, freq_osc, amp, width=width)
+freq, noise_psd = sig.welch(signals, fs=srate, nperseg=nperseg)#, detrend=False)
 
 # Filter 1-600Hz
-freq, noise_psds = freq[1:600], noise_psds[:, 1:600]
+freq = freq[1:601]
+noise_psd = noise_psd[1:601]
 
 # Normalize
-noise_psds /= noise_psds[:, 0, None]
+#noise_psd /= noise_psd[0, None]
 
 # Calc fooof vary freq ranges
-errors = []
+errors1 = []
 for low in lower:
-    fm = FOOOFGroup(verbose=None)
-    fm.fit(freq, noise_psds, [low, up])
+    fm = FOOOF(verbose=None)
+    fm.fit(freq, noise_psd, [low, up])
     exp = fm.get_params("aperiodic", "exponent")
-    error = slopes - exp
-    error = np.sum(np.abs(error))
-    errors.append(error)
+    error = 1 - exp
+    error = np.abs(error)
+    errors1.append(error)
 
 # %% A: Plot
-fig, axes = plt.subplots(2, 1, figsize=[6, 6], sharex=True)
+fig, axes = plt.subplots(2, 1, figsize=[6, 6], sharex=False)
 
 ax = axes[0]
 
 mask = (freq <= 100)
-for i in range(slopes.size):
-    ax.loglog(freq[mask], noise_psds[i, mask], "k",
-              label=f"1/f={slopes[i]:.2f}")
-ylim = ax.get_ylim()
-ax.vlines(100, *ylim, color="k", label="Upper fitting range border")
-# =============================================================================
-# for f in freq_osc:
-#     ax.vlines(f, *ylim, label="Lower fitting range border")
-# =============================================================================
+ax.loglog(freq[mask], noise_psd[mask], "k",
+          label=f"Power spectrum a={slope}")
+ax.set_xlabel("Frequency [Hz]")
 
-ax.set_ylabel("Normalized power")
-# ax.legend()
+ax.hlines(5e-1, 4, 100, color="c", ls="--", label="Fit range 1")
+ax.hlines(4e-1, 11, 100, color="m", ls="--", label="Fit range 2")
+ax.hlines(3.3e-1, 23, 100, color="y", ls="--",  label="Fit range 3")
+# =============================================================================
+# ax.hlines(1e-4, 4, 100, color="c", ls="--", label="Fit range 1")
+# ax.hlines(.8e-4, 11, 100, color="m", ls="--", label="Fit range 2")
+# ax.hlines(.6e-4, 23, 100, color="y", ls="--",  label="Fit range 3")
+# =============================================================================
+xmin = ax.get_xlim()[0]
+ax.text(xmin, 1, "a)", fontsize=15)
+ax.legend()
+ax.set_ylabel("power")
 
 ax = axes[1]
-ax.plot(lower, errors)
-ax.set_ylabel("1/f Error")
-ax.set_xlabel("Frequency in Hz")
+ax.semilogx(lower, errors1, label="Fitting error")
+ax.set_ylabel("Ground truth - fit")
+ax.set_xlabel("Lower fitting range border")
+ax.hlines(1.5, 4, 100, color="c", ls="--")
+ax.hlines(1.45, 11, 100, color="m", ls="--")
+ax.hlines(1.4, 23, 100, color="y", ls="--")
+ax.legend(loc=2)
+plt.tight_layout()
 plt.show()
 
 
@@ -503,8 +423,9 @@ ax = axes[1, 3]
 fm4_on.plot(ax=ax, plt_log=False, add_legend=False)
 plt.show()
 
-
 # %% C: Reproduce PSD
+
+
 def osc_signals_new(samples, slopes, freq_osc=[], amp=[], width=[],
                     srate=2400):
     # Initialize output
@@ -567,275 +488,279 @@ sim1 /= sim1[-1]
 pure1 /= pure1[-1]
 
 
-# No oscillations
-freq_osc = [2.5, 3, 5, 27, 36, 360]
-amp =      [160, 1000, 400, 67000, 48000, 480000]
-width =    [0.2, 1.2, 1.4, 7, 11, 60]
-slopes = [3]
+# oscillations
+freq_osc = [2.5, 3, 4, 7, 27, 36, 360]
+amp =      [7, 4.5, 5, 3, 750, 500, 6000]
+width =    [.8, .7, 1.2, 20, 7, 11, 60]
+slopes = [1]
 
-# Make noise
-w_noise = noise_white(samples)
+pink1_deltaHigh, _ = osc_signals_new(samples, slopes, freq_osc, amp, width)
+pink1_deltaHigh = pink1_deltaHigh[0]
+pink1_deltaHigh += .0005 * w_noise
 
-pink3, pure3 = osc_signals_new(samples, slopes, freq_osc, amp, width)
-pink3 = pink3[0]
-pure3 = pure3[0]
-pink3 += .052 * w_noise
-pure3 += .052 * w_noise
-
-freq, sim3 = sig.welch(pink3, fs=srate, nperseg=nperseg, detrend=False)
-freq, pure3 = sig.welch(pure3, fs=srate, nperseg=nperseg, detrend=False)
-
+freq, sim1_deltaHigh = sig.welch(pink1_deltaHigh, fs=srate, nperseg=nperseg, detrend=False)
 # Bandpass filter between 1Hz and 600Hz
 filt = (freq > 0) & (freq <= 600)
 freq = freq[filt]
-sim3 = sim3[filt]
-pure3 = pure3[filt]
+sim1_deltaHigh = sim1_deltaHigh[filt]
 
 # Adjust offset for real spectrum
 spec10_on /= spec10_on[-1]
-sim3 /= sim3[-1]
-pure3 /= pure3[-1]
-
-# %% C: Plot
-
-nfloor1 = detect_noise_floor(freq, pure1, f_range=50, thresh=0)
-nfloor3 = detect_noise_floor(freq, pure3, f_range=3, thresh=0)
-sig1 = (freq <= nfloor1)
-sig3 = (freq <= nfloor3)
-noise1 = (freq >= nfloor1)
-noise3 = (freq >= nfloor3)
-
-fig, axes = plt.subplots(1, 1, figsize=[8, 8])
-ax = axes
-ax.vlines(4, *ax.get_ylim())
-ax.loglog(freq, spec10_on, "k", label=ch + " on",)
-ax.loglog(freq[sig1], sim1[sig1], "g", label=f"Sim a={slopes[0]}")
-ax.loglog(freq[noise1], sim1[noise1], "grey", label=f"Sim a={slopes[0]}")
-#ax.loglog(freq, sim1, "g", label=f"Sim a={slopes[0]}")
-ax.loglog(freq[sig3], sim3[sig3], "b", label=f"Sim a={slopes[0]}")
-ax.loglog(freq[noise3], sim3[noise3], "grey", label=f"Sim a={slopes[0]}")
-#ax.loglog(freq, sim3, "b", label=f"Sim a={slopes[0]}")
+sim1_deltaHigh /= sim1_deltaHigh[-1]
 
 
-ax.loglog(freq[sig1], pure1[sig1], "g", label=f"Sim a={slopes[0]}")
-ax.loglog(freq[noise1], pure1[noise1], "grey", label=f"Sim a={slopes[0]}")
-ax.loglog(freq[sig3], pure3[sig3], "b", label=f"Sim a={slopes[0]}")
-ax.loglog(freq[noise3], pure3[noise3], "grey", label=f"Sim a={slopes[0]}")
-
-ax.legend()
-plt.show()
-
-# %% D: Plot
-
-
-# No oscillations
+# oscillations
 freq_osc = [2.5, 3, 4, 7, 27, 36, 360]
-amp =      [1.5, 4.5, 5, 3, 750, 500, 6000]
-width =    [0.1, .7, 1.2, 20, 7, 11, 60]
+amp =      [0, 0, 5, 3, 750, 500, 6000]
+width =    [.8, .7, 1.2, 20, 7, 11, 60]
 slopes = [1]
 
-# Make noise
-w_noise = noise_white(samples)
+pink1_deltaLow, _ = osc_signals_new(samples, slopes, freq_osc, amp, width)
+pink1_deltaLow = pink1_deltaLow[0]
+pink1_deltaLow += .0005 * w_noise
 
-pink1, pure1 = osc_signals_new(samples, slopes, freq_osc, amp, width)
-pink1 = pink1[0]
-pure = pure1[0]
-pink1 += .0005 * w_noise
-pure1 += .0005 * w_noise
-
-freq, sim1 = sig.welch(pink1, fs=srate, nperseg=nperseg, detrend=False)
-freq, pure1 = sig.welch(pure1, fs=srate, nperseg=nperseg, detrend=False)
-
+freq, sim1_deltaLow = sig.welch(pink1_deltaLow, fs=srate, nperseg=nperseg, detrend=False)
 # Bandpass filter between 1Hz and 600Hz
 filt = (freq > 0) & (freq <= 600)
 freq = freq[filt]
-sim1 = sim1[filt]
-pure1 = pure1[0, filt]
+sim1_deltaLow = sim1_deltaLow[filt]
 
+# %%
 # Adjust offset for real spectrum
-sim1 /= sim1[-1]
-pure1 /= pure1[-1]
+spec10_on /= spec10_on[-1]
+sim1_deltaLow /= sim1_deltaLow[-1]
 
-
-freq_osc = [2.5, 3, 4, 7, 22, 360]
-amp =      [1.5, 4.5, 5, 3, 600, 6000]
-width =    [0.1, .7, 1.2, 20, 6, 60]
-
-pink_left, _ = osc_signals_new(samples, slopes, freq_osc, amp, width)
-pink_left = pink_left[0]
-pink_left += .0005 * w_noise
-
-freq, sim1_left = sig.welch(pink_left, fs=srate, nperseg=nperseg, detrend=False)
-
-# Bandpass filter between 1Hz and 600Hz
-filt = (freq > 0) & (freq <= 600)
-freq = freq[filt]
-sim1_left = sim1_left[filt]
-
-# Adjust offset for real spectrum
-sim1_left /= sim1_left[-1]
-
-
-freq_osc = [2.5, 3, 4, 7, 35, 80]
-amp =      [1.5, 4.5, 5, 3, 2000, 2000]
-width =    [0.1, .7, 1.2, 20, 11, 18]
-
-pink_right, _ = osc_signals_new(samples, slopes, freq_osc, amp, width)
-pink_right = pink_right[0]
-pink_right += .0005 * w_noise
-
-freq, sim1_right = sig.welch(pink_right, fs=srate, nperseg=nperseg, detrend=False)
-
-# Bandpass filter between 1Hz and 600Hz
-filt = (freq > 0) & (freq <= 600)
-freq = freq[filt]
-sim1_right = sim1_right[filt]
-
-# Adjust offset for real spectrum
-sim1_right /= sim1_right[-1]
-
-
-nfloor1 = detect_noise_floor(freq, pure1, f_range=50, thresh=0)
-sig1 = (freq <= nfloor1)
-noise1 = (freq >= nfloor1)
-
-nfloor1_left = detect_noise_floor(freq, sim1_left, f_range=50, thresh=0)
-sig1_left = (freq <= nfloor1_left)
-noise1_left = (freq >= nfloor1_left)
-
-nfloor1_right = detect_noise_floor(freq, sim1_right, f_range=100, thresh=0)
-sig1_right = (freq <= nfloor1_right)
-noise1_right = (freq >= nfloor1_right)
 
 fig, axes = plt.subplots(1, 1, figsize=[8, 8])
 ax = axes
-ax.vlines(4, *ax.get_ylim())
-ax.loglog(freq[sig1], sim1[sig1], "g", label=f"Sim a={slopes[0]}")
-ax.loglog(freq[noise1], sim1[noise1], "grey", label=f"Sim a={slopes[0]}")
+ax.loglog(freq, spec10_on, "grey", label=ch + " on",)
+ax.loglog(freq, sim1, "g", label="Sim1")
+ax.loglog(freq, sim1_deltaHigh, "b", label="Sim2")
+ax.loglog(freq, sim1_deltaLow, "m", label="Sim3")
+#ax.loglog(freq, sim3, "b", label="Sim a=3")
 
-ax.loglog(freq[sig1_left], sim1_left[sig1_left], "r", label=f"Sim a={slopes[0]}")
-ax.loglog(freq[noise1_left], sim1_left[noise1_left], "grey", label=f"Sim a={slopes[0]}")
-
-ax.loglog(freq[sig1_right], sim1_right[sig1_right], "orange", label=f"Sim a={slopes[0]}")
-ax.loglog(freq[noise1_right], sim1_right[noise1_right], "grey", label=f"Sim a={slopes[0]}")
+ax.loglog(freq, pure1, "k", lw=1, label="Sim Ground truth + noise a=1")
 
 
-ax.loglog(freq[sig1], pure1[sig1], "g", label=f"Sim a={slopes[0]}")
-ax.loglog(freq[noise1], pure1[noise1], "grey", label=f"Sim a={slopes[0]}")
+fm = FOOOF()
+fm.fit(freq, spec10_on, [1, 100])
+exp_LFP = fm.get_params('aperiodic_params', 'exponent')
+ap_fit_LFP = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
+ax.loglog(fm.freqs, 10**ap_fit_LFP, "--", c="grey", lw=2, 
+          label=f"fooof LFP a={exp_LFP:.2f}")
+
+fm = FOOOF()
+fm.fit(freq, sim1, [1, 100])
+exp1 = fm.get_params('aperiodic_params', 'exponent')
+ap_fit1 = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
+ax.loglog(fm.freqs, 10**ap_fit1, "g--", lw=2,
+          label=f"fooof sim1 a={exp1:.2f}")
+
+
+fm = FOOOF()
+fm.fit(freq, sim1_deltaHigh, [1, 100])
+exp_high = fm.get_params('aperiodic_params', 'exponent')
+ap_fit_high = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
+ax.loglog(fm.freqs, 10**ap_fit_high, "b--", lw=2, 
+          label=f"fooof sim2 a={exp_high:.2f}")
+
+fm = FOOOF()
+fm.fit(freq, sim1_deltaLow, [1, 100])
+exp_low = fm.get_params('aperiodic_params', 'exponent')
+ap_fit_low = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
+ax.loglog(fm.freqs, 10**ap_fit_low, "m--", lw=2, 
+          label=f"fooof sim2 a={exp_low:.2f}")
+
 
 ax.legend()
 plt.show()
+
+
+# %% Combine figures panels
+
+
+
+fig3 = plt.figure(figsize=[15, 5], constrained_layout=True)
+gs = fig3.add_gridspec(2, 3)
+
+f3_ax1 = fig3.add_subplot(gs[0, 0])
+f3_ax2 = fig3.add_subplot(gs[1, 0])
+f3_ax3 = fig3.add_subplot(gs[:, 1])
+f3_ax4 = fig3.add_subplot(gs[:, 2])
+
+ax = f3_ax1
+
+mask = (freq <= 100)
+ax.loglog(freq[mask], noise_psd[mask], "k", label=f"Power spectrum a={slope}")
+
+ax.hlines(5e-1, 4, 100, color="c", ls="--", label="Fit range 1")
+ax.hlines(4e-1, 11, 100, color="m", ls="--", label="Fit range 2")
+ax.hlines(3.3e-1, 23, 100, color="y", ls="--",  label="Fit range 3")
+# =============================================================================
+# ax.hlines(1e-4, 4, 100, color="c", ls="--", label="Fit range 1")
+# ax.hlines(.8e-4, 11, 100, color="m", ls="--", label="Fit range 2")
+# ax.hlines(.6e-4, 23, 100, color="y", ls="--",  label="Fit range 3")
+# =============================================================================
+xmin = ax.get_xlim()[0]
+ax.text(xmin, 1, "a)", fontsize=10)
+ax.legend()
+ax.set_ylabel("power")
+#ax.set_ylim([1e-6, 6e-1])
+
+plt.setp(f3_ax1.get_xticklabels(), visible=False)
+
+
+ax = f3_ax2
+ax.semilogx(lower, errors1, label="Fitting error")
+ax.set(xlabel="Lower fitting range border", ylabel="Ground truth - fit")
+ax.hlines(1.5, 4, 100, color="c", ls="--")
+ax.hlines(1.45, 11, 100, color="m", ls="--")
+ax.hlines(1.4, 23, 100, color="y", ls="--")
+ax.legend(loc=2)
+
+
+ax = f3_ax3
+
+ax.loglog(freq, spec10_on, c="purple", label=ch + " on")
+ax.loglog(fm1_on.freqs, 10**ap_fit1_on, label=f"{frange1}Hz a={exp1_on:.2f} On")
+ax.loglog(fm2_on.freqs, 10**ap_fit2_on, label=f"{frange2}Hz a={exp2_on:.2f} On")
+ax.loglog(fm3_on.freqs, 10**ap_fit3_on, label=f"{frange3}Hz a={exp3_on:.2f} On")
+ax.loglog(fm4_on.freqs, 10**ap_fit4_on, label=f"{frange4}Hz a={exp4_on:.2f} On")
+ax.legend()
+
+
+
+ax = f3_ax4
+
+
+spec10_on /= spec10_on[-1]
+sim1_deltaLow /= sim1_deltaLow[-1]
+
+ax.loglog(freq, spec10_on, "purple", label=ch + " on",)
+ax.loglog(freq, sim1, "g", label="Sim1")
+ax.loglog(freq, sim1_deltaHigh, "b", label="Sim2")
+ax.loglog(freq, sim1_deltaLow, "m", label="Sim3")
+ax.loglog(freq, pure1, "k", lw=1, label="Sim Ground truth + noise a=1")
+
+ax.loglog(fm.freqs, 10**ap_fit_LFP, "--", c="grey", lw=2,
+          label=f"fooof LFP a={exp_LFP:.2f}")
+ax.loglog(fm.freqs, 10**ap_fit1, "g--", lw=2,
+          label=f"fooof sim1 a={exp1:.2f}")
+ax.loglog(fm.freqs, 10**ap_fit_high, "b--", lw=2,
+          label=f"fooof sim2 a={exp_high:.2f}")
+ax.loglog(fm.freqs, 10**ap_fit_low, "m--", lw=2,
+          label=f"fooof sim2 a={exp_low:.2f}")
+
+ax.legend()
+plt.show()
+
+
+"""
+To do:
+    All: choose good colors
+
+
+    ax1: eliminate legend fitting range and write next to h-lines
+"""
+
+
 
 # %%
 
 
+fig, ax = plt.subplots(2, 2)
+
+#ax[0, 0].xaxis.set_major_locator(plt.MaxNLocator(10))
+#ax[0, 0].yaxis.set_major_locator(plt.MaxNLocator(1))
+for axi in ax.flat:
+    axi.xaxis.set_major_locator(plt.AutoLocator())
+#    axi.yaxis.set_major_locator(plt.LinearLocator(5))
+    axi.yaxis.set_major_locator(plt.FixedLocator([0, 0.3, 1]))
+    axi.yaxis.set_major_formatter(plt.ScalarFormatter())
+    axi.xaxis.set_major_formatter(plt.ScalarFormatter())
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# %% TO understand:
-
-# %% Why does oscillation disappear when using welch average=median??
-
-# Parameters power spectrum
-freq_osc, amp, width = [100], [10000], [9]
-#freq_osc, amp, width = [100], [0000], [2]
-slopes = [2]
-
-# Sim power spectrum
-
-# Initialize output
-noises = np.zeros([len(slopes), samples-2])
-noises_pure = np.zeros([len(slopes), samples-2])
-# Make fourier amplitudes
-amps = np.ones(samples//2 + 1, complex)
-freqs = np.fft.rfftfreq(samples, d=1/srate)
-
-# Make 1/f
-amps, freqs, = amps[1:], freqs[1:]  # avoid divison by 0
-# Generate random phases
-random_phases = np.random.uniform(0, 2*np.pi, size=amps.shape)
-
-for j, slope in enumerate(slopes):
-    # Multiply Amp Spectrum by 1/f
-    amps = amps / freqs ** (slope / 2)  # half slope needed: 1/f^2 in power spectrum = sqrt(1/f^2)=1/f^2*0.5=1/f in amp spectrum
-    amps *= np.exp(1j * random_phases)
-
-    for i in range(len(freq_osc)):
-        # freq_idx = np.abs(freqs - freq_osc[i]).argmin() # ?????
-        # make Gaussian peak
-        amp_dist = norm(freq_osc[i], width[i]).pdf(freqs)
-        plt.plot(freqs, amp_dist)
-        plt.show()
-        plt.loglog(amps)
-        plt.ylim([1e-3, 15])
-        plt.show()
-        amp_dist /= np.max(amp_dist)    
-        noises_pure[j] = np.fft.irfft(amps)
-        amps += amp[i] * amp_dist
-        plt.loglog(amps)
-        plt.ylim([1e-3, 15])
-        plt.show()
-
-    noises[j] = np.fft.irfft(amps)
-pink3 = noises
-
-
-#
-# Calc PSD
-freq_w, sim3_welch = sig.welch(pink3, fs=srate, nperseg=nperseg, average="mean")
-freq_w, sim3_pure_welch = sig.welch(noises_pure, fs=srate, nperseg=nperseg, average="mean")
-
-filt_w = (freq_w > 0) & (freq_w <= 600)
-freq_w, sim3_welch = freq_w[filt_w], sim3_welch[0, filt_w]
-sim3_pure_welch = sim3_pure_welch[0, filt_w]
-
-fig, axes = plt.subplots(1, 1, figsize=[8, 8])
-ax = axes
-ax.loglog(freq_w, sim3_welch, label="Sim a=3 osci")
-ax.loglog(freq_w, sim3_pure_welch, label="Sim a=3", alpha=0.5)
-#ax.set_ylim([0.00001, 1])
-ax.legend()
-plt.show()
-
-freq_w, sim3_welch = sig.welch(pink3, fs=srate, nperseg=nperseg, average="median")
-freq_w, sim3_pure_welch = sig.welch(noises_pure, fs=srate, nperseg=nperseg, average="median")
-
-filt_w = (freq_w > 0) & (freq_w <= 600)
-freq_w, sim3_welch = freq_w[filt_w], sim3_welch[0, filt_w]
-sim3_pure_welch = sim3_pure_welch[0, filt_w]
-
-fig, axes = plt.subplots(1, 1, figsize=[8, 8])
-ax = axes
-ax.loglog(freq_w, sim3_welch, label="Sim a=3 osci")
-ax.loglog(freq_w, sim3_pure_welch, label="Sim a=3", alpha=0.5)
-#ax.set_ylim([0.00001, 1])
-ax.legend()
-plt.show()
+# =============================================================================
+# # %% TO understand:
+# 
+# # %% Why does oscillation disappear when using welch average=median??
+# 
+# # Parameters power spectrum
+# freq_osc, amp, width = [100], [10000], [9]
+# #freq_osc, amp, width = [100], [0000], [2]
+# slopes = [2]
+# 
+# # Sim power spectrum
+# 
+# # Initialize output
+# noises = np.zeros([len(slopes), samples-2])
+# noises_pure = np.zeros([len(slopes), samples-2])
+# # Make fourier amplitudes
+# amps = np.ones(samples//2 + 1, complex)
+# freqs = np.fft.rfftfreq(samples, d=1/srate)
+# 
+# # Make 1/f
+# amps, freqs, = amps[1:], freqs[1:]  # avoid divison by 0
+# # Generate random phases
+# random_phases = np.random.uniform(0, 2*np.pi, size=amps.shape)
+# 
+# for j, slope in enumerate(slopes):
+#     # Multiply Amp Spectrum by 1/f
+#     amps = amps / freqs ** (slope / 2)  # half slope needed: 1/f^2 in power spectrum = sqrt(1/f^2)=1/f^2*0.5=1/f in amp spectrum
+#     amps *= np.exp(1j * random_phases)
+# 
+#     for i in range(len(freq_osc)):
+#         # freq_idx = np.abs(freqs - freq_osc[i]).argmin() # ?????
+#         # make Gaussian peak
+#         amp_dist = norm(freq_osc[i], width[i]).pdf(freqs)
+#         plt.plot(freqs, amp_dist)
+#         plt.show()
+#         plt.loglog(amps)
+#         plt.ylim([1e-3, 15])
+#         plt.show()
+#         amp_dist /= np.max(amp_dist)    
+#         noises_pure[j] = np.fft.irfft(amps)
+#         amps += amp[i] * amp_dist
+#         plt.loglog(amps)
+#         plt.ylim([1e-3, 15])
+#         plt.show()
+# 
+#     noises[j] = np.fft.irfft(amps)
+# pink3 = noises
+# 
+# 
+# #
+# # Calc PSD
+# freq_w, sim3_welch = sig.welch(pink3, fs=srate, nperseg=nperseg, average="mean")
+# freq_w, sim3_pure_welch = sig.welch(noises_pure, fs=srate, nperseg=nperseg, average="mean")
+# 
+# filt_w = (freq_w > 0) & (freq_w <= 600)
+# freq_w, sim3_welch = freq_w[filt_w], sim3_welch[0, filt_w]
+# sim3_pure_welch = sim3_pure_welch[0, filt_w]
+# 
+# fig, axes = plt.subplots(1, 1, figsize=[8, 8])
+# ax = axes
+# ax.loglog(freq_w, sim3_welch, label="Sim a=3 osci")
+# ax.loglog(freq_w, sim3_pure_welch, label="Sim a=3", alpha=0.5)
+# #ax.set_ylim([0.00001, 1])
+# ax.legend()
+# plt.show()
+# 
+# freq_w, sim3_welch = sig.welch(pink3, fs=srate, nperseg=nperseg, average="median")
+# freq_w, sim3_pure_welch = sig.welch(noises_pure, fs=srate, nperseg=nperseg, average="median")
+# 
+# filt_w = (freq_w > 0) & (freq_w <= 600)
+# freq_w, sim3_welch = freq_w[filt_w], sim3_welch[0, filt_w]
+# sim3_pure_welch = sim3_pure_welch[0, filt_w]
+# 
+# fig, axes = plt.subplots(1, 1, figsize=[8, 8])
+# ax = axes
+# ax.loglog(freq_w, sim3_welch, label="Sim a=3 osci")
+# ax.loglog(freq_w, sim3_pure_welch, label="Sim a=3", alpha=0.5)
+# #ax.set_ylim([0.00001, 1])
+# ax.legend()
+# plt.show()
+# =============================================================================

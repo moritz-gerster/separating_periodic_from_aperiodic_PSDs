@@ -13,7 +13,9 @@ Vielleicht noch vertikale Linien für max fitting range einzeichen?
 Dann leichter zu erkennen. Vielleicht Legende weglassen und a Werte direkt
 in den Plot schreiben
 
-Evt Panel C zufügen mit Simulartion wo Noise Floor verschoben wird
+Panel Fig 1C?: Show simulation of this spectrum with moving noise floor
+due neighboring to oscillations.
+
 """
 import matplotlib.pyplot as plt
 import numpy as np
@@ -354,6 +356,253 @@ plt.tight_layout()
 plt.show()
 
 
+# %% C: Move noise floor. Problem: wrong PSD, different than in B!!!
+
+ch = 'STN_L23'
+
+# Load data
+path = "../data/Fig2/"
+fname10_on = "subj10_on_R8_raw.fif"
+
+sub10_on = mne.io.read_raw_fif(path + fname10_on, preload=True)
+
+sub10_on.pick_channels([ch])
+
+filter_params = {"freqs": np.arange(50, 601, 50),
+                 "notch_widths": .5,
+                 "method": "spectrum_fit"}
+
+sub10_on.notch_filter(**filter_params)
+
+welch_params = {"fmin": 1,
+                "fmax": 600,
+                "tmin": 0.5,
+                "tmax": 185,
+                "n_fft": srate,
+                "n_overlap": srate // 2,
+                "average": "mean"}
+
+spec10_on, freq = psd_welch(sub10_on, **welch_params)
+
+spec10_on= spec10_on[0]
+
+def osc_signals_new(samples, slopes, freq_osc=[], amp=[], width=[],
+                    srate=2400):
+    # Initialize output
+    noises = np.zeros([len(slopes), samples])
+    noises_pure = np.zeros([len(slopes), samples])
+    # Make fourier amplitudes
+    amps = np.ones(samples//2 + 1, complex)
+    freqs = np.fft.rfftfreq(samples, d=1/srate)
+
+    # Make 1/f
+    freqs[0] = 1  # avoid divison by 0
+    random_phases = np.random.uniform(0, 2*np.pi, size=amps.shape)
+
+    for j, slope in enumerate(slopes):
+        # Multiply Amp Spectrum by 1/f
+        # half slope needed: 1/f^2 in power spectrum = sqrt(1/f^2)=1/f^2*0.5=1/f
+        # in amp spectrum
+        amps = amps / freqs ** (slope / 2)
+        amps *= np.exp(1j * random_phases)
+        noises_pure[j] = np.fft.irfft(amps)
+        for i in range(len(freq_osc)):
+            # make Gaussian peak
+            amp_dist = norm(freq_osc[i], width[i]).pdf(freqs)
+            amp_dist /= np.max(amp_dist)  # normalize peak for smaller amplitude differences for different frequencies
+            
+            amps += amp[i] * amp_dist
+    noises[j] = np.fft.irfft(amps)
+    return noises, noises_pure  # delete noise_pure
+
+#spec10_on, freq = psd_welch(sub10_on, **welch_params)
+#spec10_on = spec10_on[0]
+
+# No oscillations
+freq_osc = [2.5, 3, 4, 7, 27, 36, 360]
+amp =      [1.5, 4.5, 5, 3, 750, 500, 6000]
+width =    [0.1, .7, 1.2, 20, 7, 11, 60]
+slopes = [1]
+
+# Make noise
+w_noise = noise_white(samples)
+
+pink1, pure1 = osc_signals_new(samples, slopes, freq_osc, amp, width)
+pink1 = pink1[0]
+pure = pure1[0]
+pink1 += .0005 * w_noise
+pure1 += .0005 * w_noise
+
+freq, sim1 = sig.welch(pink1, fs=srate, nperseg=nperseg, detrend=False)
+freq, pure1 = sig.welch(pure1, fs=srate, nperseg=nperseg, detrend=False)
+
+# Bandpass filter between 1Hz and 600Hz
+filt = (freq > 0) & (freq <= 600)
+freq = freq[filt]
+sim1 = sim1[filt]
+pure1 = pure1[0, filt]
+
+# Adjust offset for real spectrum
+spec10_on /= spec10_on[-1]
+sim1 /= sim1[-1]
+pure1 /= pure1[-1]
+
+
+# No oscillations
+freq_osc = [2.5, 3, 5, 27, 36, 360]
+amp =      [160, 1000, 400, 67000, 48000, 480000]
+width =    [0.2, 1.2, 1.4, 7, 11, 60]
+slopes = [3]
+
+# Make noise
+w_noise = noise_white(samples)
+
+pink3, pure3 = osc_signals_new(samples, slopes, freq_osc, amp, width)
+pink3 = pink3[0]
+pure3 = pure3[0]
+pink3 += .052 * w_noise
+pure3 += .052 * w_noise
+
+freq, sim3 = sig.welch(pink3, fs=srate, nperseg=nperseg, detrend=False)
+freq, pure3 = sig.welch(pure3, fs=srate, nperseg=nperseg, detrend=False)
+
+# Bandpass filter between 1Hz and 600Hz
+filt = (freq > 0) & (freq <= 600)
+freq = freq[filt]
+sim3 = sim3[filt]
+pure3 = pure3[filt]
+
+# Adjust offset for real spectrum
+spec10_on /= spec10_on[-1]
+sim3 /= sim3[-1]
+pure3 /= pure3[-1]
+
+# %% C: Plot
+
+nfloor1 = detect_noise_floor(freq, pure1, f_range=50, thresh=0)
+nfloor3 = detect_noise_floor(freq, pure3, f_range=3, thresh=0)
+sig1 = (freq <= nfloor1)
+sig3 = (freq <= nfloor3)
+noise1 = (freq >= nfloor1)
+noise3 = (freq >= nfloor3)
+
+fig, axes = plt.subplots(1, 1, figsize=[8, 8])
+ax = axes
+ax.vlines(4, *ax.get_ylim())
+ax.loglog(freq, spec10_on, "k", label=ch + " on",)
+ax.loglog(freq[sig1], sim1[sig1], "g", label=f"Sim a={slopes[0]}")
+ax.loglog(freq[noise1], sim1[noise1], "grey", label=f"Sim a={slopes[0]}")
+#ax.loglog(freq, sim1, "g", label=f"Sim a={slopes[0]}")
+ax.loglog(freq[sig3], sim3[sig3], "b", label=f"Sim a={slopes[0]}")
+ax.loglog(freq[noise3], sim3[noise3], "grey", label=f"Sim a={slopes[0]}")
+#ax.loglog(freq, sim3, "b", label=f"Sim a={slopes[0]}")
+
+
+ax.loglog(freq[sig1], pure1[sig1], "g", label=f"Sim a={slopes[0]}")
+ax.loglog(freq[noise1], pure1[noise1], "grey", label=f"Sim a={slopes[0]}")
+ax.loglog(freq[sig3], pure3[sig3], "b", label=f"Sim a={slopes[0]}")
+ax.loglog(freq[noise3], pure3[noise3], "grey", label=f"Sim a={slopes[0]}")
+
+ax.legend()
+plt.show()
+
+# %% Move noise floor
+
+# No oscillations
+freq_osc = [2.5, 3, 4, 7, 27, 36, 360]
+amp =      [1.5, 4.5, 5, 3, 750, 500, 6000]
+width =    [0.1, .7, 1.2, 20, 7, 11, 60]
+slopes = [1]
+
+# Make noise
+w_noise = noise_white(samples)
+
+pink1, pure1 = osc_signals_new(samples, slopes, freq_osc, amp, width)
+pink1 = pink1[0]
+pure = pure1[0]
+pink1 += .0005 * w_noise
+pure1 += .0005 * w_noise
+
+freq, sim1 = sig.welch(pink1, fs=srate, nperseg=nperseg, detrend=False)
+freq, pure1 = sig.welch(pure1, fs=srate, nperseg=nperseg, detrend=False)
+
+# Bandpass filter between 1Hz and 600Hz
+filt = (freq > 0) & (freq <= 600)
+freq = freq[filt]
+sim1 = sim1[filt]
+pure1 = pure1[0, filt]
+
+# Adjust offset for real spectrum
+sim1 /= sim1[-1]
+pure1 /= pure1[-1]
+
+
+freq_osc = [2.5, 3, 4, 7, 22, 360]
+amp =      [1.5, 4.5, 5, 3, 600, 6000]
+width =    [0.1, .7, 1.2, 20, 6, 60]
+
+pink_left, _ = osc_signals_new(samples, slopes, freq_osc, amp, width)
+pink_left = pink_left[0]
+pink_left += .0005 * w_noise
+
+freq, sim1_left = sig.welch(pink_left, fs=srate, nperseg=nperseg, detrend=False)
+
+# Bandpass filter between 1Hz and 600Hz
+filt = (freq > 0) & (freq <= 600)
+freq = freq[filt]
+sim1_left = sim1_left[filt]
+
+# Adjust offset for real spectrum
+sim1_left /= sim1_left[-1]
+
+
+freq_osc = [2.5, 3, 4, 7, 35, 80]
+amp =      [1.5, 4.5, 5, 3, 2000, 2000]
+width =    [0.1, .7, 1.2, 20, 11, 18]
+
+pink_right, _ = osc_signals_new(samples, slopes, freq_osc, amp, width)
+pink_right = pink_right[0]
+pink_right += .0005 * w_noise
+
+freq, sim1_right = sig.welch(pink_right, fs=srate, nperseg=nperseg, detrend=False)
+
+# Bandpass filter between 1Hz and 600Hz
+filt = (freq > 0) & (freq <= 600)
+freq = freq[filt]
+sim1_right = sim1_right[filt]
+
+# Adjust offset for real spectrum
+sim1_right /= sim1_right[-1]
+
+
+nfloor1 = detect_noise_floor(freq, pure1, f_range=50, thresh=0)
+sig1 = (freq <= nfloor1)
+noise1 = (freq >= nfloor1)
+
+nfloor1_left = detect_noise_floor(freq, sim1_left, f_range=50, thresh=0)
+sig1_left = (freq <= nfloor1_left)
+noise1_left = (freq >= nfloor1_left)
+
+nfloor1_right = detect_noise_floor(freq, sim1_right, f_range=100, thresh=0)
+sig1_right = (freq <= nfloor1_right)
+noise1_right = (freq >= nfloor1_right)
+
+fig, axes = plt.subplots(1, 1, figsize=[8, 8])
+ax = axes
+ax.loglog(freq[sig1], sim1[sig1], "g", label=f"Sim a={slopes[0]}")
+ax.loglog(freq[noise1], sim1[noise1], "grey", label=f"Sim a={slopes[0]}")
+
+ax.loglog(freq[sig1_left], sim1_left[sig1_left], "r", label=f"Sim a={slopes[0]}")
+ax.loglog(freq[noise1_left], sim1_left[noise1_left], "grey", label=f"Sim a={slopes[0]}")
+
+ax.loglog(freq[sig1_right], sim1_right[sig1_right], "orange", label=f"Sim a={slopes[0]}")
+ax.loglog(freq[noise1_right], sim1_right[noise1_right], "grey", label=f"Sim a={slopes[0]}")
+
+ax.loglog(freq[sig1], pure1[sig1], "g", label=f"Sim a={slopes[0]}")
+ax.loglog(freq[noise1], pure1[noise1], "grey", label=f"Sim a={slopes[0]}")
+
+ax.legend()
+plt.show()
 
 # =============================================================================
 # # %%
