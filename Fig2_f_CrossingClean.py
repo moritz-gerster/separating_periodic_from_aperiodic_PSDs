@@ -270,7 +270,7 @@ exp_high = fm.get_params('aperiodic_params', 'exponent')
 ap_fit_high = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
 
 
-# %%
+# %% Plot
 
 mpl.rcParams["font.size"] = 14
 

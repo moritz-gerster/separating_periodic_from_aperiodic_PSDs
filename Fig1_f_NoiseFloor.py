@@ -25,10 +25,11 @@ from pathlib import Path
 from fooof import FOOOF
 from fooof.sim.gen import gen_aperiodic
 from mne.time_frequency import psd_welch
-import seaborn as sns
 from scipy.stats import norm
-sns.set()
+import matplotlib as mpl
 
+mpl.rcParams["axes.spines.right"] = False
+mpl.rcParams["axes.spines.top"] = False
 
 def noise_white(samples, seed=True):
     """Create White Noise of N samples."""
@@ -239,9 +240,8 @@ alphas = [1, 0.7, .5, .3]
 ap_fit_ground = gen_aperiodic(freq, np.array([0, slope]))
 
 
-
-fig, axes = plt.subplots(1, 2, figsize=[10, 4],
-                         gridspec_kw=dict(width_ratios=[0.8, 1]))
+fig, axes = plt.subplots(1, 2, figsize=[9, 4],
+                         gridspec_kw=dict(width_ratios=[.9, 1]))
 
 ax = axes[0]
 
@@ -250,7 +250,7 @@ floor = detect_noise_floor(freq, psd2_noise)
 signal = (freq <= floor)
 noise = (freq >= floor)
 
-ax.loglog(freq[signal], psd2_noise[signal], "k", label="Spectrum")
+ax.loglog(freq[signal], psd2_noise[signal], "k", label="PSD")
 ax.loglog(freq[noise], psd2_noise[noise], "darkgray", label="Noise floor")
 ax.loglog(freq, 10**ap_fit_ground, "k:", label=f"Ground truth a={slope}", lw=1)
 
@@ -260,7 +260,7 @@ for i, lim in enumerate(upper_limits):
     exp = fm.get_params('aperiodic_params', 'exponent')
     ap_fit = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
     ax.loglog(fm.freqs, 10**ap_fit, "-", c="blue", lw=2, alpha=alphas[i]-0.1,
-              label=f"1-{lim}Hz a={exp:.2f}") # c="dodgerblue"
+              label=f"1-{lim}Hz a={exp:.2f}")  # c="dodgerblue"
 
 xlim = 1, 600
 offset = psd2_noise[freq == xlim[1]][0]
@@ -274,7 +274,7 @@ xticks = [1] + upper_limits + [600]
 ax.set_xticks(xticks)
 ax.set_xticklabels(xticks)
 ax.set_xlabel("Frequency in Hz")
-ax.set_ylabel("Normalized power")
+ax.set_ylabel("PSD [a.u.]")
 
 
 ax = axes[1]
@@ -283,14 +283,16 @@ ax = axes[1]
 floor = detect_noise_floor(freq, psd_lfp)
 signal = (freq <= floor)
 noise = (freq >= floor)
-ax.loglog(freq[signal], psd_lfp[signal], "purple", label="LFP Sub. 12") # Off STN-L23
+ax.loglog(freq[signal], psd_lfp[signal], "purple",
+          label="LFP Sub. 12")  # Off STN-L23
 ax.loglog(freq[noise], psd_lfp[noise], "darkgray")
 
 # Plot Sub 9
 floor_osc = detect_noise_floor(freq, psd_lfp_osc)
 signal = (freq <= floor_osc)
 noise = (freq >= floor_osc)
-ax.loglog(freq[signal], psd_lfp_osc[signal], "purple", label="LFP Sub. 9") # Off STN-R01
+ax.loglog(freq[signal], psd_lfp_osc[signal], "purple",
+          label="LFP Sub. 9")  # Off STN-R01
 ax.loglog(freq[noise], psd_lfp_osc[noise], "darkgray", label="Noise floor")
 
 # Get peak freqs, heights, and noise heights
@@ -304,7 +306,7 @@ noise_height = psd_lfp[freq == floor]
 noise_height_osc = psd_lfp_osc[freq == floor_osc]
 
 # Plot Peak lines
-ax.vlines(peak_freq1, noise_height_osc, peak_height1,
+ax.vlines(peak_freq1, noise_height_osc*0.8, peak_height1,
           color="k",
           linestyle="--", lw=1)
 ax.vlines(peak_freq2, noise_height_osc*0.8, peak_height2,
@@ -337,23 +339,30 @@ ax.annotate("",
             xytext=(floor, noise_height*.45),
             arrowprops=dict(arrowstyle="-", color="k", lw=2))
 ax.annotate(f"{floor}Hz", xy=(floor, noise_height*.9),
-            xytext=(floor*1.05, noise_height*.47))
+            xytext=(floor*1.05, noise_height*.485))
 
 # plt.grid(True, axis="x", which="minor", ls=":", c='w')
-
 # ax.vlines(floor_osc, 0, 1)
 
-xticks.append(peak_freq2)
+# xticks.append(peak_freq2)
+xticks = [1, 10, 100, 600]
 ax.set_xticks(xticks)
 ax.set_xticklabels(xticks)
 ylim = ax.get_ylim()
 ax.set_ylim([ylim[0]*.7, ylim[1]])
 ax.set_xlabel("Frequency in Hz")
-ax.set_ylabel(r"Power in $\mu$V/Hz")
+ax.set_ylabel(r"PSD [$\mu$$V^2$/Hz]")
 ax.legend(loc=0)
 plt.tight_layout()
-#plt.savefig(fig_path + fig_name, bbox_inches="tight")
+plt.savefig(fig_path + fig_name, bbox_inches="tight")
 plt.show()
+
+
+
+
+
+
+
 
 
 # %% C: Move noise floor. Problem: wrong PSD, different than in B!!!
