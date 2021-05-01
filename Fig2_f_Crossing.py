@@ -23,12 +23,10 @@ import scipy.signal as sig
 import matplotlib.pyplot as plt
 from scipy.stats import norm
 from pathlib import Path
-from fooof import FOOOF, FOOOFGroup
+from fooof import FOOOF
 import mne
 from mne.time_frequency import psd_welch
 from fooof.sim.gen import gen_aperiodic
-import seaborn as sns
-sns.set()
 
 
 def noise_white(samples, seed=True):
@@ -359,16 +357,21 @@ ap_fit5_off = gen_aperiodic(fm5_off.freqs, fm5_off.aperiodic_params_)
 
 # %% B: Plot
 
+c_fit1 = "c"
+c_fit2 = "orange"
+c_fit3 = "g"
+c_fit4 = "k"
+
 fig, axes = plt.subplots(1, 1, figsize=[8, 8])
 
 # ax = axes[0]
 ax = axes
 
-ax.loglog(freq, spec10_on, label=ch + " on")
-ax.loglog(fm1_on.freqs, 10**ap_fit1_on, label=f"{frange1}Hz a={exp1_on:.2f} On")
-ax.loglog(fm2_on.freqs, 10**ap_fit2_on, label=f"{frange2}Hz a={exp2_on:.2f} On")
-ax.loglog(fm3_on.freqs, 10**ap_fit3_on, label=f"{frange3}Hz a={exp3_on:.2f} On")
-ax.loglog(fm4_on.freqs, 10**ap_fit4_on, label=f"{frange4}Hz a={exp4_on:.2f} On")
+ax.loglog(freq, spec10_on, color="purple", label=ch + " on")
+ax.loglog(fm1_on.freqs, 10**ap_fit1_on, c=c_fit1, lw=4, label=f"{frange1}Hz a={exp1_on:.2f} On")
+ax.loglog(fm2_on.freqs, 10**ap_fit2_on, c=c_fit2,  lw=4, label=f"{frange2}Hz a={exp2_on:.2f} On")
+ax.loglog(fm3_on.freqs, 10**ap_fit3_on, c=c_fit3,  lw=4, label=f"{frange3}Hz a={exp3_on:.2f} On")
+ax.loglog(fm4_on.freqs, 10**ap_fit4_on, c=c_fit4,  lw=4, label=f"{frange4}Hz a={exp4_on:.2f} On")
 # ax.loglog(fm5_on.freqs, 10**ap_fit5_on, label=f"{frange5}Hz a={exp4_on:.2f} On")
 ax.legend()
 
@@ -395,32 +398,49 @@ plt.show()
 fig, axes = plt.subplots(2, 4, figsize=[16, 8])
 
 ax = axes[0, 0]
-fm1_on.plot(ax=ax, plt_log=True, add_legend=False)
-ax.set_title("On " + str(frange1))
+fm1_on.plot(ax=ax, plt_log=True, add_legend=False,
+            aperiodic_kwargs=dict(color=c_fit1, alpha=1),
+            data_kwargs=dict(color="purple"))
+ax.set_title(f"{frange1[0]}-{frange1[1]}Hz", fontsize=20)
 
 ax = axes[1, 0]
-fm1_on.plot(ax=ax, plt_log=False, add_legend=False)
+fm1_on.plot(ax=ax, plt_log=False, add_legend=False,
+            aperiodic_kwargs=dict(color=c_fit1, alpha=1),
+            data_kwargs=dict(color="purple"))
 
 ax = axes[0, 1]
-fm2_on.plot(ax=ax, plt_log=True, add_legend=False)
-ax.set_title("On " + str(frange2))
+fm2_on.plot(ax=ax, plt_log=True, add_legend=False,
+            aperiodic_kwargs=dict(color=c_fit2, alpha=1),
+            data_kwargs=dict(color="purple"))
+ax.set_title(f"{frange2[0]}-{frange2[1]}Hz", fontsize=20)
 
 ax = axes[1, 1]
-fm2_on.plot(ax=ax, plt_log=False, add_legend=False)
+fm2_on.plot(ax=ax, plt_log=False, add_legend=False,
+            aperiodic_kwargs=dict(color=c_fit2, alpha=1),
+            data_kwargs=dict(color="purple"))
 
 ax = axes[0, 2]
-fm3_on.plot(ax=ax, plt_log=True, add_legend=False)
-ax.set_title("On " + str(frange3))
+fm3_on.plot(ax=ax, plt_log=True, add_legend=False,
+            aperiodic_kwargs=dict(color=c_fit3, alpha=1),
+            data_kwargs=dict(color="purple"))
+ax.set_title(f"{frange3[0]}-{frange3[1]}Hz", fontsize=20)
 
 ax = axes[1, 2]
-fm3_on.plot(ax=ax, plt_log=False, add_legend=False)
+fm3_on.plot(ax=ax, plt_log=False, add_legend=False,
+            aperiodic_kwargs=dict(color=c_fit3, alpha=1),
+            data_kwargs=dict(color="purple"))
 
 ax = axes[0, 3]
-fm4_on.plot(ax=ax, plt_log=True, add_legend=False)
-ax.set_title("On " + str(frange4))
+fm4_on.plot(ax=ax, plt_log=True, add_legend=False,
+            aperiodic_kwargs=dict(color=c_fit4, alpha=1),
+            data_kwargs=dict(color="purple"))
+ax.set_title(f"{frange4[0]}-{frange4[1]}Hz", fontsize=20)
 
 ax = axes[1, 3]
-fm4_on.plot(ax=ax, plt_log=False, add_legend=False)
+fm4_on.plot(ax=ax, plt_log=False, add_legend=False,
+            aperiodic_kwargs=dict(color=c_fit4, alpha=1),
+            data_kwargs=dict(color="purple"))
+plt.tight_layout()
 plt.show()
 
 # %% C: Reproduce PSD
@@ -483,7 +503,7 @@ sim1 = sim1[filt]
 pure1 = pure1[0, filt]
 
 # Adjust offset for real spectrum
-spec10_on /= spec10_on[-1]
+spec10_on_adj = spec10_on / spec10_on[-1]
 sim1 /= sim1[-1]
 pure1 /= pure1[-1]
 
@@ -505,7 +525,7 @@ freq = freq[filt]
 sim1_deltaHigh = sim1_deltaHigh[filt]
 
 # Adjust offset for real spectrum
-spec10_on /= spec10_on[-1]
+spec10_on_adj = spec10_on / spec10_on[-1]
 sim1_deltaHigh /= sim1_deltaHigh[-1]
 
 
@@ -527,23 +547,23 @@ sim1_deltaLow = sim1_deltaLow[filt]
 
 # %%
 # Adjust offset for real spectrum
-spec10_on /= spec10_on[-1]
-sim1_deltaLow /= sim1_deltaLow[-1]
+spec10_on_adj = spec10_on / spec10_on[-1]
+sim1_deltaLow_adj = sim1_deltaLow / sim1_deltaLow[-1]
 
 
 fig, axes = plt.subplots(1, 1, figsize=[8, 8])
 ax = axes
-ax.loglog(freq, spec10_on, "grey", label=ch + " on",)
+ax.loglog(freq, spec10_on_adj, "grey", label=ch + " on",)
 ax.loglog(freq, sim1, "g", label="Sim1")
 ax.loglog(freq, sim1_deltaHigh, "b", label="Sim2")
-ax.loglog(freq, sim1_deltaLow, "m", label="Sim3")
+ax.loglog(freq, sim1_deltaLow_adj, "m", label="Sim3")
 #ax.loglog(freq, sim3, "b", label="Sim a=3")
 
 ax.loglog(freq, pure1, "k", lw=1, label="Sim Ground truth + noise a=1")
 
 
 fm = FOOOF()
-fm.fit(freq, spec10_on, [1, 100])
+fm.fit(freq, spec10_on_adj, [1, 100])
 exp_LFP = fm.get_params('aperiodic_params', 'exponent')
 ap_fit_LFP = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
 ax.loglog(fm.freqs, 10**ap_fit_LFP, "--", c="grey", lw=2, 
@@ -565,7 +585,7 @@ ax.loglog(fm.freqs, 10**ap_fit_high, "b--", lw=2,
           label=f"fooof sim2 a={exp_high:.2f}")
 
 fm = FOOOF()
-fm.fit(freq, sim1_deltaLow, [1, 100])
+fm.fit(freq, sim1_deltaLow_adj, [1, 100])
 exp_low = fm.get_params('aperiodic_params', 'exponent')
 ap_fit_low = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
 ax.loglog(fm.freqs, 10**ap_fit_low, "m--", lw=2, 
@@ -578,18 +598,19 @@ plt.show()
 
 # %% Combine figures panels
 
+fig3 = plt.figure(figsize=[10, 7.5], constrained_layout=True)
+gs = fig3.add_gridspec(4, 6)
 
+f3_ax1 = fig3.add_subplot(gs[0, 0:3])
+f3_ax2 = fig3.add_subplot(gs[1, 0:3])
+f3_ax3 = fig3.add_subplot(gs[:2, 3:])
+f3_ax4 = fig3.add_subplot(gs[2:, :2])
+f3_ax5 = fig3.add_subplot(gs[2:, 2:4])
+f3_ax6 = fig3.add_subplot(gs[2:, 4:])
 
-fig3 = plt.figure(figsize=[15, 5], constrained_layout=True)
-gs = fig3.add_gridspec(2, 3)
-
-f3_ax1 = fig3.add_subplot(gs[0, 0])
-f3_ax2 = fig3.add_subplot(gs[1, 0])
-f3_ax3 = fig3.add_subplot(gs[:, 1])
-f3_ax4 = fig3.add_subplot(gs[:, 2])
+# a)
 
 ax = f3_ax1
-
 mask = (freq <= 100)
 ax.loglog(freq[mask], noise_psd[mask], "k", label=f"Power spectrum a={slope}")
 
@@ -602,13 +623,13 @@ ax.hlines(3.3e-1, 23, 100, color="y", ls="--",  label="Fit range 3")
 # ax.hlines(.6e-4, 23, 100, color="y", ls="--",  label="Fit range 3")
 # =============================================================================
 xmin = ax.get_xlim()[0]
-ax.text(xmin, 1, "a)", fontsize=10)
+ax.text(0, 1, "a", fontsize=20, fontdict=dict(fontweight="bold"),
+        transform=ax.transAxes)
 ax.legend()
 ax.set_ylabel("power")
 #ax.set_ylim([1e-6, 6e-1])
 
 plt.setp(f3_ax1.get_xticklabels(), visible=False)
-
 
 ax = f3_ax2
 ax.semilogx(lower, errors1, label="Fitting error")
@@ -618,49 +639,71 @@ ax.hlines(1.45, 11, 100, color="m", ls="--")
 ax.hlines(1.4, 23, 100, color="y", ls="--")
 ax.legend(loc=2)
 
+# b)
 
 ax = f3_ax3
+ax.loglog(freq, spec10_on, c="purple", label="STN LFP")
+ax.loglog(fm1_on.freqs, 10**ap_fit1_on, c=c_fit1, lw=4, label=f"{frange1}Hz a={exp1_on:.2f} On")
+ax.loglog(fm2_on.freqs, 10**ap_fit2_on, c=c_fit2, lw=4, label=f"{frange2}Hz a={exp2_on:.2f} On")
+ax.loglog(fm3_on.freqs, 10**ap_fit3_on, c=c_fit3, lw=4, label=f"{frange3}Hz a={exp3_on:.2f} On")
+ax.loglog(fm4_on.freqs, 10**ap_fit4_on, c=c_fit4, lw=4, label=f"{frange4}Hz a={exp4_on:.2f} On")
+ax.legend()
+ax.text(0, 1, "b", fontsize=20, fontdict=dict(fontweight="bold"),
+        transform=ax.transAxes)
 
-ax.loglog(freq, spec10_on, c="purple", label=ch + " on")
-ax.loglog(fm1_on.freqs, 10**ap_fit1_on, label=f"{frange1}Hz a={exp1_on:.2f} On")
-ax.loglog(fm2_on.freqs, 10**ap_fit2_on, label=f"{frange2}Hz a={exp2_on:.2f} On")
-ax.loglog(fm3_on.freqs, 10**ap_fit3_on, label=f"{frange3}Hz a={exp3_on:.2f} On")
-ax.loglog(fm4_on.freqs, 10**ap_fit4_on, label=f"{frange4}Hz a={exp4_on:.2f} On")
+# c)
+
+ax = f3_ax4
+ax.loglog(freq, spec10_on_adj, "purple", label="STN LFP")
+ax.loglog(freq, sim1_deltaLow_adj, c="deepskyblue", label="Sim a=1")
+ax.loglog(freq, pure1, "grey", lw=1, label="Ground truth")
+
+ax.loglog(fm.freqs, 10**ap_fit_LFP, "--", c="purple", lw=2,
+          label=f"fooof LFP a={exp_LFP:.2f}")
+ax.loglog(fm.freqs, 10**ap_fit_low, "--", c="deepskyblue", lw=2,
+          label=f"fooof sim a={exp_low:.2f}")
+ax.legend()
+ax.text(0, 1, "c", fontsize=20, fontdict=dict(fontweight="bold"),
+        transform=ax.transAxes)
+
+ax = f3_ax5
+ax.loglog(freq, spec10_on_adj, "purple")
+ax.loglog(freq, sim1, "orange", label="Sim a=1")
+ax.loglog(freq, pure1, "grey", lw=1)
+
+ax.loglog(fm.freqs, 10**ap_fit_LFP, "--", c="purple", lw=2,
+          label=f"fooof LFP a={exp_LFP:.2f}")
+ax.loglog(fm.freqs, 10**ap_fit1, "--", c="orange", lw=2,
+          label=f"fooof sim a={exp1:.2f}")
+ax.set_yticks([])
+ax.set_xlabel("Frequency [Hz]")
 ax.legend()
 
 
+ax = f3_ax6
+ax.loglog(freq, spec10_on_adj, "purple")
+ax.loglog(freq, sim1_deltaHigh, "limegreen", label="Sim a=1")
+ax.loglog(freq, pure1, "grey", lw=1)
 
-ax = f3_ax4
-
-
-spec10_on /= spec10_on[-1]
-sim1_deltaLow /= sim1_deltaLow[-1]
-
-ax.loglog(freq, spec10_on, "purple", label=ch + " on",)
-ax.loglog(freq, sim1, "g", label="Sim1")
-ax.loglog(freq, sim1_deltaHigh, "b", label="Sim2")
-ax.loglog(freq, sim1_deltaLow, "m", label="Sim3")
-ax.loglog(freq, pure1, "k", lw=1, label="Sim Ground truth + noise a=1")
-
-ax.loglog(fm.freqs, 10**ap_fit_LFP, "--", c="grey", lw=2,
+ax.loglog(fm.freqs, 10**ap_fit_LFP, "--", c="purple", lw=2,
           label=f"fooof LFP a={exp_LFP:.2f}")
-ax.loglog(fm.freqs, 10**ap_fit1, "g--", lw=2,
-          label=f"fooof sim1 a={exp1:.2f}")
-ax.loglog(fm.freqs, 10**ap_fit_high, "b--", lw=2,
-          label=f"fooof sim2 a={exp_high:.2f}")
-ax.loglog(fm.freqs, 10**ap_fit_low, "m--", lw=2,
-          label=f"fooof sim2 a={exp_low:.2f}")
-
+ax.loglog(fm.freqs, 10**ap_fit_high, "--", c="limegreen", lw=2,
+          label=f"fooof sim a={exp_high:.2f}")
+ax.set_yticks([])
 ax.legend()
 plt.show()
 
 
+
 """
 To do:
+
+    good desing: whit background, spines left and bottom
     All: choose good colors
-
-
-    ax1: eliminate legend fitting range and write next to h-lines
+    a) eliminate legend fitting range and write next to h-lines
+        
+    save pdfs
+    Clean up code
 """
 
 
