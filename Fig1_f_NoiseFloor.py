@@ -233,6 +233,7 @@ psd2_noise /= psd2_noise.max()
 
 
 # %% Plot without knee
+abc = dict(x=0, y=1.025, fontsize=14, fontdict=dict(fontweight="bold"))
 
 upper_limits = [10, 50, 100, 200]
 alphas = [1, 0.7, .5, .3]
@@ -254,6 +255,13 @@ ax.loglog(freq[signal], psd2_noise[signal], "k", label="PSD")
 ax.loglog(freq[noise], psd2_noise[noise], "darkgray", label="Noise floor")
 ax.loglog(freq, 10**ap_fit_ground, "k:", label=f"Ground truth a={slope}", lw=1)
 
+xlim = 1, 600
+offset = psd2_noise[freq == xlim[1]][0]
+ylim = .5 * offset, 1
+
+ax.set_ylim(ylim)
+ax.set_xlim(xlim)
+
 for i, lim in enumerate(upper_limits):
     fm = FOOOF(verbose=False)
     fm.fit(freq, psd2_noise, [1, lim])
@@ -261,13 +269,9 @@ for i, lim in enumerate(upper_limits):
     ap_fit = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
     ax.loglog(fm.freqs, 10**ap_fit, "-", c="blue", lw=2, alpha=alphas[i]-0.1,
               label=f"1-{lim}Hz a={exp:.2f}")  # c="dodgerblue"
+    # annotate x-crossing
+    ax.vlines(lim, ylim[0], 10**ap_fit[-1], color="k", linestyle="-", lw=.3)
 
-xlim = 1, 600
-offset = psd2_noise[freq == xlim[1]][0]
-ylim = .5 * offset, 1
-
-ax.set_ylim(ylim)
-ax.set_xlim(xlim)
 ax.legend()
 
 xticks = [1] + upper_limits + [600]
@@ -275,6 +279,7 @@ ax.set_xticks(xticks)
 ax.set_xticklabels(xticks)
 ax.set_xlabel("Frequency in Hz")
 ax.set_ylabel("PSD [a.u.]")
+ax.text(s="a", **abc, transform=ax.transAxes)
 
 
 ax = axes[1]
@@ -353,6 +358,8 @@ ax.set_ylim([ylim[0]*.7, ylim[1]])
 ax.set_xlabel("Frequency in Hz")
 ax.set_ylabel(r"PSD [$\mu$$V^2$/Hz]")
 ax.legend(loc=0)
+ax.text(s="b", **abc, transform=ax.transAxes)
+
 plt.tight_layout()
 plt.savefig(fig_path + fig_name, bbox_inches="tight")
 plt.show()
