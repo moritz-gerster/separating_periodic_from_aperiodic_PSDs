@@ -187,10 +187,10 @@ welch_params = {"fs": srate, "nperseg": nperseg}
 fig_path = "../paper_figures/"
 fig_name = "Fig3_f_Separation.pdf"
 fig_name_supp = "Fig3_f_Separation_SuppMat.pdf"
-
+data_path = "../../1-f_Absence_Seizure/data/"
 # %% Load data
 
-channel_data = np.squeeze([sio.loadmat(f"../data/Fig3/{name}.mat")[name]
+channel_data = np.squeeze([sio.loadmat(data_path + f"{name}.mat")[name]
                            for name in ch_mat_nms])
 
 psds_pre, psds_seiz, psds_post = calc_PSDs(channel_data, n_seiz, n_el,
