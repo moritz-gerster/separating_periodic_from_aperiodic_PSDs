@@ -28,6 +28,7 @@ from mne.time_frequency import psd_welch
 from fooof.sim.gen import gen_aperiodic
 supp = False
 
+
 # %% Functions c)
 
 
@@ -125,6 +126,109 @@ def saw_noise(srate, seiz_len, slope=[2], saw_power=0.9,
     freq, saw_post = sig.welch(noise_saw[pre + seiz_len:], **welch_params)
     return t, noise_saw, freq, saw_pre, saw_seiz, saw_post
 
+
+# %% a)
+"""
+- change colors
+- add ground truth to fooof plots
+- make first panel two separate axes
+- reorganize structure
+- smart legend
+- fontsizes, linewidths, etc.
+- add arrow for increased fooof fit
+- combine with b and c
+"""
+
+# 1.
+duration = 180
+srate_sim = 2400
+slope = [1]
+time = np.arange(duration * srate_sim)
+samples = time.size
+noise, _ = osc_signals(samples, slope)
+nperseg = srate_sim
+welch_params_a = {"fs": srate_sim, "nperseg": nperseg}
+freq, noise_psd = sig.welch(noise, **welch_params_a)
+noise_psd = noise_psd[0]
+
+# 2.
+slope_flat = [0]
+freq_osc = [6, 12, 20]
+amp = [5, 5, 5]
+width = [1, 1, 1]
+pure, _ = osc_signals(samples, slope_flat, freq_osc, amp, width)
+freq, pure_psd = sig.welch(pure, **welch_params_a)
+pure_psd = pure_psd[0]
+
+# 3.
+plt.plot(freq, pure_psd)
+plt.xlim([0, 30])
+plt.show()
+
+# 4.
+noise_pure, _ = osc_signals(samples, slope, freq_osc, amp, width)
+freq, noise_pure_psd = sig.welch(noise_pure, **welch_params_a)
+noise_pure_psd = noise_pure_psd[0]
+
+# 5.
+fooof_params_a = dict(verbose=False)
+fm_pure = FOOOF(**fooof_params_a)
+fm_pure.fit(freq, noise_pure_psd, [1, 45])
+# fm.plot(plt_log=True)
+fm_pure_fit = gen_aperiodic(fm_pure.freqs, fm_pure.aperiodic_params_)
+a_pure = fm_pure.aperiodic_params_[1]
+mask = freq <= 50
+plt.loglog(freq[mask], noise_pure_psd[mask], label=f"Sim a={slope[0]}")
+plt.loglog(fm_pure.freqs, 10**fm_pure_fit, label=f"a={a_pure:.2f}")
+plt.legend()
+plt.xlim([0, 30])
+plt.show()
+
+# 6.
+freq_osc2 = [3, 9, 15, 25]
+amp2 = [5, 5, 5, 5]
+width2 = [1, 1, 1, 1]
+many_osc, _ = osc_signals(samples, slope_flat, freq_osc2, amp2, width2)
+freq, many_psd = sig.welch(many_osc, **welch_params_a)
+many_psd = many_psd[0]
+
+plt.plot(freq, pure_psd)
+plt.plot(freq, many_psd, "r--")
+plt.xlim([0, 30])
+plt.show()
+
+# 7.
+full = freq_osc+freq_osc2, amp+amp2, width+width2
+full_osc, _ = osc_signals(samples, slope, *full)
+freq, full_osc_psd = sig.welch(full_osc, **welch_params_a)
+full_osc_psd = full_osc_psd[0]
+
+fm_full = FOOOF(**fooof_params_a)
+fm_full.fit(freq, full_osc_psd, [1, 45])
+fm_full_fit = gen_aperiodic(fm_full.freqs, fm_full.aperiodic_params_)
+a_full = fm_full.aperiodic_params_[1]
+mask = freq <= 50
+
+# %% Plot a)
+c_pure = "b"
+c_full = "darkorange"
+
+fig, axes = plt.subplots(1, 3, figsize=[30, 10],
+                         gridspec_kw=dict(width_ratios=[1, .5, .5]))
+ax = axes[0]
+ax.loglog(freq[mask], pure_psd[mask], c_pure, label="Osc1: 6, 12, 20Hz")
+ax.loglog(freq[mask], many_psd[mask], c_full, label="Osc2: 3, 9, 15, 25Hz")
+ax.loglog(freq[mask], noise_pure_psd[mask], c_pure, label="1/f noise osc1 a=1")
+ax.loglog(freq[mask], full_osc_psd[mask], c_full,
+          label="1/f noise osc1+osc2 a=1")
+ax.loglog(fm_pure.freqs, 10**fm_pure_fit, "--", c=c_pure,
+          label=f"1/f noise osc1 fooof fit a={a_pure:.2f}")
+ax.loglog(fm_full.freqs, 10**fm_full_fit, "--",
+          c=c_full, label=f"1/f noise osc1+osc2 fooof fit a={a_full:.2f}")
+ax.legend()
+fm_pure.plot(ax=axes[1], plot_peaks="shade")
+fm_full.plot(ax=axes[2], plot_peaks="shade")
+plt.show()
 
 # %% Parameters b)
 

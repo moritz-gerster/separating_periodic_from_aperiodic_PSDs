@@ -403,7 +403,7 @@ arrow_dic = dict(arrowprops=dict(arrowstyle="->, "
 
 ax.loglog(*real, **real_kwargs, label="STN-LFP")
 ax.loglog(*real_fit, **real_kwargs, label=f"fooof LFP a={exp_LFP:.2f}")
-ax.loglog(*ground, **ground_kwargs, label="Sim 1/f")
+ax.loglog(*ground, **ground_kwargs, label=f"Sim 1/f a={slopes[0]}")
 ax.loglog(*low)
 ax.loglog(*low_fit, **low_kwargs, label=f"fooof sim1 a={exp_low:.2f}")
 ax.fill_between(freq[fill_mask],
