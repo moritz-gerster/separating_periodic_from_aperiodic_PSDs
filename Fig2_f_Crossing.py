@@ -379,18 +379,32 @@ low = freq, sim1_deltaLow_adj, c_low
 low_fit = fm.freqs, 10**ap_fit_low, "--"
 low_kwargs = dict(c=c_low, lw=2)
 x_arrow = 0.9
-arr_pos_low = "", (x_arrow, 10**ap_fit_low[0]), (x_arrow, 10**ap_fit_LFP[0])
+# x_arrow = 1
+arr_pos_low = ("",
+               (x_arrow, 10**ap_fit_low[0] * 0.95),
+               (x_arrow, 10**ap_fit_LFP[0] * 1.1))
+# =============================================================================
+# arr_pos_low = ("",
+#                (x_arrow, 10**ap_fit_low[0] * 1.),
+#                (x_arrow, 10**ap_fit_LFP[0] * 1.))
+# =============================================================================
 
 med = freq, sim1, c_med
 med_fit = fm.freqs, 10**ap_fit_med, "--"
 med_kwargs = dict(c=c_med, lw=2)
-arr_pos_med = "", (x_arrow, 10**ap_fit_med[0]), (x_arrow, 10**ap_fit_LFP[0])
+# arr_pos_med = "", (x_arrow, 10**ap_fit_med[0]), (x_arrow, 10**ap_fit_LFP[0])
 
 high = freq, sim1_deltaHigh, c_high
 high_fit = fm.freqs, 10**ap_fit_high, "--"
 high_kwargs = dict(c=c_high, lw=2)
-arr_pos_high = "", (x_arrow, 10**ap_fit_high[0]), (x_arrow, 10**ap_fit_LFP[0])
-# high_kwargs_k = dict(c="k", lw=2.1)
+arr_pos_high = ("",
+                (x_arrow, 10**ap_fit_high[0] * 1.1),
+                (x_arrow, 10**ap_fit_LFP[0] * 1))
+# =============================================================================
+# arr_pos_high = ("",
+#                 (x_arrow, 10**ap_fit_high[0] * 1.),
+#                 (x_arrow, 10**ap_fit_LFP[0] * 1))
+# =============================================================================
 
 ground = freq, pure1, c_ground
 ground_kwargs = dict(lw=.5)

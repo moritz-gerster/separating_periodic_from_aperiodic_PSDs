@@ -133,7 +133,8 @@ def osc_signals(samples, slope, freq_osc, amp, width=None, seed=True,
 
 
 
-def detect_noise_floor(freq, psd, f_start=1, f_range=50, thresh=0.05):
+def detect_noise_floor(freq, psd, f_start=1, f_range=50, thresh=0.05,
+                       ff_kwargs=dict(verbose=False, max_n_peaks=1)):
     """
     Detect the onset of the noise floor.
 
@@ -157,13 +158,21 @@ def detect_noise_floor(freq, psd, f_start=1, f_range=50, thresh=0.05):
     exp = 1
     while exp > thresh:
         n_start += 1
-        fm = FOOOF(max_n_peaks=1, verbose=False)
+        fm = FOOOF(**ff_kwargs)
         fm.fit(freq, psd, [n_start, n_start + f_range])
         exp = fm.get_params('aperiodic_params', 'exponent')
     return n_start + f_range // 2
 
 
 # %% PARAMETERS
+
+# Colors
+c_real = "purple"
+c_sim = "k"
+c_fit = "b"
+c_noise = "darkgray"
+c_right = "k--"
+c_pure = "grey"
 
 # Signal
 srate = 2400
@@ -251,9 +260,10 @@ floor = detect_noise_floor(freq, psd2_noise)
 signal = (freq <= floor)
 noise = (freq >= floor)
 
-ax.loglog(freq[signal], psd2_noise[signal], "k", label="PSD")
-ax.loglog(freq[noise], psd2_noise[noise], "darkgray", label="Noise floor")
-ax.loglog(freq, 10**ap_fit_ground, "k:", label=f"Ground truth a={slope}", lw=1)
+ax.loglog(freq[signal], psd2_noise[signal], c_sim, label="PSD")
+ax.loglog(freq[noise], psd2_noise[noise], c_noise, label="Noise floor")
+ax.loglog(freq, 10**ap_fit_ground, ":", c=c_sim, lw=1,
+          label=f"Ground truth a={slope}")
 
 xlim = 1, 600
 offset = psd2_noise[freq == xlim[1]][0]
@@ -267,10 +277,10 @@ for i, lim in enumerate(upper_limits):
     fm.fit(freq, psd2_noise, [1, lim])
     exp = fm.get_params('aperiodic_params', 'exponent')
     ap_fit = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
-    ax.loglog(fm.freqs, 10**ap_fit, "-", c="blue", lw=2, alpha=alphas[i]-0.1,
+    ax.loglog(fm.freqs, 10**ap_fit, "-", c=c_fit, lw=2, alpha=alphas[i]-0.1,
               label=f"1-{lim}Hz a={exp:.2f}")  # c="dodgerblue"
     # annotate x-crossing
-    ax.vlines(lim, ylim[0], 10**ap_fit[-1], color="k", linestyle="-", lw=.3)
+    ax.vlines(lim, ylim[0], 10**ap_fit[-1], color=c_sim, linestyle="-", lw=.3)
 
 ax.legend()
 
@@ -288,17 +298,17 @@ ax = axes[1]
 floor = detect_noise_floor(freq, psd_lfp)
 signal = (freq <= floor)
 noise = (freq >= floor)
-ax.loglog(freq[signal], psd_lfp[signal], "purple",
+ax.loglog(freq[signal], psd_lfp[signal], c_real,
           label="LFP Sub. 12")  # Off STN-L23
-ax.loglog(freq[noise], psd_lfp[noise], "darkgray")
+ax.loglog(freq[noise], psd_lfp[noise], c_noise)
 
 # Plot Sub 9
 floor_osc = detect_noise_floor(freq, psd_lfp_osc)
 signal = (freq <= floor_osc)
 noise = (freq >= floor_osc)
-ax.loglog(freq[signal], psd_lfp_osc[signal], "purple",
+ax.loglog(freq[signal], psd_lfp_osc[signal], c_real,
           label="LFP Sub. 9")  # Off STN-R01
-ax.loglog(freq[noise], psd_lfp_osc[noise], "darkgray", label="Noise floor")
+ax.loglog(freq[noise], psd_lfp_osc[noise], c_noise, label="Noise floor")
 
 # Get peak freqs, heights, and noise heights
 peak_freq1 = 23
@@ -312,27 +322,27 @@ noise_height_osc = psd_lfp_osc[freq == floor_osc]
 
 # Plot Peak lines
 ax.vlines(peak_freq1, noise_height_osc*0.8, peak_height1,
-          color="k",
+          color=c_sim,
           linestyle="--", lw=1)
 ax.vlines(peak_freq2, noise_height_osc*0.8, peak_height2,
-          color="k",
+          color=c_sim,
           linestyle="--", lw=1)
 
 # Plot Arrow left and right
 ax.annotate("",
             xy=(floor_osc, noise_height_osc*0.8),
             xytext=(peak_freq1, noise_height_osc*0.8),
-            arrowprops=dict(arrowstyle="->", color="k", lw=2))
+            arrowprops=dict(arrowstyle="->", color=c_sim, lw=2))
 ax.annotate("",
             xy=(floor_osc, noise_height_osc*0.8),
             xytext=(peak_freq2, noise_height_osc*0.8),
-            arrowprops=dict(arrowstyle="->", color="k", lw=2))
+            arrowprops=dict(arrowstyle="->", color=c_sim, lw=2))
 
 # Annotate noise floor osc
 ax.annotate("",
             xy=(floor_osc, noise_height_osc*0.86),
             xytext=(floor_osc, noise_height_osc*.4),
-            arrowprops=dict(arrowstyle="-", color="k", lw=2))
+            arrowprops=dict(arrowstyle="-", color=c_sim, lw=2))
 ax.annotate(f"{floor_osc}Hz",
             xy=(floor_osc, noise_height_osc*0.7),
             xytext=(floor_osc*1.02, noise_height_osc*.43))
@@ -342,7 +352,7 @@ ax.annotate(f"{floor_osc}Hz",
 ax.annotate("",
             xy=(floor, noise_height*.85),
             xytext=(floor, noise_height*.45),
-            arrowprops=dict(arrowstyle="-", color="k", lw=2))
+            arrowprops=dict(arrowstyle="-", color=c_sim, lw=2))
 ax.annotate(f"{floor}Hz", xy=(floor, noise_height*.9),
             xytext=(floor*1.05, noise_height*.485))
 
@@ -374,33 +384,35 @@ plt.show()
 
 # %% C: Move noise floor. Problem: wrong PSD, different than in B!!!
 
-ch = 'STN_L23'
+# =============================================================================
+# ch = 'STN_L23'
+# 
+# # Load data
+# path = "../data/Fig2/"
+# fname10_on = "subj10_on_R8_raw.fif"
+# 
+# sub10_on = mne.io.read_raw_fif(path + fname10_on, preload=True)
+# 
+# sub10_on.pick_channels([ch])
+# 
+# filter_params = {"freqs": np.arange(50, 601, 50),
+#                  "notch_widths": .5,
+#                  "method": "spectrum_fit"}
+# 
+# sub10_on.notch_filter(**filter_params)
+# 
+# welch_params = {"fmin": 1,
+#                 "fmax": 600,
+#                 "tmin": 0.5,
+#                 "tmax": 185,
+#                 "n_fft": srate,
+#                 "n_overlap": srate // 2,
+#                 "average": "mean"}
+# =============================================================================
 
-# Load data
-path = "../data/Fig2/"
-fname10_on = "subj10_on_R8_raw.fif"
+# spec10_on, freq = psd_welch(sub10_on, **welch_params)
 
-sub10_on = mne.io.read_raw_fif(path + fname10_on, preload=True)
-
-sub10_on.pick_channels([ch])
-
-filter_params = {"freqs": np.arange(50, 601, 50),
-                 "notch_widths": .5,
-                 "method": "spectrum_fit"}
-
-sub10_on.notch_filter(**filter_params)
-
-welch_params = {"fmin": 1,
-                "fmax": 600,
-                "tmin": 0.5,
-                "tmax": 185,
-                "n_fft": srate,
-                "n_overlap": srate // 2,
-                "average": "mean"}
-
-spec10_on, freq = psd_welch(sub10_on, **welch_params)
-
-spec10_on= spec10_on[0]
+# spec10_on= spec10_on[0]
 
 def osc_signals_new(samples, slopes, freq_osc=[], amp=[], width=[],
                     srate=2400):
@@ -434,9 +446,9 @@ def osc_signals_new(samples, slopes, freq_osc=[], amp=[], width=[],
 #spec10_on, freq = psd_welch(sub10_on, **welch_params)
 #spec10_on = spec10_on[0]
 
-# No oscillations
-freq_osc = [2.5, 3, 4, 7, 27, 36, 360]
-amp =      [1.5, 4.5, 5, 3, 750, 500, 6000]
+
+freq_osc = [2.5,   3, 4, 7,  27,  36,  360]
+amp =      [1.5, 4.5, 5, 4, 750, 500, 7000]
 width =    [0.1, .7, 1.2, 20, 7, 11, 60]
 slopes = [1]
 
@@ -459,14 +471,14 @@ sim1 = sim1[filt]
 pure1 = pure1[0, filt]
 
 # Adjust offset for real spectrum
-spec10_on /= spec10_on[-1]
+# spec10_on /= spec10_on[-1]
 sim1 /= sim1[-1]
 pure1 /= pure1[-1]
 
 
-# No oscillations
+
 freq_osc = [2.5, 3, 5, 27, 36, 360]
-amp =      [160, 1000, 400, 67000, 48000, 480000]
+amp =      [160, 1000, 400, 67000, 48000, 700000]
 width =    [0.2, 1.2, 1.4, 7, 11, 60]
 slopes = [3]
 
@@ -489,137 +501,127 @@ sim3 = sim3[filt]
 pure3 = pure3[filt]
 
 # Adjust offset for real spectrum
-spec10_on /= spec10_on[-1]
+# spec10_on /= spec10_on[-1]
+psd_lfp_osc /= psd_lfp_osc[-2]
 sim3 /= sim3[-1]
 pure3 /= pure3[-1]
 
-# %% C: Plot
-
 nfloor1 = detect_noise_floor(freq, pure1, f_range=50, thresh=0)
 nfloor3 = detect_noise_floor(freq, pure3, f_range=3, thresh=0)
-sig1 = (freq <= nfloor1)
-sig3 = (freq <= nfloor3)
-noise1 = (freq >= nfloor1)
-noise3 = (freq >= nfloor3)
+# =============================================================================
+# sig1 = (freq <= nfloor1)
+# sig3 = (freq <= nfloor3)
+# noise1 = (freq >= nfloor1)
+# noise3 = (freq >= nfloor3)
+# =============================================================================
+
+# %% C: Plot
 
 fig, axes = plt.subplots(1, 1, figsize=[8, 8])
 ax = axes
-ax.vlines(4, *ax.get_ylim())
-ax.loglog(freq, spec10_on, "k", label=ch + " on",)
-ax.loglog(freq[sig1], sim1[sig1], "g", label=f"Sim a={slopes[0]}")
-ax.loglog(freq[noise1], sim1[noise1], "grey", label=f"Sim a={slopes[0]}")
-#ax.loglog(freq, sim1, "g", label=f"Sim a={slopes[0]}")
-ax.loglog(freq[sig3], sim3[sig3], "b", label=f"Sim a={slopes[0]}")
-ax.loglog(freq[noise3], sim3[noise3], "grey", label=f"Sim a={slopes[0]}")
-#ax.loglog(freq, sim3, "b", label=f"Sim a={slopes[0]}")
 
+ax.loglog(freq, psd_lfp_osc, c_real, alpha=0.4, label="LFP Sub. 9")
+# ax.loglog(freq, spec10_on, c_real, alpha=0.4, label=ch + " on",)
+ax.loglog(freq, sim1, c_sim, label="Sim a=1")
 
-ax.loglog(freq[sig1], pure1[sig1], "g", label=f"Sim a={slopes[0]}")
-ax.loglog(freq[noise1], pure1[noise1], "grey", label=f"Sim a={slopes[0]}")
-ax.loglog(freq[sig3], pure3[sig3], "b", label=f"Sim a={slopes[0]}")
-ax.loglog(freq[noise3], pure3[noise3], "grey", label=f"Sim a={slopes[0]}")
+ax.loglog(freq, sim3, "--", c=c_sim, label="Sim a=3")
 
+ax.loglog(freq, pure1, c_noise, label="1/f a=1")
+ax.loglog(freq, pure3, "--", c=c_noise, label="1/f a=3")
+
+ax.vlines(nfloor1, ymin=0, ymax=pure1[freq == nfloor1], color=c_sim)
+ax.vlines(nfloor3, ymin=0, ymax=pure3[freq == nfloor3], color=c_sim, ls="--")
 ax.legend()
 plt.show()
 
-# %% Move noise floor
-
-# No oscillations
-freq_osc = [2.5, 3, 4, 7, 27, 36, 360]
-amp =      [1.5, 4.5, 5, 3, 750, 500, 6000]
-width =    [0.1, .7, 1.2, 20, 7, 11, 60]
-slopes = [1]
-
-# Make noise
-w_noise = noise_white(samples)
-
-pink1, pure1 = osc_signals_new(samples, slopes, freq_osc, amp, width)
-pink1 = pink1[0]
-pure = pure1[0]
-pink1 += .0005 * w_noise
-pure1 += .0005 * w_noise
-
-freq, sim1 = sig.welch(pink1, fs=srate, nperseg=nperseg, detrend=False)
-freq, pure1 = sig.welch(pure1, fs=srate, nperseg=nperseg, detrend=False)
-
-# Bandpass filter between 1Hz and 600Hz
-filt = (freq > 0) & (freq <= 600)
-freq = freq[filt]
-sim1 = sim1[filt]
-pure1 = pure1[0, filt]
-
-# Adjust offset for real spectrum
-sim1 /= sim1[-1]
-pure1 /= pure1[-1]
-
-
-freq_osc = [2.5, 3, 4, 7, 22, 360]
-amp =      [1.5, 4.5, 5, 3, 600, 6000]
-width =    [0.1, .7, 1.2, 20, 6, 60]
-
-pink_left, _ = osc_signals_new(samples, slopes, freq_osc, amp, width)
-pink_left = pink_left[0]
-pink_left += .0005 * w_noise
-
-freq, sim1_left = sig.welch(pink_left, fs=srate, nperseg=nperseg, detrend=False)
-
-# Bandpass filter between 1Hz and 600Hz
-filt = (freq > 0) & (freq <= 600)
-freq = freq[filt]
-sim1_left = sim1_left[filt]
-
-# Adjust offset for real spectrum
-sim1_left /= sim1_left[-1]
-
-
-freq_osc = [2.5, 3, 4, 7, 35, 80]
-amp =      [1.5, 4.5, 5, 3, 2000, 2000]
-width =    [0.1, .7, 1.2, 20, 11, 18]
-
-pink_right, _ = osc_signals_new(samples, slopes, freq_osc, amp, width)
-pink_right = pink_right[0]
-pink_right += .0005 * w_noise
-
-freq, sim1_right = sig.welch(pink_right, fs=srate, nperseg=nperseg, detrend=False)
-
-# Bandpass filter between 1Hz and 600Hz
-filt = (freq > 0) & (freq <= 600)
-freq = freq[filt]
-sim1_right = sim1_right[filt]
-
-# Adjust offset for real spectrum
-sim1_right /= sim1_right[-1]
-
-
-nfloor1 = detect_noise_floor(freq, pure1, f_range=50, thresh=0)
-sig1 = (freq <= nfloor1)
-noise1 = (freq >= nfloor1)
-
-nfloor1_left = detect_noise_floor(freq, sim1_left, f_range=50, thresh=0)
-sig1_left = (freq <= nfloor1_left)
-noise1_left = (freq >= nfloor1_left)
-
-nfloor1_right = detect_noise_floor(freq, sim1_right, f_range=100, thresh=0)
-sig1_right = (freq <= nfloor1_right)
-noise1_right = (freq >= nfloor1_right)
-
-fig, axes = plt.subplots(1, 1, figsize=[8, 8])
-ax = axes
-ax.loglog(freq[sig1], sim1[sig1], "g", label=f"Sim a={slopes[0]}")
-ax.loglog(freq[noise1], sim1[noise1], "grey", label=f"Sim a={slopes[0]}")
-
-ax.loglog(freq[sig1_left], sim1_left[sig1_left], "r", label=f"Sim a={slopes[0]}")
-ax.loglog(freq[noise1_left], sim1_left[noise1_left], "grey", label=f"Sim a={slopes[0]}")
-
-ax.loglog(freq[sig1_right], sim1_right[sig1_right], "orange", label=f"Sim a={slopes[0]}")
-ax.loglog(freq[noise1_right], sim1_right[noise1_right], "grey", label=f"Sim a={slopes[0]}")
-
-ax.loglog(freq[sig1], pure1[sig1], "g", label=f"Sim a={slopes[0]}")
-ax.loglog(freq[noise1], pure1[noise1], "grey", label=f"Sim a={slopes[0]}")
-
-ax.legend()
-plt.show()
-
+# =============================================================================
+# # %% Move noise floor
+# 
+# # oscillations
+# freq_osc1 = [2.5, 3, 4, 7, 22, 360]
+# amp1 =      [1.5, 4.5, 5, 3, 600, 6000]
+# width1 =    [0.1, .7, 1.2, 20, 6, 60]
+# 
+# freq_osc2 = [2.5, 3, 4, 7, 27, 36, 360]
+# amp2 =      [1.5, 4.5, 5, 3, 750, 500, 6000]
+# width2 =    [0.1, .7, 1.2, 20, 7, 11, 60]
+# slopes = [1]
+# 
+# freq_osc3 = [2.5, 3, 4, 7, 35, 80]
+# amp3 =      [1.5, 4.5, 5, 3, 2000, 2000]
+# width3 =    [0.1, .7, 1.2, 20, 11, 18]
+# 
+# # oscs1 = freq_osc1, amp1, width1
+# oscs2 = freq_osc2, amp2, width2
+# oscs3 = freq_osc3, amp3, width3
+# 
+# # Make noise
+# w_noise = noise_white(samples)
+# 
+# # pink_left, _ = osc_signals_new(samples, slopes, *oscs1)
+# pink_middle, pure_middle = osc_signals_new(samples, slopes, *oscs2)
+# pink_right, _ = osc_signals_new(samples, slopes, *oscs3)
+# 
+# # pink_left = pink_left[0]
+# pink_middle = pink_middle[0]
+# pure_middle = pure_middle[0]
+# pink_right = pink_right[0]
+# 
+# # pink_left += .0005 * w_noise
+# pink_middle += .0005 * w_noise
+# pure_middle += .0005 * w_noise
+# pink_right += .0005 * w_noise
+# 
+# welch = dict(fs=srate, nperseg=nperseg, detrend=False)
+# # freq, sim_left = sig.welch(pink_left, **welch)
+# freq, sim_middle = sig.welch(pink_middle, **welch)
+# freq, pure_middle = sig.welch(pure_middle, **welch)
+# freq, sim_right = sig.welch(pink_right, **welch)
+# 
+# # Bandpass filter between 1Hz and 600Hz
+# filt = (freq > 0) & (freq <= 600)
+# 
+# freq = freq[filt]
+# # sim_left = sim_left[filt]
+# sim_middle = sim_middle[filt]
+# pure_middle = pure_middle[filt]
+# sim_right = sim_right[filt]
+# 
+# # Adjust offset for real spectrum
+# # sim_left /= sim_left[-1]
+# sim_middle /= sim_middle[-1]
+# pure_middle /= pure_middle[-1]
+# sim_right /= sim_right[-1]
+# 
+# find_noise = dict(f_start=30, f_range=30, thresh=0,
+#                   ff_kwargs=dict(max_n_peaks=0, verbose=False))
+# 
+# # nfloor_left = detect_noise_floor(freq, sim_left, **find_noise)
+# nfloor_pure = detect_noise_floor(freq, pure_middle, **find_noise)
+# nfloor_middle = detect_noise_floor(freq, sim_middle, **find_noise)
+# nfloor_right = detect_noise_floor(freq, sim_right, **find_noise)
+# 
+# # %% Plot
+# 
+# fig, axes = plt.subplots(1, 1, figsize=[8, 8])
+# ax = axes
+# 
+# ax.loglog(freq, spec10_on, c_real, alpha=0.4, label=ch + " on",)
+# 
+# ax.loglog(freq, sim_middle, c_sim, label="Sim2")
+# 
+# ax.loglog(freq, sim_right, c_right, label="Sim3")
+# 
+# ax.loglog(freq, pure_middle, c_pure, label=f"Ground truth a={slopes[0]}")
+# 
+# # annotate noise floors
+# ax.vlines(nfloor_middle, 1, 0, color=c_sim)
+# ax.vlines(nfloor_right, 1, 0, color=c_sim, ls="--")
+# 
+# ax.legend()
+# plt.show()
+# 
+# =============================================================================
 # =============================================================================
 # # %%
 # fig, ax = plt.subplots(1, 1)
@@ -645,13 +647,13 @@ plt.show()
 # floor = detect_noise_floor(freq, psd2_noise_osc)
 # signal = (freq <= floor)
 # noise = (freq >= floor)
-# ax.loglog(freq[signal], psd2_noise_osc[signal], "k", label="Subj. 12 STN-L23 Off")
+# ax.loglog(freq[signal], psd2_noise_osc[signal], c_sim, label="Subj. 12 STN-L23 Off")
 # ax.loglog(freq[noise], psd2_noise_osc[noise], "darkgray")
 # 
 # floor = detect_noise_floor(freq, psd_lfp_osc)
 # signal = (freq <= floor)
 # noise = (freq >= floor)
-# ax.loglog(freq[signal], psd_lfp_osc[signal], "k", label="Subj. 9 STN-R01 Off")
+# ax.loglog(freq[signal], psd_lfp_osc[signal], c_sim, label="Subj. 9 STN-R01 Off")
 # ax.loglog(freq[noise], psd_lfp_osc[noise], "darkgray", label="Noise floor")
 # 
 # plt.show()
@@ -668,7 +670,7 @@ plt.show()
 # 
 # fig, ax = plt.subplots(1, 1, figsize=[5, 4])
 # 
-# ax.loglog(freq, psd2_noise, "k", label="Spectrum", lw=3)
+# ax.loglog(freq, psd2_noise, c_sim, label="Spectrum", lw=3)
 # ax.loglog(freq, 10**ap_fit_ground, "k--", lw=1,
 #           label=f"Ground truth a={slope}")
 # 

@@ -1,20 +1,6 @@
 """
 Fooof needs clearly separable (and ideally Gaussian) peaks.
 
-a)
-1) show pure 1/f
-2) show clearly separable Gaussians oscillations
-3) show sum and successful fooof fit
-
-2) show strongly overlappy oscillations by adding intermediate oscillations
-    in the middle (dashed)
-3) fooof underestimates 1/f because 1/f is hidden below oscillations
-
-b)
-1) show easy spectrum with fooof fit and 2 other possibilites - CHECK
-2) show "hard" spectrum with fooof fit and 2 other possibilites - CHECK
-
-c)
 use epilepsy plot but make nice - CHECK
 """
 import numpy as np
@@ -23,18 +9,13 @@ import matplotlib.pyplot as plt
 from scipy.signal import sawtooth
 from fooof import FOOOF
 from scipy.stats import norm
-import mne
-from mne.time_frequency import psd_welch
-from fooof.sim.gen import gen_aperiodic
-supp = False
-
-
-# %% Functions c)
 
 
 def osc_signals(samples, slopes, freq_osc=[], amp=[], width=[],
-                srate=2400):
+                srate=2400, seed=1):
     """Simplified sim function."""
+    if seed:
+        np.random.seed(seed)
     # Initialize output
     slopes = [slopes]
     noises = np.zeros([len(slopes), samples])
@@ -127,118 +108,7 @@ def saw_noise(srate, seiz_len, slope=[2], saw_power=0.9,
     return t, noise_saw, freq, saw_pre, saw_seiz, saw_post
 
 
-# %% a)
-"""
-- change colors
-- add ground truth to fooof plots
-- make first panel two separate axes
-- reorganize structure
-- smart legend
-- fontsizes, linewidths, etc.
-- add arrow for increased fooof fit
-- combine with b and c
-"""
-
-# 1.
-duration = 180
-srate_sim = 2400
-slope = [1]
-time = np.arange(duration * srate_sim)
-samples = time.size
-noise, _ = osc_signals(samples, slope)
-nperseg = srate_sim
-welch_params_a = {"fs": srate_sim, "nperseg": nperseg}
-freq, noise_psd = sig.welch(noise, **welch_params_a)
-noise_psd = noise_psd[0]
-
-# 2.
-slope_flat = [0]
-freq_osc = [6, 12, 20]
-amp = [5, 5, 5]
-width = [1, 1, 1]
-pure, _ = osc_signals(samples, slope_flat, freq_osc, amp, width)
-freq, pure_psd = sig.welch(pure, **welch_params_a)
-pure_psd = pure_psd[0]
-
-# 3.
-plt.plot(freq, pure_psd)
-plt.xlim([0, 30])
-plt.show()
-
-# 4.
-noise_pure, _ = osc_signals(samples, slope, freq_osc, amp, width)
-freq, noise_pure_psd = sig.welch(noise_pure, **welch_params_a)
-noise_pure_psd = noise_pure_psd[0]
-
-# 5.
-fooof_params_a = dict(verbose=False)
-fm_pure = FOOOF(**fooof_params_a)
-fm_pure.fit(freq, noise_pure_psd, [1, 45])
-# fm.plot(plt_log=True)
-fm_pure_fit = gen_aperiodic(fm_pure.freqs, fm_pure.aperiodic_params_)
-a_pure = fm_pure.aperiodic_params_[1]
-mask = freq <= 50
-plt.loglog(freq[mask], noise_pure_psd[mask], label=f"Sim a={slope[0]}")
-plt.loglog(fm_pure.freqs, 10**fm_pure_fit, label=f"a={a_pure:.2f}")
-plt.legend()
-plt.xlim([0, 30])
-plt.show()
-
-# 6.
-freq_osc2 = [3, 9, 15, 25]
-amp2 = [5, 5, 5, 5]
-width2 = [1, 1, 1, 1]
-many_osc, _ = osc_signals(samples, slope_flat, freq_osc2, amp2, width2)
-freq, many_psd = sig.welch(many_osc, **welch_params_a)
-many_psd = many_psd[0]
-
-plt.plot(freq, pure_psd)
-plt.plot(freq, many_psd, "r--")
-plt.xlim([0, 30])
-plt.show()
-
-# 7.
-full = freq_osc+freq_osc2, amp+amp2, width+width2
-full_osc, _ = osc_signals(samples, slope, *full)
-freq, full_osc_psd = sig.welch(full_osc, **welch_params_a)
-full_osc_psd = full_osc_psd[0]
-
-fm_full = FOOOF(**fooof_params_a)
-fm_full.fit(freq, full_osc_psd, [1, 45])
-fm_full_fit = gen_aperiodic(fm_full.freqs, fm_full.aperiodic_params_)
-a_full = fm_full.aperiodic_params_[1]
-mask = freq <= 50
-
-# %% Plot a)
-c_pure = "b"
-c_full = "darkorange"
-
-fig, axes = plt.subplots(1, 3, figsize=[30, 10],
-                         gridspec_kw=dict(width_ratios=[1, .5, .5]))
-ax = axes[0]
-ax.loglog(freq[mask], pure_psd[mask], c_pure, label="Osc1: 6, 12, 20Hz")
-ax.loglog(freq[mask], many_psd[mask], c_full, label="Osc2: 3, 9, 15, 25Hz")
-ax.loglog(freq[mask], noise_pure_psd[mask], c_pure, label="1/f noise osc1 a=1")
-ax.loglog(freq[mask], full_osc_psd[mask], c_full,
-          label="1/f noise osc1+osc2 a=1")
-ax.loglog(fm_pure.freqs, 10**fm_pure_fit, "--", c=c_pure,
-          label=f"1/f noise osc1 fooof fit a={a_pure:.2f}")
-ax.loglog(fm_full.freqs, 10**fm_full_fit, "--",
-          c=c_full, label=f"1/f noise osc1+osc2 fooof fit a={a_full:.2f}")
-ax.legend()
-fm_pure.plot(ax=axes[1], plot_peaks="shade")
-fm_full.plot(ax=axes[2], plot_peaks="shade")
-plt.show()
-
-# %% Parameters b)
-
-srate_pd = 2400
-
-# Colors
-c_straight = "r--"
-c_fooof = "b--"
-c_low = "g--"
-# %% Parameters c)
+# %% Parameters
 
 # Colors
 c_empirical = "purple"
@@ -249,7 +119,7 @@ c_pre = "c"
 c_post = "y"
 
 srate_ep = 256
-seiz_start = 88100
+seiz_start = 87800
 seiz_end = 91150
 seiz_len = seiz_end - seiz_start
 
@@ -275,141 +145,16 @@ fooof_params = dict(verbose=False)  # standard params
 # Paths
 data_path = "../data/Fig3/"
 fig_path = "../paper_figures/"
-fig_name_b = "Fig3_f_Separation_b.pdf"
-fig_name_c = "Fig3_f_Separation_c.pdf"
+fig_name = "Fig3_f_Separation.pdf"
 fig_name_supp = "Fig3_f_Separation_SuppMat.pdf"
 
-# %% Get data b)
-
-sub5 = mne.io.read_raw_fif(data_path + "subj5_on_R1_raw.fif", preload=True)
-sub9 = mne.io.read_raw_fif(data_path + "subj9_on_R8_raw.fif", preload=True)
-
-ch5 = "SMA"
-ch9 = "STN_R01"
-sub5.pick_channels([ch5])
-sub9.pick_channels([ch9])
-filter_params = {"freqs": np.arange(50, 601, 50),
-                 "notch_widths": 0.1,
-                 "method": "spectrum_fit"}
-sub5.notch_filter(**filter_params)
-sub9.notch_filter(**filter_params)
-
-welch_params_b = {"fmin": 1,
-                  "fmax": 600,
-                  "tmin": 0.5,
-                  "tmax": 185,
-                  "n_fft": srate_pd,
-                  "n_overlap": srate_pd // 2,
-                  "average": "mean"}
-
-spec5, freq = psd_welch(sub5, **welch_params_b)
-spec9, freq = psd_welch(sub9, **welch_params_b)
-
-spec5 = spec5[0]
-spec9 = spec9[0]
-
-# %% Fit b)
-freq_range = [1, 95]
-
-fm5 = FOOOF(**fooof_params)
-fm9 = FOOOF(**fooof_params)
-
-fm5.fit(freq, spec5, freq_range)
-fm9.fit(freq, spec9, freq_range)
-
-# Fooof fit
-fm5_fooof = gen_aperiodic(fm5.freqs, fm5.aperiodic_params_)
-fm9_fooof = gen_aperiodic(fm9.freqs, fm9.aperiodic_params_)
-
-a5_fooof = fm5.aperiodic_params_[1]
-a9_fooof = fm9.aperiodic_params_[1]
-
-# Straight fit
-DeltaX = np.log10(np.diff(freq_range)[0])
-
-offset5 = np.log10(spec5[freq == freq_range[0]][0])
-endpoint5 = np.log10(spec5[freq == freq_range[1]][0])
-DeltaY5 = offset5 - endpoint5
-
-offset9 = np.log10(spec9[freq == freq_range[0]][0])
-endpoint9 = np.log10(spec9[freq == freq_range[1]][0])
-DeltaY9 = offset9 - endpoint9
-
-a5_straight = DeltaY5 / DeltaX
-a9_straight = DeltaY9 / DeltaX
-
-fm5_straight = gen_aperiodic(fm5.freqs, np.array([offset5, a5_straight]))
-fm9_straight = gen_aperiodic(fm9.freqs, np.array([offset9, a9_straight]))
-
-# Low fit
-offset5_low = np.log10(spec5[freq == freq_range[0]][0] * 0.5)
-DeltaY5_low = offset5_low - endpoint5
-
-offset9_low = np.log10(spec9[freq == freq_range[0]][0] * 0.5)
-DeltaY9_low = offset9_low - endpoint9
-
-a5_low = DeltaY5_low / DeltaX
-a9_low = DeltaY9_low / DeltaX
-
-fm5_low = gen_aperiodic(fm5.freqs, np.array([offset5_low, a5_low]))
-fm9_low = gen_aperiodic(fm9.freqs, np.array([offset9_low, a9_low]))
-
-spec5_real = freq, spec5, c_empirical
-spec9_real = freq, spec9, c_empirical
-
-spec5_fooof = fm5.freqs, 10**fm5_fooof, c_fooof
-spec9_fooof = fm9.freqs, 10**fm9_fooof, c_fooof
-
-spec5_straight = fm5.freqs, 10**fm5_straight, c_straight
-spec9_straight = fm9.freqs, 10**fm9_straight, c_straight
-
-spec5_low = fm5.freqs, 10**fm5_low, c_low
-spec9_low = fm9.freqs, 10**fm9_low, c_low
-
-# %% Plot b)
-
-fig, ax = plt.subplots(2, 2, figsize=(8, 5))
-
-ax[0, 0].set_title('"Easy" spectrum')
-ax[0, 1].set_title('"Hard" spectrum')
-# lin
-ax[0, 0].semilogy(*spec5_real, label="Sub 5 MEG")  # + ch5)
-ax[0, 1].semilogy(*spec9_real, label="Sub 9 LFP")  # + ch9)
-
-# log
-ax[1, 0].loglog(*spec5_real)
-ax[1, 1].loglog(*spec9_real)
-
-# Fooof fit
-ax[1, 0].loglog(*spec5_fooof, label=f"fooof     a={a5_fooof:.2f}")
-ax[1, 1].loglog(*spec9_fooof, label=f"fooof     a={a9_fooof:.2f}")
-
-# Straight fit
-ax[1, 0].loglog(*spec5_straight, label=f"straight a={a5_straight:.2f}")
-ax[1, 1].loglog(*spec9_straight, label=f"straight a={a9_straight:.2f}")
-
-# Low fit
-ax[1, 0].loglog(*spec5_low, label=f"low        a={a5_low:.2f}")
-ax[1, 1].loglog(*spec9_low, label=f"low        a={a9_low:.2f}")
-
-for axes in ax.flatten():
-    axes.spines["top"].set_visible(False)
-    axes.spines["right"].set_visible(False)
-    axes.legend()
-ax[0, 0].set(xlabel=None, ylabel=r"PSD [$\mu$$V^2/Hz$]")
-ax[0, 1].set(xlabel=None, ylabel=None)
-ax[1, 0].set(xlabel="Frequency [Hz]", ylabel=r"PSD [$\mu$$V^2/Hz$]")
-ax[1, 1].set(xlabel="Frequency [Hz]", ylabel=None)
-plt.tight_layout()
-plt.savefig(fig_path + fig_name_b, bbox_inches="tight")
-plt.show()
-# %% Get data c)
+# %% Get data
 
 seiz_data = np.load(data_path + cha_nm + ".npy", allow_pickle=True)
 
 # normalize
 seiz_data = seiz_data[pre_seiz:post_seiz]
-seiz_data /= seiz_data.std()
+# seiz_data /= seiz_data.std()
 
 t, noise_saw, freq, saw_pre, saw_seiz, saw_post = saw_noise(srate_ep, seiz_len,
                                                             **saw_params)
@@ -418,7 +163,7 @@ freq, psd_pre, psd_seiz, psd_post = calc_PSDs(seiz_data, seiz_len, srate_ep,
                                               **welch_params_c)
 
 
-# %% Plot c)
+# %% Plot
 
 pre_kwargs = dict(plt_log=True,
                   model_kwargs={"alpha": 0},
@@ -470,7 +215,7 @@ ax.add_patch(rectangle_post)
 
 ax.spines["top"].set_visible(False)
 ax.spines["right"].set_visible(False)
-ax.set_ylabel(f"{cha_nm} 30s SD")
+ax.set_ylabel(fr"{cha_nm} [$\mu$V]")
 
 
 ax = axes[1, 0]
@@ -503,7 +248,7 @@ ax.set_xticklabels(xticks-10)
 ax.set_xlabel("Time [s]")
 ax.spines["top"].set_visible(False)
 ax.spines["right"].set_visible(False)
-ax.set_ylabel("Simulation")
+ax.set_ylabel("Simulation [a.u.]")
 
 
 ax = axes[0, 1]
@@ -532,7 +277,7 @@ handles, _ = ax.get_legend_handles_labels()
 handles = handles[2::3]
 ax.legend(handles, labels, loc=1)
 ax.grid(False)
-ax.set_ylabel("PSD")
+ax.set_ylabel(r"PSD [$\mu$$V^2$/Hz]")
 ax.set_xlabel("")
 ax.spines["top"].set_visible(False)
 ax.spines["right"].set_visible(False)
@@ -562,39 +307,78 @@ labels.append(f"1/f Post={exp_post:.2f}")
 
 ax.legend(handles, labels, loc=1)
 ax.grid(False)
-ax.set_ylabel("PSD")
+# ax.set_ylabel("PSD")
+ax.set_ylabel("")
 ax.set_xticks(xticks_pos)
 ax.set_xticklabels(xticks)
 ax.set_xlabel("Frequency [Hz]")
+ax.set_ylabel("PSD [a.u.]")
 ax.spines["top"].set_visible(False)
 ax.spines["right"].set_visible(False)
 
 plt.tight_layout()
-plt.savefig(fig_path + fig_name_c, bbox_inches="tight")
+plt.savefig(fig_path + fig_name, bbox_inches="tight")
 plt.show()
 
 
-# %% Plot Supp. c)
+# %% Plot Supp. b)
 
-if supp:
-    
-    fm = FOOOF(**fooof_params)
-    
-    freq_range = [1, 100]
-    
-    fig, axes = plt.subplots(1, 2, figsize=[12, 6], sharey=True)
-    ax = axes[0]
-    
-    fm.fit(freq, saw_seiz, freq_range)
-    fm.plot(ax=ax)
-    exp_seiz = fm.get_params("aperiodic", "exponent")
-    ax.set_title(f"1/f={exp_seiz:.2f}")
-    ax.grid(False)
-    
-    ax = axes[1]
-    fm.plot(ax=ax, plt_log=True)
-    ax.grid(False)
-    ax.set_title(f"1/f={exp_seiz:.2f}")
-    plt.suptitle(f"Fooof fit {freq_range[0]}-{freq_range[1]}Hz  sawtooth signal")
-    plt.savefig(fig_path + fig_name_supp, bbox_inches="tight")
-    plt.show()
+# best fooof params for seizure:
+fooof_seiz_params = dict(peak_width_limits=(0, 1), peak_threshold=0)
+
+# Message:
+# even with these tuned params the fit is above 2 and therefore bad
+# furthermore, one cannot tune fooof for each condition and then compare
+# the 1/f
+
+fm_seiz = FOOOF()
+fm_saw = FOOOF()
+fm_tuned_seiz = FOOOF(**fooof_seiz_params)
+fm_tuned_saw = FOOOF(**fooof_seiz_params)
+
+freq_range = [1, 100]
+
+fm_seiz.fit(freq, psd_seiz, freq_range)
+fm_saw.fit(freq, saw_seiz, freq_range)
+fm_tuned_seiz.fit(freq, psd_seiz, freq_range)
+fm_tuned_saw.fit(freq, saw_seiz, freq_range)
+
+# %% Plot Supp
+fig, axes = plt.subplots(2, 2, figsize=[12, 12], sharey="col")
+ax = axes[0, 0]
+
+fm_seiz.plot(ax=ax, plt_log=True)
+exp_seiz = fm_seiz.get_params("aperiodic", "exponent")
+ax.set_title(f"Seizure a={exp_seiz:.2f}")
+ax.set_ylabel("Fooof default parameters")
+ax.grid(False)
+
+ax = axes[0, 1]
+
+fm_saw.fit(freq, saw_seiz, freq_range)
+fm_saw.plot(ax=ax, plt_log=True)
+exp_seiz = fm_saw.get_params("aperiodic", "exponent")
+ax.set_title(f"1/f={exp_seiz:.2f}")
+ax.grid(False)
+ax.set_ylabel("")
+
+ax = axes[1, 0]
+
+fm_tuned_seiz.plot(ax=ax, plt_log=True)
+exp_seiz = fm_tuned_seiz.get_params("aperiodic", "exponent")
+ax.set_title(f"1/f={exp_seiz:.2f}")
+ax.set_ylabel("Fooof tuned parameters")
+ax.grid(False)
+
+ax = axes[1, 1]
+
+fm_tuned_saw.plot(ax=ax, plt_log=True)
+exp_seiz = fm_tuned_saw.get_params("aperiodic", "exponent")
+ax.set_title(f"1/f={exp_seiz:.2f}")
+ax.set_ylabel("")
+ax.grid(False)
+
+plt.suptitle(f"Fooof fit {freq_range[0]}-{freq_range[1]}Hz  sawtooth signal")
+plt.savefig(fig_path + fig_name_supp, bbox_inches="tight")
+plt.tight_layout()
+plt.show()
