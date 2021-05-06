@@ -1,22 +1,4 @@
-"""
-Figure 2 Panels.
-
-A: 1/f simulated with and without noise floor.
-Fitted with fooof with and without knee.
-Print ground truth and fit values.
-
-B: Real spectra. Subj 12 no oscillations, maybe a subj with oscillations in
-that range and an potentially early noise floor too,
-maybe a full spectrum with low noise amplifier.
-
-Vielleicht noch vertikale Linien für max fitting range einzeichen?
-Dann leichter zu erkennen. Vielleicht Legende weglassen und a Werte direkt
-in den Plot schreiben
-
-Panel Fig 1C?: Show simulation of this spectrum with moving noise floor
-due neighboring to oscillations.
-
-"""
+"""Figure 1."""
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.signal as sig
@@ -30,6 +12,7 @@ import matplotlib as mpl
 
 mpl.rcParams["axes.spines.right"] = False
 mpl.rcParams["axes.spines.top"] = False
+
 
 def noise_white(samples, seed=True):
     """Create White Noise of N samples."""
@@ -154,14 +137,49 @@ def detect_noise_floor(freq, psd, f_start=1, f_range=50, thresh=0.05,
     n_start : float
         Onset frequency of the noise floor.
     """
-    n_start = f_start - 1
+    f_start -= 1
     exp = 1
     while exp > thresh:
-        n_start += 1
+        f_start += 1
         fm = FOOOF(**ff_kwargs)
-        fm.fit(freq, psd, [n_start, n_start + f_range])
+        fm.fit(freq, psd, [f_start, f_start + f_range])
         exp = fm.get_params('aperiodic_params', 'exponent')
-    return n_start + f_range // 2
+    return f_start + f_range // 2
+
+
+def detect_noise_floor_end(freq, psd, f_start=None, f_range=50, thresh=0.05,
+                           step=None,
+                           ff_kwargs=dict(verbose=False, max_n_peaks=1)):
+    """
+    Detect the end of the noise floor.
+
+    The noise floor is defined by having a slopes below 0.05.
+
+    Parameters
+    ----------
+    freq : ndarray
+        Freq array.
+    psd : ndarray
+        PSD array.
+    f_start : float
+        Starting frequency for the search.
+
+    Returns
+    -------
+    n_start : float
+        Onset frequency of the noise floor.
+    """
+    if f_start is None:
+        f_start = freq[-1]
+    if step is None:
+        step = f_range / 10
+    exp = 1
+    while exp > thresh:
+        f_start -= step
+        fm = FOOOF(**ff_kwargs)
+        fm.fit(freq, psd, [f_start - f_range, f_start])
+        exp = fm.get_params('aperiodic_params', 'exponent')
+    return f_start + f_range // 2
 
 
 # %% PARAMETERS
@@ -185,6 +203,7 @@ nperseg = srate  # welch
 path = "../data/Fig1/"
 fname12 = "subj12_off_R7_raw.fif"
 fname9 = "subj9_off_R1_raw.fif"
+
 
 sub12 = mne.io.read_raw_fif(path + fname12, preload=True)
 sub9 = mne.io.read_raw_fif(path + fname9, preload=True)
@@ -218,6 +237,22 @@ fig_path = "../paper_figures/"
 fig_name = "Fig1_f_NoiseFloor.pdf"
 Path(fig_path).mkdir(parents=True, exist_ok=True)
 
+
+# d)
+dummy_name = "Paper-Dummy_2016-11-23_F8-F4.npy"
+sub_name = "DBS_2018-03-02_STN_L24_rest.npy"
+
+sub_low_n = np.load(path + sub_name)
+dummy_low_n = np.load(path + dummy_name)
+
+srate_low_n = 10000
+welch_low_n = dict(fs=srate_low_n, nperseg=srate_low_n)
+
+# Calc PSD
+f_low_n, psd_sub_low_n = sig.welch(sub_low_n, **welch_low_n)
+f_low_n, psd_dummy_low_n = sig.welch(dummy_low_n, **welch_low_n)
+
+
 # %% Make noise
 
 freq_range = [1, 100]
@@ -240,9 +275,26 @@ freq, psd2_noise = freq[filt], psd2_noise[filt]
 # Normalize
 psd2_noise /= psd2_noise.max()
 
+# Detect Noise floor a)
+floor_a = detect_noise_floor(freq, psd2_noise)
+signal_a = (freq <= floor_a)
+noise_a = (freq >= floor_a)
+
+# Detect Noise floor b)
+floor_12 = detect_noise_floor(freq, psd_lfp)
+signal_12 = (freq <= floor_12)
+noise_12 = (freq >= floor_12)
+
+floor_9 = detect_noise_floor(freq, psd_lfp_osc)
+signal_9 = (freq <= floor_9)
+noise_9 = (freq >= floor_9)
+
+# Detect Noise floor b)
+floor_low_start = detect_noise_floor(f_low_n, psd_sub_low_n, f_start=1)
+floor_low_end = detect_noise_floor_end(f_low_n, psd_sub_low_n, f_range=100)
 
 # %% Plot without knee
-abc = dict(x=0, y=1.025, fontsize=14, fontdict=dict(fontweight="bold"))
+abc = dict(x=0, y=1.01, fontsize=14, fontdict=dict(fontweight="bold"))
 
 upper_limits = [10, 50, 100, 200]
 alphas = [1, 0.7, .5, .3]
@@ -250,18 +302,12 @@ alphas = [1, 0.7, .5, .3]
 ap_fit_ground = gen_aperiodic(freq, np.array([0, slope]))
 
 
-fig, axes = plt.subplots(1, 2, figsize=[9, 4],
+fig, axes = plt.subplots(2, 2, figsize=[9, 8],
                          gridspec_kw=dict(width_ratios=[.9, 1]))
 
-ax = axes[0]
-
-# Detect Noise floor
-floor = detect_noise_floor(freq, psd2_noise)
-signal = (freq <= floor)
-noise = (freq >= floor)
-
-ax.loglog(freq[signal], psd2_noise[signal], c_sim, label="PSD")
-ax.loglog(freq[noise], psd2_noise[noise], c_noise, label="Noise floor")
+ax = axes[0, 0]
+ax.loglog(freq[signal_a], psd2_noise[signal_a], c_sim, label="PSD")
+ax.loglog(freq[noise_a], psd2_noise[noise_a], c_noise, label="Plateau")
 ax.loglog(freq, 10**ap_fit_ground, ":", c=c_sim, lw=1,
           label=f"Ground truth a={slope}")
 
@@ -292,23 +338,17 @@ ax.set_ylabel("PSD [a.u.]")
 ax.text(s="a", **abc, transform=ax.transAxes)
 
 
-ax = axes[1]
+ax = axes[0, 1]
 
 # Plot Sub 12
-floor = detect_noise_floor(freq, psd_lfp)
-signal = (freq <= floor)
-noise = (freq >= floor)
-ax.loglog(freq[signal], psd_lfp[signal], c_real,
+ax.loglog(freq[signal_12], psd_lfp[signal_12], c_real,
           label="LFP Sub. 12")  # Off STN-L23
-ax.loglog(freq[noise], psd_lfp[noise], c_noise)
+ax.loglog(freq[noise_12], psd_lfp[noise_12], c_noise)
 
 # Plot Sub 9
-floor_osc = detect_noise_floor(freq, psd_lfp_osc)
-signal = (freq <= floor_osc)
-noise = (freq >= floor_osc)
-ax.loglog(freq[signal], psd_lfp_osc[signal], c_real,
+ax.loglog(freq[signal_9], psd_lfp_osc[signal_9], c_real,
           label="LFP Sub. 9")  # Off STN-R01
-ax.loglog(freq[noise], psd_lfp_osc[noise], c_noise, label="Noise floor")
+ax.loglog(freq[noise_9], psd_lfp_osc[noise_9], c_noise, label="Plateau")
 
 # Get peak freqs, heights, and noise heights
 peak_freq1 = 23
@@ -317,8 +357,8 @@ peak_freq2 = 350
 peak_height1 = psd_lfp_osc[freq == peak_freq1]
 peak_height2 = psd_lfp_osc[freq == peak_freq2]
 
-noise_height = psd_lfp[freq == floor]
-noise_height_osc = psd_lfp_osc[freq == floor_osc]
+noise_height = psd_lfp[freq == floor_12]
+noise_height_osc = psd_lfp_osc[freq == floor_9]
 
 # Plot Peak lines
 ax.vlines(peak_freq1, noise_height_osc*0.8, peak_height1,
@@ -330,31 +370,31 @@ ax.vlines(peak_freq2, noise_height_osc*0.8, peak_height2,
 
 # Plot Arrow left and right
 ax.annotate("",
-            xy=(floor_osc, noise_height_osc*0.8),
+            xy=(floor_9, noise_height_osc*0.8),
             xytext=(peak_freq1, noise_height_osc*0.8),
             arrowprops=dict(arrowstyle="->", color=c_sim, lw=2))
 ax.annotate("",
-            xy=(floor_osc, noise_height_osc*0.8),
+            xy=(floor_9, noise_height_osc*0.8),
             xytext=(peak_freq2, noise_height_osc*0.8),
             arrowprops=dict(arrowstyle="->", color=c_sim, lw=2))
 
 # Annotate noise floor osc
 ax.annotate("",
-            xy=(floor_osc, noise_height_osc*0.86),
-            xytext=(floor_osc, noise_height_osc*.4),
+            xy=(floor_9, noise_height_osc*0.86),
+            xytext=(floor_9, noise_height_osc*.4),
             arrowprops=dict(arrowstyle="-", color=c_sim, lw=2))
-ax.annotate(f"{floor_osc}Hz",
-            xy=(floor_osc, noise_height_osc*0.7),
-            xytext=(floor_osc*1.02, noise_height_osc*.43))
+ax.annotate(f"{floor_9}Hz",
+            xy=(floor_9, noise_height_osc*0.7),
+            xytext=(floor_9*1.02, noise_height_osc*.43))
 
 
 # Annotate noise floor
 ax.annotate("",
-            xy=(floor, noise_height*.85),
-            xytext=(floor, noise_height*.45),
+            xy=(floor_12, noise_height*.85),
+            xytext=(floor_12, noise_height*.45),
             arrowprops=dict(arrowstyle="-", color=c_sim, lw=2))
-ax.annotate(f"{floor}Hz", xy=(floor, noise_height*.9),
-            xytext=(floor*1.05, noise_height*.485))
+ax.annotate(f"{floor_12}Hz", xy=(floor_12, noise_height*.9),
+            xytext=(floor_12*1.05, noise_height*.485))
 
 # plt.grid(True, axis="x", which="minor", ls=":", c='w')
 # ax.vlines(floor_osc, 0, 1)
@@ -370,6 +410,28 @@ ax.set_ylabel(r"PSD [$\mu$$V^2$/Hz]")
 ax.legend(loc=0)
 ax.text(s="b", **abc, transform=ax.transAxes)
 
+
+# d)
+ax = axes[1, 1]
+ax.loglog(f_low_n, psd_sub_low_n, c_real, label="low-noise LFP")
+ax.loglog(f_low_n, psd_dummy_low_n, c_noise, label="low-noise empty room")
+
+# Plot Plateau lines
+ax.vlines(floor_low_start, 0, psd_sub_low_n[f_low_n == floor_low_start],
+          color=c_sim,
+          linestyle="--", lw=1)
+ax.vlines(floor_low_end, 0, psd_sub_low_n[f_low_n == floor_low_end],
+          color=c_sim,
+          linestyle="--", lw=1)
+
+xticks = [1, 10, 100, 1000, 5000]
+ax.set_xticks(xticks)
+ax.set_xticklabels(xticks)
+ax.set_xlabel("Frequency in Hz")
+ax.set_ylabel(r"PSD [$\mu$$V^2$/Hz]")
+ax.legend()
+ax.text(s="d", **abc, transform=ax.transAxes)
+
 plt.tight_layout()
 plt.savefig(fig_path + fig_name, bbox_inches="tight")
 plt.show()
@@ -384,35 +446,6 @@ plt.show()
 
 # %% C: Move noise floor. Problem: wrong PSD, different than in B!!!
 
-# =============================================================================
-# ch = 'STN_L23'
-# 
-# # Load data
-# path = "../data/Fig2/"
-# fname10_on = "subj10_on_R8_raw.fif"
-# 
-# sub10_on = mne.io.read_raw_fif(path + fname10_on, preload=True)
-# 
-# sub10_on.pick_channels([ch])
-# 
-# filter_params = {"freqs": np.arange(50, 601, 50),
-#                  "notch_widths": .5,
-#                  "method": "spectrum_fit"}
-# 
-# sub10_on.notch_filter(**filter_params)
-# 
-# welch_params = {"fmin": 1,
-#                 "fmax": 600,
-#                 "tmin": 0.5,
-#                 "tmax": 185,
-#                 "n_fft": srate,
-#                 "n_overlap": srate // 2,
-#                 "average": "mean"}
-# =============================================================================
-
-# spec10_on, freq = psd_welch(sub10_on, **welch_params)
-
-# spec10_on= spec10_on[0]
 
 def osc_signals_new(samples, slopes, freq_osc=[], amp=[], width=[],
                     srate=2400):

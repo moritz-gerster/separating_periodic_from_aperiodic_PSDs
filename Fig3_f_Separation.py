@@ -9,6 +9,13 @@ import matplotlib.pyplot as plt
 from scipy.signal import sawtooth
 from fooof import FOOOF
 from scipy.stats import norm
+from fooof.sim.gen import gen_aperiodic
+
+import matplotlib as mpl
+
+mpl.rcParams["axes.spines.right"] = False
+mpl.rcParams["axes.spines.top"] = False
+mpl.rcParams['font.size'] = 14
 
 
 def osc_signals(samples, slopes, freq_osc=[], amp=[], width=[],
@@ -108,6 +115,38 @@ def saw_noise(srate, seiz_len, slope=[2], saw_power=0.9,
     return t, noise_saw, freq, saw_pre, saw_seiz, saw_post
 
 
+def ap_fit_label(psd: np.array, cond: str, freq: np.array,
+                 freq_range: tuple,
+                 fooof_params: dict) -> tuple:
+    """
+    Return aperiodic fit and corr. label.
+
+    Parameters
+    ----------
+    psd : np.array
+        PSD.
+    cond : str
+        Condition.
+    freq : np.array
+        Freq array for PSD.
+    freq_range : tuple of int
+        Fitting range.
+    fooof_params : dict
+        Fooof params.
+
+    Returns
+    -------
+    tuple(ndarray, str)
+        (aperiodic fit, plot label).
+    """
+    fm = FOOOF(**fooof_params)
+    fm.fit(freq, psd, freq_range)
+    exp = fm.get_params("aperiodic", "exponent")
+    label = f"1/f {cond}={exp:.2f}"
+    ap_fit = gen_aperiodic(freq, fm.aperiodic_params_)
+    return 10**ap_fit, label
+
+
 # %% Parameters
 
 # Colors
@@ -163,37 +202,42 @@ freq, psd_pre, psd_seiz, psd_post = calc_PSDs(seiz_data, seiz_len, srate_ep,
                                               **welch_params_c)
 
 
+# %% Fit
+
+freq_range = [1, 100]
+
+fooof_inp = dict(freq=freq, freq_range=freq_range, fooof_params=fooof_params)
+
+ap_pre_eeg, lab_pre_eeg = ap_fit_label(psd_pre, "Pre", **fooof_inp)
+ap_seiz_eeg, lab_seiz_eeg = ap_fit_label(psd_seiz, "Seizure", **fooof_inp)
+ap_post_eeg, lab_post_eeg = ap_fit_label(psd_post, "Post", **fooof_inp)
+ap_pre_sim, lab_pre_sim = ap_fit_label(saw_pre, "Pre", **fooof_inp)
+ap_seiz_sim, lab_seiz_sim = ap_fit_label(saw_seiz, "Seizure", **fooof_inp)
+ap_post_sim, lab_post_sim = ap_fit_label(saw_post, "Post", **fooof_inp)
+
+ticks_time = dict(length=6, width=1.5)
+ticks_psd = dict(length=4, width=1)
+# abc = dict(x=0, y=1.01, fontsize=14, fontdict=dict(fontweight="bold"))
+
+n = 10  # step size plotting
+xticks1 = np.arange(0, (post_seiz-pre_seiz+1)/n, step=(5*srate_ep/n))
+# xticklabels = (xticks - pre/n) / (srate_ep/n)
+# xticklabels = [(str(int(element))) for element in xticklabels]
+
 # %% Plot
-
-pre_kwargs = dict(plt_log=True,
-                  model_kwargs={"alpha": 0},
-                  data_kwargs={"alpha": 1, "color": c_pre},
-                  aperiodic_kwargs={"color": c_pre, "alpha": 1})
-seiz_kwargs = dict(plt_log=True,
-                   model_kwargs={"alpha": 0},
-                   data_kwargs={"alpha": 1, "color": c_seiz},
-                   aperiodic_kwargs={"color": c_seiz, "alpha": 1})
-post_kwargs = dict(plt_log=True,
-                   model_kwargs={"alpha": 0},
-                   data_kwargs={"alpha": 1, "color": c_post},
-                   aperiodic_kwargs={"color": c_post, "alpha": 1})
-
-
 fig, axes = plt.subplots(2, 2,  figsize=[12, 6],
                          gridspec_kw=dict(width_ratios=[1, .6]))
 
 ax = axes[0, 0]
 
-n = 10  # step size plotting
-
 ax.plot(seiz_data[::n], c=c_empirical, lw=1)
 
-xticks = np.arange(0, (post_seiz-pre_seiz+1)/n, step=(5*srate_ep/n))
-xticklabels = (xticks - pre/n) / (srate_ep/n)
-xticklabels = [(str(int(element))) for element in xticklabels]
-ax.set_xticks(xticks)
-ax.set_xticklabels(xticklabels)
+ax.set_xticks(xticks1)
+ax.set_xticklabels([])
 ax.set_xlim([-0.5/n, (post_seiz-pre_seiz)/n])
+yticks = [-200, 0, 200]
+ax.set_yticks(yticks)
+ax.set_yticklabels([-200, "", 200])
 
 rectangle_pre = plt.Rectangle((0, -1000),
                               (seiz_start-pre_seiz)/n,
@@ -212,10 +256,9 @@ rectangle_post = plt.Rectangle(((seiz_end-pre_seiz)/n, -1000),
                                9000,
                                alpha=0.2, color=c_post)
 ax.add_patch(rectangle_post)
-
-ax.spines["top"].set_visible(False)
-ax.spines["right"].set_visible(False)
-ax.set_ylabel(fr"{cha_nm} [$\mu$V]")
+ax.set_ylabel(fr"{cha_nm} [$\mu$V]", labelpad=-20)
+ax.tick_params(**ticks_time)
+# ax.text(s="a", **abc, transform=ax.transAxes)
 
 
 ax = axes[1, 0]
@@ -246,75 +289,59 @@ xticks = np.arange(0, 35, 5)
 ax.set_xticks(xticks)
 ax.set_xticklabels(xticks-10)
 ax.set_xlabel("Time [s]")
-ax.spines["top"].set_visible(False)
-ax.spines["right"].set_visible(False)
-ax.set_ylabel("Simulation [a.u.]")
+yticks = [-3, 0, 3]
+ax.set_yticks(yticks)
+ax.set_yticklabels([])
+ax.set_ylabel("Simulation [a.u.]", labelpad=15)
+ax.tick_params(**ticks_time)
 
 
 ax = axes[0, 1]
 
-freq_range = [1, 100]
+ax.loglog(freq, psd_pre, c_pre, lw=2)
+ax.loglog(freq, psd_seiz, c_seiz, lw=2)
+ax.loglog(freq, psd_post, c_post, lw=2)
 
-fm = FOOOF(**fooof_params)
-labels = []
+ax.loglog(freq, ap_pre_eeg, "--", c=c_pre, lw=2, label=lab_pre_eeg)
+ax.loglog(freq, ap_seiz_eeg, "--", c=c_seiz, lw=2, label=lab_seiz_eeg)
+ax.loglog(freq, ap_post_eeg, "--", c=c_post, lw=2, label=lab_post_eeg)
 
-fm.fit(freq, psd_pre, freq_range)
-fm.plot(ax=ax, **pre_kwargs)
-exp_pre = fm.get_params("aperiodic", "exponent")
-labels.append(f"1/f Pre={exp_pre:.2f}")
+ax.set_xlim(freq_range)
 
-fm.fit(freq, psd_seiz, freq_range)
-fm.plot(ax=ax, **seiz_kwargs)
-exp_seiz = fm.get_params("aperiodic", "exponent")
-labels.append(f"1/f Seizure={exp_seiz:.2f}")
-
-fm.fit(freq, psd_post, freq_range)
-fm.plot(ax=ax, **post_kwargs)
-exp_post = fm.get_params("aperiodic", "exponent")
-labels.append(f"1/f Post={exp_post:.2f}")
-
-handles, _ = ax.get_legend_handles_labels()
-handles = handles[2::3]
-ax.legend(handles, labels, loc=1)
-ax.grid(False)
-ax.set_ylabel(r"PSD [$\mu$$V^2$/Hz]")
+ax.legend(loc=1, fontsize=10)
+ax.set_ylabel(r"PSD [$\mu$$V^2$/Hz]", fontsize=14, labelpad=-25)
 ax.set_xlabel("")
-ax.spines["top"].set_visible(False)
-ax.spines["right"].set_visible(False)
 xticks = [1, 10, 100]
-xticks_pos = np.log10(np.array(xticks))
-ax.set_xticks(xticks_pos)
+ax.set_xticks(xticks)
 ax.set_xticklabels([])
+yticks = [1e-2, 1, 1e2, 1e4]
+ax.set_yticks(yticks)
+ax.set_yticklabels([r"$10^{-2}$", "", "", r"$10^4$"], fontsize=14)
+ax.tick_params(**ticks_psd)
+# ax.text(s="b", **abc, transform=ax.transAxes)
 
 ax = axes[1, 1]
 
-labels = []
+ax.loglog(freq, saw_pre, c_pre, lw=2)
+ax.loglog(freq, saw_seiz, c_seiz, lw=2)
+ax.loglog(freq, saw_post, c_post, lw=2)
 
-fm.fit(freq, saw_pre, freq_range)
-fm.plot(ax=ax, **pre_kwargs)
-exp_pre = fm.get_params("aperiodic", "exponent")
-labels.append(f"1/f Pre={exp_pre:.2f}")
+ax.loglog(freq, ap_pre_sim, "--", c=c_pre, lw=2, label=lab_pre_sim)
+ax.loglog(freq, ap_seiz_sim, "--", c=c_seiz, lw=2, label=lab_seiz_sim)
+ax.loglog(freq, ap_post_sim, "--", c=c_post, lw=2, label=lab_post_sim)
 
-fm.fit(freq, saw_seiz, freq_range)
-fm.plot(ax=ax, **seiz_kwargs)
-exp_seiz = fm.get_params("aperiodic", "exponent")
-labels.append(f"1/f Seizure={exp_seiz:.2f}")
+ax.set_xlim(freq_range)
 
-fm.fit(freq, saw_post, freq_range)
-fm.plot(ax=ax, **post_kwargs)
-exp_post = fm.get_params("aperiodic", "exponent")
-labels.append(f"1/f Post={exp_post:.2f}")
-
-ax.legend(handles, labels, loc=1)
-ax.grid(False)
-# ax.set_ylabel("PSD")
+ax.legend(loc=1, fontsize=10)
 ax.set_ylabel("")
-ax.set_xticks(xticks_pos)
-ax.set_xticklabels(xticks)
-ax.set_xlabel("Frequency [Hz]")
-ax.set_ylabel("PSD [a.u.]")
-ax.spines["top"].set_visible(False)
-ax.spines["right"].set_visible(False)
+ax.set_xticks(xticks)
+ax.set_xticklabels(xticks, fontsize=14)
+yticks = [1e-3, 1e-1, 1e1, 1e3]
+ax.set_yticks(yticks)
+ax.set_yticklabels([])
+ax.set_xlabel("Frequency [Hz]", fontsize=14)
+ax.set_ylabel("PSD [a.u.]", fontsize=14, labelpad=10)
+ax.tick_params(**ticks_psd)
 
 plt.tight_layout()
 plt.savefig(fig_path + fig_name, bbox_inches="tight")
