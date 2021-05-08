@@ -268,8 +268,8 @@ welch_params = {"fmin": 1,
 spec12, freq = psd_welch(sub12, **welch_params)
 spec9, freq = psd_welch(sub9, **welch_params)
 
-psd_lfp = spec12[0]
-psd_lfp_osc = spec9[0]
+psd_lfp_12 = spec12[0]
+psd_lfp_9 = spec9[0]
 
 # Save Path
 fig_path = "../paper_figures/"
@@ -320,11 +320,11 @@ signal_a = (freq <= floor_a)
 noise_a = (freq >= floor_a)
 
 # Detect Noise floor b)
-floor_12 = detect_noise_floor(freq, psd_lfp)
+floor_12 = detect_noise_floor(freq, psd_lfp_12)
 signal_12 = (freq <= floor_12)
 noise_12 = (freq >= floor_12)
 
-floor_9 = detect_noise_floor(freq, psd_lfp_osc)
+floor_9 = detect_noise_floor(freq, psd_lfp_9)
 signal_9 = (freq <= floor_9)
 noise_9 = (freq >= floor_9)
 
@@ -380,24 +380,24 @@ ax.text(s="a", **abc, transform=ax.transAxes)
 ax = axes[0, 1]
 
 # Plot Sub 12
-ax.loglog(freq[signal_12], psd_lfp[signal_12], c_real,
+ax.loglog(freq[signal_12], psd_lfp_12[signal_12], c_real,
           label="LFP Sub. 12")  # Off STN-L23
-ax.loglog(freq[noise_12], psd_lfp[noise_12], c_noise)
+ax.loglog(freq[noise_12], psd_lfp_12[noise_12], c_noise)
 
 # Plot Sub 9
-ax.loglog(freq[signal_9], psd_lfp_osc[signal_9], c_real,
+ax.loglog(freq[signal_9], psd_lfp_9[signal_9], c_real,
           label="LFP Sub. 9")  # Off STN-R01
-ax.loglog(freq[noise_9], psd_lfp_osc[noise_9], c_noise, label="Plateau")
+ax.loglog(freq[noise_9], psd_lfp_9[noise_9], c_noise, label="Plateau")
 
 # Get peak freqs, heights, and noise heights
 peak_freq1 = 23
 peak_freq2 = 350
 
-peak_height1 = psd_lfp_osc[freq == peak_freq1]
-peak_height2 = psd_lfp_osc[freq == peak_freq2]
+peak_height1 = psd_lfp_9[freq == peak_freq1]
+peak_height2 = psd_lfp_9[freq == peak_freq2]
 
-noise_height = psd_lfp[freq == floor_12]
-noise_height_osc = psd_lfp_osc[freq == floor_9]
+noise_height = psd_lfp_12[freq == floor_12]
+noise_height_osc = psd_lfp_9[freq == floor_9]
 
 # Plot Peak lines
 ax.vlines(peak_freq1, noise_height_osc*0.8, peak_height1,
@@ -485,10 +485,13 @@ plt.show()
 # slope_s = 0.75
 # =============================================================================
 
-freq_osc_m = [10, 23, 55, 360]
-amp_m =      [0, 400, 150, 3500]
-width_m =    [2, 6, 10, 60]
-slope_m = 1
+# =============================================================================
+# # Works:
+# freq_osc_m = [ 1, 6,   8,  23,  55, 360]
+# amp_m =      np.array([ 3, 4,  19, 300, 150, 2000]) * 1
+# width_m =    [.8, 2, 1.9,   6,  10, 50]
+# slope_m = 1
+# =============================================================================
 
 # =============================================================================
 # freq_osc_l = [2.5, 3, 5, 27, 36, 360]
@@ -504,6 +507,12 @@ slope_m = 1
 # slope3 = 3
 # =============================================================================
 
+# # Works:
+freq_osc_m = [ 1, 6,   8,  23,  55, 360]
+amp_m =      [ 0, 0,  0, 0, 0, 0]
+width_m =    [.8, 2, 1.9,   6,  10, 50]
+slope_m = .8
+
 # Gen signal
 oscs_s = slope_s, freq_osc_s, amp_s, width_s
 oscs_m = slope_m, freq_osc_m, amp_m, width_m
@@ -514,6 +523,25 @@ pink_s, pure_s = osc_signals_new(samples, *oscs_s)
 pink_m, pure_m = osc_signals_new(samples, *oscs_m)
 pink_l, pure_l = osc_signals_new(samples, *oscs_l)
 # pink3, pure3 = osc_signals_new(samples, *oscs3)
+
+# Highpass filter
+sos = sig.butter(20, 1, btype="hp", fs=srate, output='sos')
+pink_m = sig.sosfilt(sos, pink_m)
+pure_m = sig.sosfilt(sos, pure_m)
+
+# Normalize amplitudes
+sub9_dat = sub9.get_data()
+#sub9_norm = (sub9_dat - sub9_dat.mean()) / sub9_dat.std()
+freq, psd_9_norm = sig.welch(sub9_norm[0][int(0.5*srate):int(185*srate)], fs=srate, nperseg=nperseg,
+                             detrend="linear")
+
+spec9, freq = psd_welch(sub9, **welch_params)
+psd_lfp_9 = spec9[0]
+
+pink_m = (pink_m - pink_m.mean()) / pink_m.std()
+pure_m = (pure_m - pure_m.mean()) / pure_m.std()
+
+
 
 pink_s = pink_s[0]
 pure_s = pure_s[0]
@@ -526,12 +554,13 @@ pure_l = pure_l[0]
 
 # Add white noise
 w_noise = noise_white(samples)
-pink_s += .00035 * w_noise
-pure_s += .00035 * w_noise
-pink_m += .0003 * w_noise
-pure_m += .0003 * w_noise
-pink_l += .0007 * w_noise
-pure_l += .0007 * w_noise
+# pink_s += .00035 * w_noise
+# pure_s += .00035 * w_noise
+pink_m += .05 * w_noise
+#pure_m += .00022 * w_noise
+pure_m += .05 * w_noise
+# pink_l += .0007 * w_noise
+# pure_l += .0007 * w_noise
 # pink3 += .037 * w_noise
 # pure3 += .037 * w_noise
 
@@ -546,9 +575,11 @@ freq, pure_m = sig.welch(pure_m, fs=srate, nperseg=nperseg, detrend=False)
 freq, pure_l = sig.welch(pure_l, fs=srate, nperseg=nperseg, detrend=False)
 # freq, pure3 = sig.welch(pure3, fs=srate, nperseg=nperseg, detrend=False)
 
-# Bandpass filter between 1Hz and 600Hz
+# Mask between 1Hz and 600Hz
 filt = (freq > 0) & (freq <= 600)
 freq = freq[filt]
+
+psd_9_norm = psd_9_norm[filt]
 
 sim_s = sim_s[filt]
 sim_m = sim_m[filt]
@@ -561,32 +592,22 @@ pure_l = pure_l[filt]
 # pure3 = pure3[filt]
 
 # Adjust offset for real spectrum
-# =============================================================================
-# psd_lfp_osc /= psd_lfp_osc[-2]
-# sim1 /= sim1[-1]
-# pure1 /= pure1[-1]
-# sim_l /= sim_l[-1]
-# pure_l /= pure_l[-1]
-# sim3 /= sim3[-1]
-# pure3 /= pure3[-1]
-# =============================================================================
-psd_lfp_osc /= psd_lfp_osc[0]
+psd_9_norm /= psd_9_norm[-1]
 sim_s /= sim_s[0]
-sim_m /= sim_m[0]
+sim_m /= sim_m[-1]
 sim_l /= sim_l[0]
 # sim3 /= sim3[0]
 
 pure_s /= pure_s[0]
-pure_m /= pure_m[0]
+pure_m /= pure_m[-1]
 pure_l /= pure_l[0]
 # pure3 /= pure3[0]
 
 # % C: Plot
-
 fig, axes = plt.subplots(1, 1, figsize=[8, 8])
 ax = axes
-
-ax.loglog(freq, psd_lfp_osc, c_real, alpha=0.4, label="LFP Sub. 9")
+ax.loglog(freq, psd_9_norm, c_real, alpha=0.4, label="LFP Sub. 9")
+ax.loglog(freq, psd_lfp_9, c_real, alpha=0.4, label="LFP Sub. 9")
 # =============================================================================
 # ax.loglog(freq, sim_m, c_sim, label=f"Sim a={slope_s}")
 ax.loglog(freq, sim_m, c_sim, label=f"Sim a={slope_m}")
@@ -595,13 +616,18 @@ ax.loglog(freq, sim_m, c_sim, label=f"Sim a={slope_m}")
 # =============================================================================
 # =============================================================================
 # ax.loglog(freq, pure_s, c_noise, label=f"1/f a={slope_s}")
-# ax.loglog(freq, pure_m, c_noise, label=f"1/f a={slope_m}")
+ax.loglog(freq, pure_m, c_noise, label=f"1/f a={slope_m}")
 # ax.loglog(freq, pure_l, ":", c=c_noise, label=f"1/f a={slope_l}")
 # =============================================================================
-
+ax.set_title(f"Freqs: {freq_osc_m}\nAmps: {amp_m}\nWidths: {width_m}")
 ax.legend()
 plt.show()
 
+# %%
+
+fm = FOOOF()
+fm.fit(freq, psd_9_norm, [1, 600])
+fm.report()
 # %% Old
 # =============================================================================
 # # %% Move noise floor
@@ -720,12 +746,12 @@ plt.show()
 #            label="Subj. 12 STN-L23 Off")
 # ax.loglog(freq[noise], psd2_noise_osc[noise], "darkgray")
 #
-# floor = detect_noise_floor(freq, psd_lfp_osc)
+# floor = detect_noise_floor(freq, psd_lfp_9)
 # signal = (freq <= floor)
 # noise = (freq >= floor)
-# ax.loglog(freq[signal], psd_lfp_osc[signal], c_sim, label="Subj.
+# ax.loglog(freq[signal], psd_lfp_9[signal], c_sim, label="Subj.
 # 9 STN-R01 Off")
-# ax.loglog(freq[noise], psd_lfp_osc[noise], "darkgray", label="Noise floor")
+# ax.loglog(freq[noise], psd_lfp_9[noise], "darkgray", label="Noise floor")
 #
 # plt.show()
 #

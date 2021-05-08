@@ -146,8 +146,6 @@ def sim_psd(psd_lfp_osc, **parameters):
 parameters = dict(n_freq=1, freq_osc=[23], amp=[1], width=[5], slope=1,
                   noise_scale=0.0003)
 
-
-
 sim_psd(psd_lfp_osc, **parameters)
 
 # %% C: Plot
