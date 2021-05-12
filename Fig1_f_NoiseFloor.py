@@ -262,10 +262,10 @@ noise_a = (freq >= floor_a)
 
 ground_truth = gen_aperiodic(freq, np.array([0, slope_a]))
 
-# plot data
+# %% Plot params a)
 plot_sim = (freq[signal_a], psd2_noise[signal_a], c_sim)
 plot_plateau = (freq[noise_a], psd2_noise[noise_a], c_noise)
-plot_ground = (freq, 10**ground_truth, ":")
+plot_ground = (freq, 10**ground_truth, c_sim)
 
 # plot limits, ticks, and labels
 xlim_a = (1, 600)
@@ -373,6 +373,26 @@ fit1 = fm1.freqs, 10**ap_fit1, c_high
 fit2 = fm2.freqs, 10**ap_fit2, c_low
 fit_sub9 = fm_sub9.freqs, 10**ap_fit_sub9, c_real
 
+# %% Plot params b)
+plot_sub9 = freq, psd_sub9, c_real
+
+plot_osc1 = freq, psc_osc1, c_high
+plot_osc2 = freq, psc_osc2, c_low
+
+plot_noise1 = freq, psd_noise1, c_high
+plot_noise2 = freq, psd_noise2, c_low
+
+ground1 = gen_aperiodic(freq, np.array([off_sub9, slope1]))
+ground2 = gen_aperiodic(freq, np.array([off_sub9, slope2]))
+
+plot_ground1 = freq, 10**ground1, c_high
+plot_ground2 = freq, 10**ground2, c_low
+
+xticks_b = [1, 10, 100, 600]
+ylim_b = (0.006, 2)
+xlim_b = (1, 825)
+
+axes_b = dict(xlim=xlim_b, ylim=ylim_b, xticks=xticks_b, xticklabels=xticks_b)
 
 # %% Calc d)
 
@@ -433,22 +453,23 @@ mpl.rcParams["axes.spines.top"] = False
 panel_labels = dict(x=0, y=1.01, fontsize=panel_fontsize,
                     fontdict=dict(fontweight="bold"))
 
-# b)
+lw_noise = 1
+line_fit = dict(lw=2, ls="--")
+line_ground = dict(lw=1, ls=":")
 
-plot_sub9 = freq, psd_sub9, c_real
-sim1_kwargs = dict(c=c_high)
-sim2_kwargs = dict(c=c_low)
+
+# c)
 
 
 # %% Plot
 fig, axes = plt.subplots(2, 2, figsize=[8, width])
 
-# a)
+# a)  =========================================================================
 ax = axes[0, 0]
 
 # Plot simulated PSD and ground truth
 ax.loglog(*plot_sim, label=f"1/f a={slope_a} + noise")
-ax.loglog(*plot_ground, c=c_sim, lw=1, label="Ground truth")
+ax.loglog(*plot_ground, **line_ground, label="Ground truth")
 
 # Plot fits for different upper fitting borders
 for i in range(len(upper_fit_limits)):
@@ -461,46 +482,36 @@ ax.loglog(*plot_plateau, label="Plateau")
 # Set
 ax.set(**axes_a)
 ax.legend()
-ax.text(s="a", **panel_labels, transform=ax.transAxes)
+# =============================================================================
 
-# b)
+# b)  =========================================================================
 ax = axes[0, 1]
 
+# Plot sub9
 ax.loglog(*plot_sub9, zorder=6, label="LFP Sub. 9")
-ax.loglog(*fit_sub9, ls="--", lw=2, zorder=10, label=f"a={exp_sub9:.2f}")
+ax.loglog(*fit_sub9, **line_fit, zorder=10, label=f"a={exp_sub9:.2f}")
 
-ylim = ax.get_ylim()
-ax.set_ylim(ylim)
+# Plot sim1
+ax.loglog(*plot_osc1, zorder=5, label="Sim a=1")
+ax.loglog(*fit1, **line_fit, zorder=9, label=f"a={exp1:.2f}")
+ax.loglog(*plot_noise1, lw=lw_noise, zorder=1, label="1/f + noise")
 
-ax.loglog(freq, psc_osc1, **sim1_kwargs, zorder=5, label="Sim a=1")
-ax.loglog(*fit1, ls="--", lw=2, zorder=9, label=f"a={exp1:.2f}")
-ax.loglog(freq, psd_noise1, sim1_kwargs["c"], lw=1, zorder=1,
-          label="1/f + noise")
-ap_fit_ground = gen_aperiodic(freq, np.array([off_sub9, slope1]))
-ax.loglog(freq, 10**ap_fit_ground, ":", c=sim1_kwargs["c"], lw=1, zorder=4,
-          label=f"a={slope1:.0f}")
+# Plot ground truth sim1
+ax.loglog(*plot_ground1, **line_ground, zorder=4, label=f"a={slope1:.0f}")
 
+# Plot sim2
+ax.loglog(*plot_osc2, zorder=7, label="Sim a=2")
+ax.loglog(*fit2, **line_fit, zorder=8, label=f"a={exp2:.2f}")
+ax.loglog(*plot_noise2, zorder=2, lw=lw_noise, label="1/f + noise")
 
-ax.loglog(freq, psc_osc2, **sim2_kwargs, zorder=7, label="Sim a=2")
-ax.loglog(*fit2, ls="--", lw=2, zorder=8, label=f"a={exp2:.2f}")
-ax.loglog(freq, psd_noise2, sim2_kwargs["c"], zorder=2, lw=1,
-          label="1/f + noise")
-ap_fit_ground = gen_aperiodic(freq, np.array([off_sub9, slope2]))
-ax.loglog(freq, 10**ap_fit_ground, ":", c=sim2_kwargs["c"], lw=1, zorder=3,
-          label=f"a={slope2:.0f}")
+# Plot ground truth sim1
+ax.loglog(*plot_ground2, **line_ground, zorder=3, label=f"a={slope2:.0f}")
 
-
+ax.set(**axes_b)
 ax.legend(labelspacing=0.3)
-xticks = [1, 10, 100, 600]
-ax.set_xticks(xticks)
-ax.set_xticklabels(xticks)
-ymin, _ = ax.get_ylim()
-_, xmax = ax.get_xlim()
-ax.set_ylim([ymin, 2])
-ax.set_xlim([1, xmax])
-ax.text(s="b", **panel_labels, transform=ax.transAxes)
+# =============================================================================
 
-# c)
+# c)  =========================================================================
 ax = axes[1, 0]
 
 # Plot Sub 9
@@ -563,8 +574,8 @@ ax.annotate(f"{floor_12}Hz", xy=(floor_12, noise_height*.9),
             fontsize=annotation_fontsize)
 
 
-ax.set_xticks(xticks)
-ax.set_xticklabels(xticks)
+ax.set_xticks(xticks_b)
+ax.set_xticklabels(xticks_b)
 _, xmax = ax.get_xlim()
 ax.set_xlim([1, xmax])
 ylim = ax.get_ylim()
@@ -572,10 +583,10 @@ ax.set_ylim([ylim[0]*.7, ylim[1]*1.15])
 ax.set_xlabel("Frequency in Hz")
 ax.set_ylabel(r"PSD [$\mu$$V^2$/Hz]")
 ax.legend(loc=0)
-ax.text(s="c", **panel_labels, transform=ax.transAxes)
+# =============================================================================
 
 
-# d)
+# d)  =========================================================================
 ax = axes[1, 1]
 
 lowN_signalL = (f_lowN <= floor_lowN_start)
@@ -604,7 +615,7 @@ ax.vlines(floor_lowN_end, 0, psd_sub_lowN[f_lowN == floor_lowN_end],
 
 ax.set_xlabel("Frequency in Hz")
 ax.legend()
-ax.text(s="d", **panel_labels, transform=ax.transAxes)
+#ax.text(s="d", **panel_labels, transform=ax.transAxes)
 
 xticks = [1, 10, 100, 1000, 5000]
 ax.set_xticks(xticks)
@@ -618,12 +629,18 @@ ax.yaxis.set_major_formatter(ticker.LogFormatterSciNotation())
 ax.set_yticklabels(yticks)
 _, xmax = ax.get_xlim()
 ax.set_xlim([1, xmax])
+# =============================================================================
+
+# panel labels
+for s, ax in zip("abcd", axes.flat):
+    ax.text(s=s, **panel_labels, transform=ax.transAxes)
+
 plt.tight_layout()
 # plt.savefig(fig_path + fig_name, bbox_inches="tight")
 plt.show()
 
 
-# %% Calc Slope_l = 3: too large slope
+# % Calc Slope_l = 3: too large slope
 # =============================================================================
 # Not needed
 # slope_l = 3
@@ -642,7 +659,7 @@ plt.show()
 #                              nlv=.00025, normalize=False)
 # =============================================================================
 
-# %% Convert lowN to fif and filter: takes forever, filter not neccessary
+# % Convert lowN to fif and filter: takes forever, filter not neccessary
 # =============================================================================
 # srate_lowN = 10000
 # filter_params_lowN = {"freqs": np.arange(50, 5001, 50),
