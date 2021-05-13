@@ -23,7 +23,8 @@ def osc_signals(slope=1, periodic_params=None, nlv=None,
         Aperiodic 1/f exponent. The default is 1.
     periodic_params : list of tuples, optional
         Oscillations parameters as list of tuples in form
-        [(frequency, amplitude, width), (frequency, amplitude, width)].
+        [(frequency, amplitude, width), (frequency, amplitude, width)] for
+        two oscillations.
         The default is None.
     nlv : float, optional
         Level of white noise. The default is None.
