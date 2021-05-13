@@ -17,7 +17,6 @@ def osc_signals(slope=1, periodic_params=None, nlv=None, highpass=True,
                 srate=2400, duration=180, seed=1):
     """
     Generate colored noise with optionally added oscillations.
-
     Parameters
     ----------
     slope : float, optional
@@ -38,7 +37,6 @@ def osc_signals(slope=1, periodic_params=None, nlv=None, highpass=True,
         Duration of the signal in seconds. The default is 180.
     seed : int, optional
         Seed for reproducability. The default is 1.
-
     Returns
     -------
     noise : ndarray
@@ -93,10 +91,9 @@ def osc_signals(slope=1, periodic_params=None, nlv=None, highpass=True,
 
 # %% PARAMETERS
 
-# Signal params
+# Signal
 srate = 2400
 nperseg = srate  # 4*srate too high resolution for fooof
-welch_params = dict(fs=srate, nperseg=nperseg)
 
 # Save Path
 fig_path = "../paper_figures/"
@@ -129,185 +126,171 @@ c_high = "orangered"
 c_ground = "grey"
 
 
-# %% a) Sim Toy Signal with Three Oscillations and Fit
+# %% a) Sim Signal and fit
 
 # fit in all frequency ranges from 1 to 80...
-lower_fitting_border = range(1, 80)
+lower_fitting_border = np.arange(0, 80, 1)
 # ... to 100 Hz
 upper_fitting_border = 100
 
 # Oscillations parameters:
-freq1, freq2, freq3 = 5, 15, 25  # Hz
+osc_freq1, osc_freq2, osc_freq3 = 5, 15, 25
 amp1, amp2, amp3 = 5, 4, 1
 width1, width2, width3 = 1, .1, 2
-toy_slope = 1
 
-periodic_params = [(freq1, amp1, width1),
-                   (freq2, amp2, width2),
-                   (freq3, amp3, width3)]
+periodic_params = [(osc_freq1, amp1, width1),
+                   (osc_freq2, amp2, width2),
+                   (osc_freq3, amp3, width3)]
 
-# Sim Toy Signal
-_, toy_signal = osc_signals(slope=toy_slope, periodic_params=periodic_params)
-freq, toy_psd = sig.welch(toy_signal, **welch_params)
+signals = osc_signals(periodic_params=periodic_params)
+freq, noise_psd = sig.welch(signals[1], fs=srate, nperseg=nperseg)
 
 # Filter 1-600Hz
-filt = (freq > 0) & (freq <= 600)
-freq = freq[filt]
-toy_psd = toy_psd[filt]
+freq = freq[1:601]
+noise_psd = noise_psd[1:601]
 
-# Fit fooof and subtract ground truth to obtain fitting error
-fit_errors = []
-fm = FOOOF(verbose=None)
+# Calc fooof vary freq ranges
+errors1 = []
 for low in lower_fitting_border:
-    freq_range = (low, upper_fitting_border)
-    fm.fit(freq, toy_psd, freq_range)
+    fm = FOOOF(verbose=None)
+    fm.fit(freq, noise_psd, [low, upper_fitting_border])
     exp = fm.get_params("aperiodic", "exponent")
-    error = np.abs(toy_slope - exp)
-    fit_errors.append(error)
+    error = 1 - exp
+    error = np.abs(error)
+    errors1.append(error)
 
 
-# %% B: Load and Fit
+# %% B: Load and fit
+ch = 'STN_L23'
 
 # Load data
-data_path = "../data/Fig2/"
-fname10 = "subj10_on_R8_raw.fif"
+path = "../data/Fig2/"
+fname10_on = "subj10_on_R8_raw.fif"
 
-sub10 = mne.io.read_raw_fif(data_path + fname10, preload=True)
+sub10_on = mne.io.read_raw_fif(path + fname10_on, preload=True)
 
-sub10.pick_channels(["STN_L23"])
+sub10_on.pick_channels([ch])
 
-# Notch Filter
 filter_params = {"freqs": np.arange(50, 601, 50),
                  "notch_widths": .5,
                  "method": "spectrum_fit"}
-sub10.notch_filter(**filter_params)
 
-# Convert to numpy and calc PSD
-start = int(0.5*srate)  # artefacts in beginning and end
-stop = int(185*srate)
-sub10 = sub10.get_data(start=start, stop=stop)[0]
-freq, spec10 = sig.welch(sub10, **welch_params)
+sub10_on.notch_filter(**filter_params)
 
-# Filter above highpass and below lowpass
-freq = freq[filt]
-spec10 = spec10[filt]
+welch_params = {"fmin": 1,
+                "fmax": 600,
+                "tmin": 0.5,
+                "tmax": 185,
+                "n_fft": srate,
+                "n_overlap": srate // 2,
+                "average": "mean"}
 
-# Set common 1/f fitting ranges
-frange1 = (1, 95)
+spec10_on, freq = psd_welch(sub10_on, **welch_params)
+spec10_on = spec10_on[0]
+
+frange1 = (1, 95)  # 96 -> a = 0.70
 frange2 = (30, 45)
 frange3 = (40, 60)
 frange4 = (1, 45)
 
-# Set corresponding fooof fitting parameters
-peak_width_limits = (1, 100)  # huge beta peak spans from 10 to almost 100 Hz
-max_n_peaks = 0  # some fitting ranges try to avoid oscillations peaks
-fooof_params1 = dict(peak_width_limits=peak_width_limits, verbose=False)
-fooof_params2 = dict(max_n_peaks=max_n_peaks, verbose=False)
-fooof_params3 = dict(max_n_peaks=max_n_peaks, verbose=False)
-fooof_params4 = dict(peak_width_limits=peak_width_limits, verbose=False)
+fit_params = [(frange1, dict(peak_width_limits=[1, 100], verbose=False), c_fit1),
+              # (frange2, dict(peak_width_limits=[1, 100]), c_fit2),
+              (frange2, dict(max_n_peaks=0, verbose=False), c_fit2),
+              (frange3, dict(max_n_peaks=0, verbose=False), c_fit3),
+              (frange4, dict(peak_width_limits=[1, 100], verbose=False), c_fit4)]
 
-# Combine
-fit_params = [(frange1, fooof_params1, c_fit1),
-              (frange2, fooof_params2, c_fit2),
-              (frange3, fooof_params3, c_fit3),
-              (frange4, fooof_params4, c_fit4)]
-
-# Fit for diferent ranges
-fit_ranges = []
-for frange, fooof_params, plot_color in fit_params:
-    # fit
-    fm = FOOOF(**fooof_params)
-    fm.fit(freq, spec10, frange)
+fits = []
+for i in range(4):
+    fm = FOOOF(**fit_params[i][1])
+    fm.fit(freq, spec10_on, fit_params[i][0])
+    exp = fm.aperiodic_params_[1]
     ap_fit = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
-    plot_args = (fm.freqs, 10**ap_fit, plot_color)
-
-    # set plot labels
-    freq_low, freq_up = frange
-    freq_str = f"{freq_low}-{freq_up}Hz"
-    if freq_low == 1:  # add extra spaces if freq_low=1 for aligned legend
-        freq_str = "  " + freq_str
-    exp = fm.get_params("aperiodic", "exponent")
-    plot_label = freq_str + f" a={exp:.2f}"
-    plot_kwargs = dict(lw=3, ls="--", label=plot_label)
-
-    # append plot argument (tuple) and plot_kwargs (dict) as tuple
-    fit_ranges.append((plot_args, plot_kwargs))
+    fits.append((fm, exp, ap_fit))
 
 
 # %% C: Reproduce PSD
 
-nlv = 0.0003  # white noise level
-slope = 1  # 1/f slope
+nlv = 0.00026
+#nlv = 0.0003
+slope = 1.5
+# No oscillations
+periodic_params = [(2, 3.1, 6), (12, 1, 2.5), (18, 1, 2),
+                   (27, 26, 7), (55, 8, 20), (360, 25, 60)]
 
-# Oscillations as (frequency, amplitude, width)
-alpha = (12, 1, 2.5)
-low_beta = (18, 1, 2)
-high_beta = (27, 26, 7)
-gamma = (55, 8, 20)
-HFO = (360, 25, 60)
-oscillations = (alpha, low_beta, high_beta, gamma, HFO)
 
-# Delta Oscillations
-delta_freq = 2
-delta_width = 6
-low_delta = (delta_freq, 1.8, delta_width)
-med_delta = (delta_freq, 0.3, delta_width)
-high_delta = (delta_freq, 3.6, delta_width)
+# Make noise
 
-osc_params_low = [low_delta, *oscillations]
-osc_params_med = [med_delta, *oscillations]
-osc_params_high = [high_delta, *oscillations]
+pure1, pink1 = osc_signals(slope=slope, periodic_params=periodic_params,
+                           nlv=nlv)
 
-# Make signals
-aperiodic, osc_low = osc_signals(slope=slope,
-                                 periodic_params=osc_params_low,
-                                 nlv=nlv)
-aperiodic, osc_med = osc_signals(slope=slope,
-                                 periodic_params=osc_params_med,
-                                 nlv=nlv)
-aperiodic, osc_high = osc_signals(slope=slope,
-                                  periodic_params=osc_params_high,
-                                  nlv=nlv)
-
-# Calc PSD
-freq, psd_aperiodic = sig.welch(aperiodic, **welch_params)
-freq, psd_low = sig.welch(osc_low, **welch_params)
-freq, psd_med = sig.welch(osc_med, **welch_params)
-freq, psd_high = sig.welch(osc_high, **welch_params)
+freq, sim1 = sig.welch(pink1, fs=srate, nperseg=nperseg)
+freq, pure1 = sig.welch(pure1, fs=srate, nperseg=nperseg)
 
 # Bandpass filter between 1Hz and 600Hz
+filt = (freq > 0) & (freq <= 600)
 freq = freq[filt]
-psd_aperiodic = psd_aperiodic[filt]
-psd_low = psd_low[filt]
-psd_med = psd_med[filt]
-psd_high = psd_high[filt]
+sim1 = sim1[filt]
+pure1 = pure1[filt]
 
-# Normalize spectra to bring together real and simulated PSD.
-# We cannot use the 1Hz offset because we want to show the impact of Delta
-# oscillations -> so we normalize at the plateau by taking the median
-# (to avoid notch filter outliers) and divide
-plateau = (freq > 105) & (freq < 195)
-spec10_adj = spec10 / np.median(spec10[plateau])
-psd_aperiodic /= np.median(psd_aperiodic[plateau])
-psd_low /= np.median(psd_low[plateau])
-psd_med /= np.median(psd_med[plateau])
-psd_high /= np.median(psd_high[plateau])
+# Adjust offset for real spectrum
+# cannot be normalized at 1Hz due to Delta Offset
+spec10_on_adj = spec10_on / spec10_on[-1]
+sim1 /= sim1[-1]
+pure1 /= pure1[-1]
 
-# Fit real and simulated spectra
-fm = FOOOF(**fooof_params1)
-fm.fit(freq, spec10_adj, frange1)
+# oscillations
+periodic_params = [(2, 5.3, 6), (12, 1, 2.5), (18, 1, 2),
+                   (27, 26, 7), (55, 8, 20), (360, 25, 60)]
+
+
+_, pink1_deltaHigh = osc_signals(slope=slope, periodic_params=periodic_params,
+                                 nlv=nlv)
+
+freq, sim1_deltaHigh = sig.welch(pink1_deltaHigh, fs=srate, nperseg=nperseg)
+# Bandpass filter between 1Hz and 600Hz
+filt = (freq > 0) & (freq <= 600)
+freq = freq[filt]
+sim1_deltaHigh = sim1_deltaHigh[filt]
+
+# Adjust offset for real spectrum
+sim1_deltaHigh /= sim1_deltaHigh[-1]
+
+
+# oscillations
+
+periodic_params = [(2, 1.5, 6), (12, 1, 2.5), (18, 1, 2),
+                   (27, 26, 7), (55, 8, 20), (360, 25, 60)]
+
+_, pink1_deltaLow = osc_signals(slope=slope, periodic_params=periodic_params,
+                                nlv=nlv)
+pink1_deltaLow = pink1_deltaLow
+
+
+
+freq, sim1_deltaLow = sig.welch(pink1_deltaLow, fs=srate, nperseg=nperseg)
+# Bandpass filter between 1Hz and 600Hz
+filt = (freq > 0) & (freq <= 600)
+freq = freq[filt]
+sim1_deltaLow = sim1_deltaLow[filt]
+
+# Adjust offset for real spectrum
+sim1_deltaLow_adj = sim1_deltaLow / sim1_deltaLow[-1]
+
+# Fit
+fm = FOOOF(**fit_params[0][1])
+fm.fit(freq, spec10_on_adj, [1, 95])
 exp_LFP = fm.get_params('aperiodic_params', 'exponent')
 ap_fit_LFP = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
 
-fm.fit(freq, psd_low, frange1)
+fm.fit(freq, sim1_deltaLow_adj, [1, 95])
 exp_low = fm.get_params('aperiodic_params', 'exponent')
 ap_fit_low = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
 
-fm.fit(freq, psd_med, frange1)
+fm.fit(freq, sim1, [1, 95])
 exp_med = fm.get_params('aperiodic_params', 'exponent')
 ap_fit_med = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
 
-fm.fit(freq, psd_high, frange1)
+fm.fit(freq, sim1_deltaHigh, [1, 95])
 exp_high = fm.get_params('aperiodic_params', 'exponent')
 ap_fit_high = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
 
@@ -346,47 +329,51 @@ mask = (freq <= 100)
 xticks = []
 tick_dic = dict(xticks=xticks, xticklabels=xticks)
 anno_dic = dict(x=100, ha="right", fontsize=9)
-ax.loglog(freq[mask], toy_psd[mask], c_sim)
-hline_height_log = (8e-8, 5.58e-9, 3.9e-10)
-ax.hlines(hline_height_log[0], freq1, upper_fitting_border, color=c_range1, ls="--", label="Fit range 1")
-ax.hlines(hline_height_log[1], freq2, upper_fitting_border, color=c_range2, ls="--", label="Fit range 2")
-ax.hlines(hline_height_log[2], freq3, upper_fitting_border, color=c_range3, ls="--",  label="Fit range 3")
+ax.loglog(freq[mask], noise_psd[mask], c_sim)
+hlines_y = [8e-8, 5.58e-9, 3.9e-10]
+ax.hlines(hlines_y[0], 4, 100, color=c_range1, ls="--", label="Fit range 1")
+ax.hlines(hlines_y[1], 11, 100, color=c_range2, ls="--", label="Fit range 2")
+ax.hlines(hlines_y[2], 23, 100, color=c_range3, ls="--",  label="Fit range 3")
 ax.text(s="Fitting range: 4-100Hz", y=1.1e-7, **anno_dic)
 ax.text(s="11-100Hz", y=7.1e-9, **anno_dic)
 ax.text(s="23-100Hz", y=5.5e-10, **anno_dic)
 ax.text(s="a", **abc, transform=ax.transAxes)
-xlim_a = (1, 126)
-ax.set(**tick_dic, yticklabels=[], xlim=xlim_a,
+ax.set(**tick_dic, yticklabels=[],
        # xlabel="Frequency [Hz]",
        ylabel="PSD [a.u.]")
 
 ax = ax2
-ax.semilogx(lower_fitting_border, fit_errors, c_error)
+ax.semilogx(lower_fitting_border, errors1, c_error)
 ax.set(xlabel="Lower fitting range border [Hz]", ylabel="Fitting error")
-hline_height = (1, .7, .4)
-ax.hlines(hline_height[0], freq1, upper_fitting_border, color=c_range1, ls="--")
-ax.hlines(hline_height[1], freq2, upper_fitting_border, color=c_range2, ls="--")
-ax.hlines(hline_height[2], freq3, upper_fitting_border, color=c_range3, ls="--")
+ax.hlines(1, 4, 100, color=c_range1, ls="--")
+ax.hlines(.7, 11, 100, color=c_range2, ls="--")
+ax.hlines(.4, 23, 100, color=c_range3, ls="--")
 # xticks = [1, 4, 11, 23, 100]
 xticks = [1, 10, 100]
 yticks = [0, 1]
-tick_dic = dict(xticks=xticks, xticklabels=xticks, yticks=yticks, xlim=xlim_a)
+tick_dic = dict(xticks=xticks, xticklabels=xticks,  yticks=yticks)
 ax.set(**tick_dic)
 
 
 # b)
 
 ax = ax3
-ax.loglog(freq, spec10, c=c_real)
-for fit_range in fit_ranges:
-
-    ax.loglog(*fit_range[0], **fit_range[1])
+ax.loglog(freq, spec10_on, c=c_real)
+for i in range(4):
+    fit = fits[i][0].freqs, 10**fits[i][2], fit_params[i][2]
+    freq1 = fit_params[i][0][0]
+    freq2 = fit_params[i][0][1]
+    if freq1 == 1:
+        freq_str = f"  {freq1}-{freq2}Hz"
+    else:
+        freq_str = f"{freq1}-{freq2}Hz"
+    kwargs = dict(lw=3, ls="--", label=freq_str + f" a={fits[i][1]:.2f}")
+    ax.loglog(*fit, **kwargs)
 xticks = [1, 10, 100, 600]
 yticks = [5e-3, 5e-2, 5e-1]
 yticklabels = [5e-3, None, .5]
-xlim_b = (1, 826)
 ax.set(xlabel="Frequency [Hz]", xticks=xticks,
-       xticklabels=xticks, yticks=yticks, yticklabels=yticklabels, xlim=xlim_b)
+       xticklabels=xticks, yticks=yticks, yticklabels=yticklabels)
 ax.set_ylabel(r"PSD [$\mu$$V^2$/Hz]", labelpad=-30)
 ax.tick_params(axis="y", length=5, width=1.5)
 leg = ax.legend(frameon=True, fontsize=10, bbox_to_anchor=(.55, 1.03))
@@ -398,11 +385,11 @@ ax.text(s="b", **abc, transform=ax.transAxes)
 
 ax = ax4
 
-real = freq, spec10_adj
+real = freq, spec10_on_adj
 real_fit = fm.freqs, 10**ap_fit_LFP, "--"
 real_kwargs = dict(c=c_real, alpha=.3, lw=2)
 
-low = freq, psd_low, c_low
+low = freq, sim1_deltaLow_adj, c_low
 low_fit = fm.freqs, 10**ap_fit_low, "--"
 low_kwargs = dict(c=c_low, lw=2)
 x_arrow = 0.9
@@ -416,12 +403,12 @@ arr_pos_low = ("",
 #                (x_arrow, 10**ap_fit_LFP[0] * 1.))
 # =============================================================================
 
-med = freq, psd_med, c_med
+med = freq, sim1, c_med
 med_fit = fm.freqs, 10**ap_fit_med, "--"
 med_kwargs = dict(c=c_med, lw=2)
 # arr_pos_med = "", (x_arrow, 10**ap_fit_med[0]), (x_arrow, 10**ap_fit_LFP[0])
 
-high = freq, psd_high, c_high
+high = freq, sim1_deltaHigh, c_high
 high_fit = fm.freqs, 10**ap_fit_high, "--"
 high_kwargs = dict(c=c_high, lw=2)
 arr_pos_high = ("",
@@ -433,7 +420,7 @@ arr_pos_high = ("",
 #                 (x_arrow, 10**ap_fit_LFP[0] * 1))
 # =============================================================================
 
-ground = freq, psd_aperiodic, c_ground
+ground = freq, pure1, c_ground
 ground_kwargs = dict(lw=.5)
 
 fill_mask = freq <= 4
@@ -448,7 +435,7 @@ ax.loglog(*ground, **ground_kwargs)
 ax.loglog(*low)
 ax.loglog(*low_fit, **low_kwargs, label=f"fooof sim1 a={exp_low:.2f}")
 ax.fill_between(freq[fill_mask],
-                psd_low[fill_mask], psd_aperiodic[fill_mask],
+                sim1_deltaLow_adj[fill_mask], pure1[fill_mask],
                 color=c_low, **fill_dic)
 ax.set_ylabel("PSD [a.u.]")
 ax.set(**tick_dic)
@@ -464,7 +451,7 @@ ax.loglog(*ground, **ground_kwargs)
 real_line, = ax.loglog(*real_fit, **real_kwargs)
 ax.loglog(*med_fit, **med_kwargs, label=f"fooof sim2 a={exp_med:.2f}")
 ax.fill_between(freq[fill_mask],
-                psd_med[fill_mask], psd_aperiodic[fill_mask], color=c_med, **fill_dic)
+                sim1[fill_mask], pure1[fill_mask], color=c_med, **fill_dic)
 ax.set_yticks([], minor=True)
 ax.set_xlabel("Fitting range: 1-95 Hz")
 ax.spines["left"].set_visible(False)
@@ -482,7 +469,7 @@ ax.loglog(*high)
 real_line, = ax.loglog(*real_fit, **real_kwargs)
 ax.loglog(*high_fit, **high_kwargs, label=f"fooof sim3 a={exp_high:.2f}")
 ax.fill_between(freq[fill_mask],
-                psd_high[fill_mask], psd_aperiodic[fill_mask],
+                sim1_deltaHigh[fill_mask], pure1[fill_mask],
                 color=c_high, **fill_dic)
 ax.loglog(*ground, **ground_kwargs, label="1/f + noise")
 ax.set_yticks([], minor=True)
@@ -513,40 +500,40 @@ plt.show()
 # 
 # # Make noise
 # 
-# aperiodic, pink1 = osc_signals(slope=slope, periodic_params=periodic_params,
+# pure1, pink1 = osc_signals(slope=slope, periodic_params=periodic_params,
 #                            nlv=nlv)
 # 
 # freq, sim1 = sig.welch(pink1, fs=srate, nperseg=nperseg)
-# freq, aperiodic = sig.welch(aperiodic, fs=srate, nperseg=nperseg)
+# freq, pure1 = sig.welch(pure1, fs=srate, nperseg=nperseg)
 # 
 # # Bandpass filter between 1Hz and 600Hz
 # filt = (freq > 0) & (freq <= 600)
 # freq = freq[filt]
 # sim1 = sim1[filt]
-# aperiodic = aperiodic[filt]
+# pure1 = pure1[filt]
 # 
 # # Adjust offset for real spectrum
 # # cannot be normalized at 1Hz due to Delta Offset
-# spec10 = spec10 / spec10[-1]
+# spec10_on_adj = spec10_on / spec10_on[-1]
 # sim1 /= sim1[-1]
-# aperiodic /= aperiodic[-1]
+# pure1 /= pure1[-1]
 # 
 # # oscillations
 # periodic_params = [(2, 2.5, 1), (12, 7, 10), (18, 2, 5),
 #                    (27, 30, 7), (55, 9, 15), (360, 30, 60)]
 # 
 # 
-# _, osc_high = osc_signals(slope=slope, periodic_params=periodic_params,
+# _, pink1_deltaHigh = osc_signals(slope=slope, periodic_params=periodic_params,
 #                                  nlv=nlv)
 # 
-# freq, psd_high = sig.welch(osc_high, fs=srate, nperseg=nperseg)
+# freq, sim1_deltaHigh = sig.welch(pink1_deltaHigh, fs=srate, nperseg=nperseg)
 # # Bandpass filter between 1Hz and 600Hz
 # filt = (freq > 0) & (freq <= 600)
 # freq = freq[filt]
-# psd_high = psd_high[filt]
+# sim1_deltaHigh = sim1_deltaHigh[filt]
 # 
 # # Adjust offset for real spectrum
-# psd_high /= psd_high[-1]
+# sim1_deltaHigh /= sim1_deltaHigh[-1]
 # 
 # 
 # # oscillations
@@ -554,28 +541,28 @@ plt.show()
 # periodic_params = [(2, 0, 1), (12, 3, 10), (18, 2, 5),
 #                    (27, 30, 7), (55, 9, 15), (360, 30, 60)]
 # 
-# _, osc_low = osc_signals(slope=slope, periodic_params=periodic_params,
+# _, pink1_deltaLow = osc_signals(slope=slope, periodic_params=periodic_params,
 #                                 nlv=nlv)
-# osc_low = osc_low
+# pink1_deltaLow = pink1_deltaLow
 # 
 # 
 # 
-# freq, sim1_deltaLow = sig.welch(osc_low, fs=srate, nperseg=nperseg)
+# freq, sim1_deltaLow = sig.welch(pink1_deltaLow, fs=srate, nperseg=nperseg)
 # # Bandpass filter between 1Hz and 600Hz
 # filt = (freq > 0) & (freq <= 600)
 # freq = freq[filt]
 # sim1_deltaLow = sim1_deltaLow[filt]
 # 
 # # Adjust offset for real spectrum
-# psd_low = sim1_deltaLow / sim1_deltaLow[-1]
+# sim1_deltaLow_adj = sim1_deltaLow / sim1_deltaLow[-1]
 # 
 # # Fit
 # fm = FOOOF(**fit_params[0][1])
-# fm.fit(freq, spec10, [1, 95])
+# fm.fit(freq, spec10_on_adj, [1, 95])
 # exp_LFP = fm.get_params('aperiodic_params', 'exponent')
 # ap_fit_LFP = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
 # 
-# fm.fit(freq, psd_low, [1, 95])
+# fm.fit(freq, sim1_deltaLow_adj, [1, 95])
 # exp_low = fm.get_params('aperiodic_params', 'exponent')
 # ap_fit_low = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
 # 
@@ -583,7 +570,7 @@ plt.show()
 # exp_med = fm.get_params('aperiodic_params', 'exponent')
 # ap_fit_med = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
 # 
-# fm.fit(freq, psd_high, [1, 95])
+# fm.fit(freq, sim1_deltaHigh, [1, 95])
 # exp_high = fm.get_params('aperiodic_params', 'exponent')
 # ap_fit_high = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
 # 
@@ -651,7 +638,7 @@ plt.show()
 # # b)
 # 
 # ax = ax3
-# ax.loglog(freq, spec10, c=c_real)
+# ax.loglog(freq, spec10_on, c=c_real)
 # for i in range(4):
 #     fit = fits[i][0].freqs, 10**fits[i][2], fit_params[i][2]
 #     freq1 = fit_params[i][0][0]
@@ -678,11 +665,11 @@ plt.show()
 # 
 # ax = ax4
 # 
-# real = freq, spec10
+# real = freq, spec10_on_adj
 # real_fit = fm.freqs, 10**ap_fit_LFP, "--"
 # real_kwargs = dict(c=c_real, alpha=.3, lw=2)
 # 
-# low = freq, psd_low, c_low
+# low = freq, sim1_deltaLow_adj, c_low
 # low_fit = fm.freqs, 10**ap_fit_low, "--"
 # low_kwargs = dict(c=c_low, lw=2)
 # x_arrow = 0.9
@@ -701,7 +688,7 @@ plt.show()
 # med_kwargs = dict(c=c_med, lw=2)
 # # arr_pos_med = "", (x_arrow, 10**ap_fit_med[0]), (x_arrow, 10**ap_fit_LFP[0])
 # 
-# high = freq, psd_high, c_high
+# high = freq, sim1_deltaHigh, c_high
 # high_fit = fm.freqs, 10**ap_fit_high, "--"
 # high_kwargs = dict(c=c_high, lw=2)
 # arr_pos_high = ("",
@@ -713,7 +700,7 @@ plt.show()
 # #                 (x_arrow, 10**ap_fit_LFP[0] * 1))
 # # =============================================================================
 # 
-# ground = freq, aperiodic, c_ground
+# ground = freq, pure1, c_ground
 # ground_kwargs = dict(lw=.5)
 # 
 # fill_mask = freq <= 4
@@ -728,7 +715,7 @@ plt.show()
 # ax.loglog(*low)
 # ax.loglog(*low_fit, **low_kwargs, label=f"fooof sim1 a={exp_low:.2f}")
 # ax.fill_between(freq[fill_mask],
-#                 psd_low[fill_mask], aperiodic[fill_mask],
+#                 sim1_deltaLow_adj[fill_mask], pure1[fill_mask],
 #                 color=c_low, **fill_dic)
 # ax.set_ylabel("PSD [a.u.]")
 # ax.set(**tick_dic)
@@ -744,7 +731,7 @@ plt.show()
 # real_line, = ax.loglog(*real_fit, **real_kwargs)
 # ax.loglog(*med_fit, **med_kwargs, label=f"fooof sim2 a={exp_med:.2f}")
 # ax.fill_between(freq[fill_mask],
-#                 sim1[fill_mask], aperiodic[fill_mask], color=c_med, **fill_dic)
+#                 sim1[fill_mask], pure1[fill_mask], color=c_med, **fill_dic)
 # ax.set_yticks([], minor=True)
 # ax.set_xlabel("Fitting range: 1-95 Hz")
 # ax.spines["left"].set_visible(False)
@@ -762,7 +749,7 @@ plt.show()
 # real_line, = ax.loglog(*real_fit, **real_kwargs)
 # ax.loglog(*high_fit, **high_kwargs, label=f"fooof sim3 a={exp_high:.2f}")
 # ax.fill_between(freq[fill_mask],
-#                 psd_high[fill_mask], aperiodic[fill_mask],
+#                 sim1_deltaHigh[fill_mask], pure1[fill_mask],
 #                 color=c_high, **fill_dic)
 # ax.loglog(*ground, **ground_kwargs, label="1/f + noise")
 # ax.set_yticks([], minor=True)
