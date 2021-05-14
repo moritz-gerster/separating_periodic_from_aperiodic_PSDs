@@ -31,8 +31,8 @@ def osc_signals(slope=1, periodic_params=None, nlv=None,
     normalize : float, optional
         Normalization factor. The default is 6.
     highpass : int, optional
-        The order of the butterworth highpass filter. The default is 4. If None
-        no filter will be applied.
+        The order of the butterworth highpass filter. The default is 4. If
+        None, no filter will be applied.
     srate : float, optional
         Sample rate of the signal. The default is 2400.
     duration : float, optional
@@ -525,7 +525,6 @@ axes_d = dict(xlabel=xlabel_d, xticks=xticks_d, xticklabels=xticks_d,
 
 # %% Plot Params
 
-fontsize = 10
 width = 7.25  # inches
 panel_fontsize = 12
 legend_fontsize = 9
@@ -572,29 +571,30 @@ ax.legend()
 # b)  =========================================================================
 ax = axes[0, 1]
 
-# Plot sub9
+# Plot spectra
 ax.loglog(*plot_sub9, zorder=6, label="LFP Sub. 9")
-ax.loglog(*fit_sub9, **line_fit, zorder=10, label=f"a={exp_sub9:.2f}")
-
-# Plot sim1
 ax.loglog(*plot_osc1, zorder=5, label="Sim a=1")
-ax.loglog(*fit1, **line_fit, zorder=9, label=f"a={exp1:.2f}")
-ax.loglog(*plot_noise1, lw=lw_noise, zorder=1, label="1/f + noise")
-
-# Plot ground truth sim1
-ax.loglog(*plot_ground1, **line_ground, zorder=4, label=f"a={slope1:.0f}")
-
-# Plot sim2
 ax.loglog(*plot_osc2, zorder=7, label="Sim a=2")
-ax.loglog(*fit2, **line_fit, zorder=8, label=f"a={exp2:.2f}")
-ax.loglog(*plot_noise2, zorder=2, lw=lw_noise, label="1/f + noise")
+
+# Plot fits
+ax.loglog(*fit_sub9, **line_fit, zorder=10,
+          label=r"$a_{fit}$="f"{exp_sub9:.2f}")
+ax.loglog(*fit1, **line_fit, zorder=9, label=r"$a_{fit}$="f"{exp1:.2f}")
+ax.loglog(*fit2, **line_fit, zorder=8, label=r"$a_{fit}$="f"{exp2:.2f}")
 
 # Plot ground truth sim1
-ax.loglog(*plot_ground2, **line_ground, zorder=3, label=f"a={slope2:.0f}")
+# ax.loglog(*plot_ground1, **line_ground, zorder=4, label=f"a={slope1:.0f}")
+
+# Aperiodic components
+ax.loglog(*plot_noise1, lw=lw_noise, ls=":", zorder=1, label="1/f + noise")
+ax.loglog(*plot_noise2, zorder=2, lw=lw_noise, ls=":", label="1/f + noise")
+
+# Plot ground truth sim2
+# ax.loglog(*plot_ground2, **line_ground, zorder=3, label=f"a={slope2:.0f}")
 
 # Set axes
 ax.set(**axes_b)
-ax.legend(labelspacing=0.3)
+ax.legend()
 # =============================================================================
 
 # c)  =========================================================================
@@ -634,13 +634,15 @@ ax = axes[1, 1]
 
 # Plot low noise subject
 ax.loglog(*plot_sub_lowN_low, label="LFP low-noise")
-ax.loglog(*plot_lowN_fit_sub, **line_fit, label=f"a={exp_lowN:.2f}")
+ax.loglog(*plot_lowN_fit_sub, **line_fit,
+          label=r"$a_{fit}$="f"{exp_lowN:.2f}")
 ax.loglog(*plot_sub_lowN_high)
 ax.loglog(*plot_sub_lowN_plateau)
 
 # Plot low noise dummy
 ax.loglog(*dummy_lowN, label="Dummy low-noise")
-ax.loglog(*plot_lowN_fit_dummy, **line_fit, label=f"a={exp_lowN_d:.2f}")
+ax.loglog(*plot_lowN_fit_dummy, **line_fit,
+          label=r"$a_{fit}$="f"{exp_lowN_d:.2f}")
 ax.loglog(*plot_sub9, alpha=0.2, label="LFP Sub. 9")
 
 # Plot Plateau lines
@@ -659,49 +661,3 @@ for s, ax in zip("abcd", axes.flat):
 plt.tight_layout()
 plt.savefig(fig_path + fig_name, bbox_inches="tight")
 plt.show()
-
-
-# %% Calc Slope_l = 3: too large slope
-# =============================================================================
-# Not needed
-# slope_l = 3
-#
-# periodic_params_l = [(2, 0.07, .01),
-#                      (4, 1, 1.5),
-#                      (5, 1, 2),
-#                      (9.5, 4, 2),
-#                      (15, 5, 2.5),
-#                      (23, 19, 5),
-#                      (42, 20, 19),
-#                      (360, 35, 70)]
-#
-# noise_l, osc_l = osc_signals(slope=slope_l,
-#                              periodic_params=periodic_params_l,
-#                              nlv=.00025, normalize=False)
-# =============================================================================
-
-# %% Convert lowN to fif and filter: takes forever, filter not neccessary
-# =============================================================================
-# srate_lowN = 10000
-# filter_params_lowN = {"freqs": np.arange(50, 5001, 50),
-#                       "notch_widths": .5,
-#                       "method": "spectrum_fit"}
-#
-# info_sub = mne.create_info(["STN_L24"], srate_lowN)
-# info_dummy = mne.create_info(["F8-F4"], srate_lowN)
-#
-# sub_lowN_mne = mne.io.RawArray(sub_lowN[None, :], info_sub)
-# dummy_lowN_mne = mne.io.RawArray(dummy_lowN[None, :], info_dummy)
-#
-# # apply notch filter using mne
-# sub_lowN_mne.notch_filter(**filter_params_lowN, picks=["STN_L24"])
-# dummy_lowN_mne.notch_filter(**filter_params_lowN, picks=["F8-F4"])
-#
-# # convert to numpy
-# sub_lowN_mne = sub_lowN_mne.get_data()[0]
-# dummy_lowN_mne = dummy_lowN_mne.get_data()[0]
-#
-# # rename
-# sub_lowN = sub_lowN_mne
-# dummy_lowN = dummy_lowN_mne
-# =============================================================================

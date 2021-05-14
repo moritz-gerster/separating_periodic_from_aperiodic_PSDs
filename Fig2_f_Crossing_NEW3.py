@@ -9,7 +9,6 @@ import mne
 from pathlib import Path
 from fooof import FOOOF
 from fooof.sim.gen import gen_aperiodic
-from mne.time_frequency import psd_welch
 import matplotlib.gridspec as gridspec
 
 
@@ -138,7 +137,7 @@ upper_fitting_border = 100
 
 # Oscillations parameters:
 freq1, freq2, freq3 = 5, 15, 25  # Hz
-amp1, amp2, amp3 = 5, 4, 1
+amp1, amp2, amp3 = 5, 2.5, 1
 width1, width2, width3 = 1, .1, 2
 toy_slope = 1
 
@@ -308,6 +307,9 @@ plot_psd_low = (freq, psd_low, c_low)
 plot_psd_med = (freq, psd_med, c_med)
 plot_psd_high = (freq, psd_high, c_high)
 
+# Summarize
+psd_delta_vary = [plot_psd_low, plot_psd_med, plot_psd_high]
+
 # Plot delta power
 delta_mask = (freq <= 4)
 
@@ -320,6 +322,10 @@ psd_high_delta = psd_high[delta_mask]
 plot_delta_low = (freq_delta, psd_low_delta, psd_aperiodic_delta)
 plot_delta_med = (freq_delta, psd_med_delta, psd_aperiodic_delta)
 plot_delta_high = (freq_delta, psd_high_delta, psd_aperiodic_delta)
+
+# Summarize
+delta_power = [plot_delta_low, plot_delta_med, plot_delta_high]
+
 
 # Fit real and simulated spectra
 fm_LFP = FOOOF(**fooof_params1)
@@ -337,6 +343,11 @@ exp_low = fm_low.get_params('aperiodic_params', 'exponent')
 exp_med = fm_med.get_params('aperiodic_params', 'exponent')
 exp_high = fm_high.get_params('aperiodic_params', 'exponent')
 
+# Summarize
+exponents = [exp_low, exp_med, exp_high]
+delta_labels = [f"fooof sim{i} a={exp:.2f}" for i, exp in enumerate(exponents)]
+
+
 ap_fit_LFP = gen_aperiodic(fm_LFP.freqs, fm_LFP.aperiodic_params_)
 ap_fit_low = gen_aperiodic(fm_low.freqs, fm_low.aperiodic_params_)
 ap_fit_med = gen_aperiodic(fm_med.freqs, fm_med.aperiodic_params_)
@@ -349,57 +360,86 @@ plot_fit_low = (fm_low.freqs, 10**ap_fit_low, "--")
 plot_fit_med = (fm_med.freqs, 10**ap_fit_med, "--")
 plot_fit_high = (fm_high.freqs, 10**ap_fit_high, "--")
 
+# Summarize
+psd_delta_fits = [plot_fit_low, plot_fit_med, plot_fit_high]
+
+
 spec10_kwargs = dict(c=c_real, alpha=.3, lw=2)
 aperiodic_kwargs = dict(lw=.5)
 low_kwargs = dict(c=c_low, lw=2)
 med_kwargs = dict(c=c_med, lw=2)
 high_kwargs = dict(c=c_high, lw=2)
 
+# Summarize
+delta_kwargs = [low_kwargs, med_kwargs, high_kwargs]
+colors_c = [c_low, c_med, c_high]
+
 
 # %% Plot params
+
+width = 7.25  # inches
+panel_fontsize = 12
+legend_fontsize1 = 9
+legend_fontsize2 = 10
+label_fontsize = 10
+tick_fontsize = 9
+annotation_fontsize = 9
+
+mpl.rcParams['xtick.labelsize'] = tick_fontsize
+mpl.rcParams['ytick.labelsize'] = tick_fontsize
+mpl.rcParams['axes.labelsize'] = label_fontsize
+mpl.rcParams['legend.fontsize'] = legend_fontsize1
 mpl.rcParams["axes.spines.right"] = False
 mpl.rcParams["axes.spines.top"] = False
 mpl.rcParams["font.size"] = 14
 
-anno_fontsize = 9
-legend_fontsize = 10
-legend_fontsize_c = 12
 
-abc = dict(x=0, y=1.04, fontsize=20, fontdict=dict(fontweight="bold"))
+abc = dict(x=0, y=1.04, fontsize=panel_fontsize,
+           fontdict=dict(fontweight="bold"))
 
 # a)
 # a1
-xticks_a1 = []
+xticklabels_a1 = []
+yticks_a = [1e-10, 1e-7]
 yticklabels_a1 = []
-xlim_a = (1, 126)
+xlim_a = (1, 100)
 ylabel_a1 = "PSD [a.u.]"
-axes_a1 = dict(xticks=xticks_a1, xticklabels=xticks_a1,
-               yticklabels=yticklabels_a1, xlim=xlim_a, ylabel=ylabel_a1)
+labelpad = 5
+axes_a1 = dict(xticklabels=xticklabels_a1, yticks=yticks_a,
+               yticklabels=yticklabels_a1, xlim=xlim_a)
+freqs123 = [freq1, freq2, freq3]
+colors123 = [c_range1, c_range2, c_range3]
+hline_height_log = (8e-8, 5.58e-9, 3.9e-10)
+text_height_log = (1.1e-7, 7.1e-9, 5.5e-10)
+text_dic = dict(x=100, ha="right", fontsize=annotation_fontsize)
+
 # a2
 xticks_a2 = [1, 10, 100]
 yticks_a2 = [0, 1]
 xlabel_a2 = "Lower fitting range border [Hz]"
 ylabel_a2 = "Fitting error"
 axes_a2 = dict(xticks=xticks_a2, xticklabels=xticks_a2, yticks=yticks_a2,
-               xlim=xlim_a, xlabel=xlabel_a2, ylabel=ylabel_a2)
+               xlim=xlim_a, xlabel=xlabel_a2)
+hline_height = (1, .7, .4)
 
 # b)
 xticks_b = [1, 10, 100, 600]
-yticks_b = [5e-3, 5e-2, 5e-1]
-yticklabels_b = [5e-3, None, .5]
+# yticks_b = [5e-3, 5e-2, 5e-1]
+# yticklabels_b = [r"5$\cdot10^{-3}$", r"5$\cdot10^{-2}$", r"5$\cdot10^{-1}$"]
 xlim_b = (1, 826)
 xlabel_b = "Frequency [Hz]"
 ylabel_b = r"PSD [$\mu$$V^2$/Hz]"
 axes_b = dict(xlabel=xlabel_b, xticks=xticks_b, xticklabels=xticks_b,
-              yticks=yticks_b, yticklabels=yticklabels_b, xlim=xlim_b)
+              # yticks=yticks_b, yticklabels=yticklabels_b,
+              xlim=xlim_b, ylabel=ylabel_b)
 
 # c)
 ylabel_c = "PSD [a.u.]"
 axes_c = dict(xticks=xticks_b, xticklabels=xticks_b,
               yticks=[])
 x_label_c2 = f"Fitting range: {frange1[0]}-{frange1[1]} Hz"
-leg_c = dict(ncol=3, frameon=True, fontsize=legend_fontsize_c,
-             labelspacing=0.1, bbox_to_anchor=(.9, .7))
+leg_c = dict(ncol=3, loc=10, fontsize=legend_fontsize2,
+             bbox_to_anchor=(.5, -.7))
 delta_fill_dic = dict(alpha=0.5)
 
 # Annotate increased/decreased delta power with arrows
@@ -429,12 +469,13 @@ arr_pos_high = dict(text="", xy=arr_head_high, xytext=arr_tail_high,
 # %% Plot
 
 # Prepare Gridspec
-fig = plt.figure(figsize=[9, 7.5], constrained_layout=True)
+fig = plt.figure(figsize=[8, width], constrained_layout=True)
 
-gs0 = gridspec.GridSpec(3, 1, figure=fig, height_ratios=[10, 1.5, 10])
+gs0 = gridspec.GridSpec(3, 1, figure=fig, height_ratios=[10, 1, 10])
 
 # a) and b)
-gs00 = gridspec.GridSpecFromSubplotSpec(2, 2, subplot_spec=gs0[0])
+gs00 = gridspec.GridSpecFromSubplotSpec(2, 2, subplot_spec=gs0[0],
+                                        width_ratios=[8, 10])
 ax1 = fig.add_subplot(gs00[0, 0])
 ax2 = fig.add_subplot(gs00[1, 0])
 ax3 = fig.add_subplot(gs00[:, 1])
@@ -450,6 +491,7 @@ ax4 = fig.add_subplot(gs02[0])
 ax5 = fig.add_subplot(gs02[1])
 ax6 = fig.add_subplot(gs02[2])
 
+c_axes = [ax4, ax5, ax6]
 
 # a)
 # a1
@@ -459,11 +501,6 @@ ax = ax1
 ax.loglog(*toy_plot)
 
 # Annotate fitting ranges
-freqs123 = [freq1, freq2, freq3]
-colors123 = [c_range1, c_range2, c_range3]
-hline_height_log = (8e-8, 5.58e-9, 3.9e-10)
-text_height_log = (1.1e-7, 7.1e-9, 5.5e-10)
-text_dic = dict(x=100, ha="right", fontsize=anno_fontsize)
 for i, (freq_low, color) in enumerate(zip(freqs123, colors123)):
     y = hline_height_log[i]
     xmin = freq_low
@@ -480,6 +517,7 @@ for i, (freq_low, color) in enumerate(zip(freqs123, colors123)):
 # Set axes
 ax.text(s="a", **abc, transform=ax.transAxes)
 ax.set(**axes_a1)
+ax.set_ylabel(ylabel_a1, labelpad=labelpad)
 
 # a2
 ax = ax2
@@ -488,7 +526,6 @@ ax = ax2
 ax.semilogx(*error_plot)
 
 # Annotate fitting ranges
-hline_height = (1, .7, .4)
 for i, (freq_low, color) in enumerate(zip(freqs123, colors123)):
     y = hline_height[i]
     xmin = freq_low
@@ -499,6 +536,7 @@ for i, (freq_low, color) in enumerate(zip(freqs123, colors123)):
 
 # Set axes
 ax.set(**axes_a2)
+ax.set_ylabel(ylabel_a2, labelpad=0)
 
 
 # b)
@@ -513,104 +551,92 @@ for fit_range in fit_ranges:
 
 # Set axes
 ax.set(**axes_b)
-ax.set_ylabel(ylabel_b, labelpad=-30)
-ax.tick_params(axis="y", length=4, width=1.4)
-ax.legend(fontsize=legend_fontsize)
+ax.legend()
 ax.text(s="b", **abc, transform=ax.transAxes)
 
 
 # c)
-# c1
-ax = ax4
 
-# Plot LFP and fooof fit
-ax.loglog(*plot_psd_spec10_adj, **spec10_kwargs, label="STN-LFP")
-ax.loglog(*plot_fit_spec10, **spec10_kwargs, label=f"fooof LFP a={exp_LFP:.2f}")
+# Make sure we have just one label for each repetitive plot
+spec10_label = ["STN-LFP", None, None]
+spec10_fit_label = [f"fooof LFP a={exp_LFP:.2f}", None, None]
+aperiodic_label = [None, None, "1/f + noise"]
 
-# Plot aperiodic component of sim
-ax.loglog(*plot_aperiodic, **aperiodic_kwargs)
+arrows = [arr_pos_low, None, arr_pos_high]
 
-# Plot sim low delta power and fooof fit
-ax.loglog(*plot_psd_low)
-ax.loglog(*plot_fit_low, **low_kwargs, label=f"fooof sim1 a={exp_low:.2f}")
+for i, ax in enumerate(c_axes):
 
-# Indicate delta power as fill between aperiodic component and full spectrum
-ax.fill_between(*plot_delta_low, color=c_low, **delta_fill_dic)
+    # Plot LFP and fooof fit
+    ax.loglog(*plot_psd_spec10_adj, **spec10_kwargs, label=spec10_label[i])
+    ax.loglog(*plot_fit_spec10, **spec10_kwargs, label=spec10_fit_label[i])
 
-# Draw arrow
-ax.annotate(**arr_pos_low)
+    # Plot aperiodic component of sim
+    ax.loglog(*plot_aperiodic, **aperiodic_kwargs, label=aperiodic_label[i])
 
-# Save legend handles labels
-handles, labels = ax.get_legend_handles_labels()
+    # Plot sim low delta power and fooof fit
+    ax.loglog(*psd_delta_vary[i])
+    ax.loglog(*psd_delta_fits[i], **delta_kwargs[i], label=delta_labels[i])
 
-# Set axes
-ax.set(**axes_c)
-ax.set_ylabel(ylabel_c)
-ax.text(s="c", **abc, transform=ax.transAxes)
+    # Indicate delta power as fill between aperiodic component
+    # and full spectrum
+    ax.fill_between(*delta_power[i], color=colors_c[i], **delta_fill_dic)
 
-# c2
-ax = ax5
+    # Draw arrow
+    if i != 1:
+        ax.annotate(**arrows[i])
+    else:
+        ax.set_xlabel(x_label_c2)
 
-# Plot LFP and fooof fit
-ax.loglog(*plot_psd_spec10_adj, **spec10_kwargs)
-ax.loglog(*plot_fit_spec10, **spec10_kwargs)
-
-# Plot sim medium delta power and fooof fit
-ax.loglog(*plot_psd_med)
-ax.loglog(*plot_fit_med, **med_kwargs, label=f"fooof sim2 a={exp_med:.2f}")
-
-# Plot aperiodic component of sim
-ax.loglog(*plot_aperiodic, **aperiodic_kwargs)
-
-# Indicate delta power as fill between aperiodic component and full spectrum
-ax.fill_between(*plot_delta_med, color=c_med, **delta_fill_dic)
-
-# Save legend handles labels
-hands, labs = ax.get_legend_handles_labels()
-handles.extend(hands)
-labels.extend(labs)
-
-# Set axes
-ax.set(**axes_c)
-ax.set_yticks([], minor=True)
-ax.set_xlabel(x_label_c2)
-ax.spines["left"].set_visible(False)
-
-# c3
-ax = ax6
-
-# Plot LFP and fooof fit
-ax.loglog(*plot_psd_spec10_adj, **spec10_kwargs)
-ax.loglog(*plot_fit_spec10, **spec10_kwargs)
-
-# Plot sim high delta power and fooof fit
-ax.loglog(*plot_psd_high)
-ax.loglog(*plot_fit_high, **high_kwargs, label=f"fooof sim3 a={exp_high:.2f}")
-
-# Indicate delta power as fill between aperiodic component and full spectrum
-ax.fill_between(*plot_delta_high, color=c_high, **delta_fill_dic)
-
-# Plot aperiodic component of sim
-ax.loglog(*plot_aperiodic, **aperiodic_kwargs, label="1/f + noise")
-
-# Draw arrow
-ax.annotate(**arr_pos_high)
-
-# Save legend handles labels
-hands, labs = ax.get_legend_handles_labels()
-handles.extend(hands)
-labels.extend(labs)
-
-# Set axes
-ax.set(**axes_c)
-ax.set_yticks([], minor=True)
-ax.spines["left"].set_visible(False)
+    # Save legend handles labels and set axes
+    if i == 0:
+        handles, labels = ax.get_legend_handles_labels()
+        ax.set_ylabel(ylabel_c, labelpad=labelpad)
+        ax.text(s="c", **abc, transform=ax.transAxes)
+    else:
+        hands, labs = ax.get_legend_handles_labels()
+        handles.extend(hands)
+        labels.extend(labs)
+        ax.spines["left"].set_visible(False)
+        ax.set_yticks([], minor=True)
+    ax.set(**axes_c)
 
 # Set legend between subplots
 leg = ax_leg.legend(handles, labels, **leg_c)
 leg.set_in_layout(False)
 for lh in leg.legendHandles:
     lh.set_alpha(1)
-plt.savefig(fig_path + fig_name, bbox_inches="tight")
 
+plt.savefig(fig_path + fig_name, bbox_inches="tight")
 plt.show()
+
+# %% Plot Supp Mat b
+
+"""
+Make supp. fooof fits for b) and c) and maybe one example of a)
+"""
+
+# =============================================================================
+# fig, axes = plt.subplots(2, 4, figsize=[16, 8])
+# for i in range(4):
+#     ax = axes[0, i]
+#     kwargs = dict(add_legend=False,
+#                   aperiodic_kwargs=dict(color=fit_params[i][2], alpha=1),
+#                   data_kwargs=dict(color=c_real))
+#     title = f"{fit_params[i][0][0]}-{fit_params[i][0][1]}Hz"
+#     fits[i][0].plot(ax=ax, plt_log=True, **kwargs)
+#     ax.set_title(title, fontsize=30)
+#     ax.spines['right'].set_visible(True)
+#     ax.spines['top'].set_visible(True)
+#     if i > 0:
+#         ax.set_ylabel("")
+# 
+#     ax = axes[1, i]
+#     fits[i][0].plot(ax=ax, plt_log=False, **kwargs)
+#     if i > 0:
+#         ax.set_ylabel("")
+#     ax.spines['right'].set_visible(True)
+#     ax.spines['top'].set_visible(True)
+# plt.tight_layout()
+# plt.savefig(fig_path + fig_name[:-4] + "Supp.pdf", bbox_inches="tight")
+# plt.show()
+# =============================================================================
