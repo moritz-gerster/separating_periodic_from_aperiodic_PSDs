@@ -237,22 +237,23 @@ for frange, fooof_params, plot_color in fit_params:
 # %% C: Reproduce PSD
 
 nlv = 0.0003  # white noise level
-slope = 1  # 1/f slope
+slope = 1.5  # 1/f slope
 
 # Oscillations as (frequency, amplitude, width)
-alpha = (12, 1, 2.5)
-low_beta = (18, 1, 2)
-high_beta = (27, 26, 7)
-gamma = (55, 8, 20)
-HFO = (360, 25, 60)
+alpha = (12, 1.7, 3)
+low_beta = (18, 2, 2)
+high_beta = (27, 20, 6)
+gamma = (50, 6, 15)
+HFO = (360, 20, 60)
+
 oscillations = (alpha, low_beta, high_beta, gamma, HFO)
 
 # Delta Oscillations
 delta_freq = 2
 delta_width = 6
-low_delta = (delta_freq, 1.8, delta_width)
-med_delta = (delta_freq, 0.3, delta_width)
-high_delta = (delta_freq, 3.6, delta_width)
+low_delta = (delta_freq, 0, delta_width)
+med_delta = (delta_freq, 1.9, delta_width)
+high_delta = (delta_freq, 4.2, delta_width)
 
 osc_params_low = [low_delta, *oscillations]
 osc_params_med = [med_delta, *oscillations]
@@ -287,6 +288,7 @@ psd_high = psd_high[filt]
 # oscillations -> so we normalize at the plateau by taking the median
 # (to avoid notch filter outliers) and divide
 plateau = (freq > 105) & (freq < 195)
+
 spec10_adj = spec10 / np.median(spec10[plateau])
 psd_aperiodic /= np.median(psd_aperiodic[plateau])
 psd_low /= np.median(psd_low[plateau])
@@ -294,31 +296,36 @@ psd_med /= np.median(psd_med[plateau])
 psd_high /= np.median(psd_high[plateau])
 
 # Fit real and simulated spectra
-fm = FOOOF(**fooof_params1)
-fm.fit(freq, spec10_adj, frange1)
-exp_LFP = fm.get_params('aperiodic_params', 'exponent')
-ap_fit_LFP = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
+fm_LFP = FOOOF(**fooof_params1)
+fm_low = FOOOF(**fooof_params1)
+fm_med = FOOOF(**fooof_params1)
+fm_high = FOOOF(**fooof_params1)
 
-fm.fit(freq, psd_low, frange1)
-exp_low = fm.get_params('aperiodic_params', 'exponent')
-ap_fit_low = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
+fm_LFP.fit(freq, spec10_adj, frange1)
+fm_low.fit(freq, psd_low, frange1)
+fm_med.fit(freq, psd_med, frange1)
+fm_high.fit(freq, psd_high, frange1)
 
-fm.fit(freq, psd_med, frange1)
-exp_med = fm.get_params('aperiodic_params', 'exponent')
-ap_fit_med = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
+exp_LFP = fm_LFP.get_params('aperiodic_params', 'exponent')
+exp_low = fm_low.get_params('aperiodic_params', 'exponent')
+exp_med = fm_med.get_params('aperiodic_params', 'exponent')
+exp_high = fm_high.get_params('aperiodic_params', 'exponent')
 
-fm.fit(freq, psd_high, frange1)
-exp_high = fm.get_params('aperiodic_params', 'exponent')
-ap_fit_high = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
+ap_fit_LFP = gen_aperiodic(fm_LFP.freqs, fm_LFP.aperiodic_params_)
+ap_fit_low = gen_aperiodic(fm_low.freqs, fm_low.aperiodic_params_)
+ap_fit_med = gen_aperiodic(fm_med.freqs, fm_med.aperiodic_params_)
+ap_fit_high = gen_aperiodic(fm_high.freqs, fm_high.aperiodic_params_)
 
 
-# %% Plot
+# %% Plot params
 mpl.rcParams["axes.spines.right"] = False
 mpl.rcParams["axes.spines.top"] = False
 mpl.rcParams["font.size"] = 14
 
 abc = dict(x=0, y=1.04, fontsize=20, fontdict=dict(fontweight="bold"))
 
+
+# % Plot
 fig = plt.figure(figsize=[9, 7.5], constrained_layout=True)
 
 gs0 = gridspec.GridSpec(3, 1, figure=fig, height_ratios=[10, 1.5, 10])
@@ -343,8 +350,8 @@ ax6 = fig.add_subplot(gs02[2])
 
 ax = ax1
 mask = (freq <= 100)
-xticks = []
-tick_dic = dict(xticks=xticks, xticklabels=xticks)
+xticks_a = []
+tick_dic = dict(xticks=xticks_a, xticklabels=xticks_a)
 anno_dic = dict(x=100, ha="right", fontsize=9)
 ax.loglog(freq[mask], toy_psd[mask], c_sim)
 hline_height_log = (8e-8, 5.58e-9, 3.9e-10)
@@ -399,11 +406,11 @@ ax.text(s="b", **abc, transform=ax.transAxes)
 ax = ax4
 
 real = freq, spec10_adj
-real_fit = fm.freqs, 10**ap_fit_LFP, "--"
+real_fit = fm_LFP.freqs, 10**ap_fit_LFP, "--"
 real_kwargs = dict(c=c_real, alpha=.3, lw=2)
 
 low = freq, psd_low, c_low
-low_fit = fm.freqs, 10**ap_fit_low, "--"
+low_fit = fm_low.freqs, 10**ap_fit_low, "--"
 low_kwargs = dict(c=c_low, lw=2)
 x_arrow = 0.9
 # x_arrow = 1
@@ -417,12 +424,12 @@ arr_pos_low = ("",
 # =============================================================================
 
 med = freq, psd_med, c_med
-med_fit = fm.freqs, 10**ap_fit_med, "--"
+med_fit = fm_med.freqs, 10**ap_fit_med, "--"
 med_kwargs = dict(c=c_med, lw=2)
 # arr_pos_med = "", (x_arrow, 10**ap_fit_med[0]), (x_arrow, 10**ap_fit_LFP[0])
 
 high = freq, psd_high, c_high
-high_fit = fm.freqs, 10**ap_fit_high, "--"
+high_fit = fm_high.freqs, 10**ap_fit_high, "--"
 high_kwargs = dict(c=c_high, lw=2)
 arr_pos_high = ("",
                 (x_arrow, 10**ap_fit_high[0] * 1.1),
