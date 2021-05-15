@@ -1,8 +1,4 @@
-"""
-Fooof needs clearly separable (and ideally Gaussian) peaks.
-
-use epilepsy plot but make nice - CHECK
-"""
+"""Fooof needs clearly separable (and ideally Gaussian) peaks."""
 import numpy as np
 import scipy.signal as sig
 import matplotlib.pyplot as plt
@@ -10,12 +6,7 @@ from scipy.signal import sawtooth
 from fooof import FOOOF
 from scipy.stats import norm
 from fooof.sim.gen import gen_aperiodic
-
 import matplotlib as mpl
-
-mpl.rcParams["axes.spines.right"] = False
-mpl.rcParams["axes.spines.top"] = False
-mpl.rcParams['font.size'] = 14
 
 
 def osc_signals(samples, slopes, freq_osc=[], amp=[], width=[],
@@ -119,7 +110,7 @@ def ap_fit_label(psd: np.array, cond: str, freq: np.array,
                  freq_range: tuple,
                  fooof_params: dict) -> tuple:
     """
-    Return aperiodic fit and corr. label.
+    Return aperiodic fit and corresponding label.
 
     Parameters
     ----------
@@ -225,6 +216,12 @@ xticks1 = np.arange(0, (post_seiz-pre_seiz+1)/n, step=(5*srate_ep/n))
 # xticklabels = [(str(int(element))) for element in xticklabels]
 
 # %% Plot
+
+mpl.rcParams["axes.spines.right"] = False
+mpl.rcParams["axes.spines.top"] = False
+mpl.rcParams['font.size'] = 14
+
+
 fig, axes = plt.subplots(2, 2,  figsize=[12, 6],
                          gridspec_kw=dict(width_ratios=[1, .6]))
 

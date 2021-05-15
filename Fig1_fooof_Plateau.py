@@ -11,8 +11,8 @@ from fooof import FOOOF
 from fooof.sim.gen import gen_aperiodic
 
 
-def osc_signals(slope=1, periodic_params=None, nlv=None,
-                normalize=False, highpass=4, srate=2400,
+def osc_signals(slope, periodic_params=None, nlv=None,
+                highpass=4, srate=2400,
                 duration=180, seed=1):
     """
     Generate colored noise with optionally added oscillations.
@@ -76,15 +76,6 @@ def osc_signals(slope=1, periodic_params=None, nlv=None,
     # Create colored noise time series from amplitudes
     noise = irfft(amps)
     noise_osc = irfft(amps_osc)
-
-# =============================================================================
-#     # Normalize
-#     if normalize:
-#         noise_SD = noise.std()
-#         scaling = noise_SD / normalize
-#         noise /= scaling
-#         noise_osc /= scaling
-# =============================================================================
 
     # Add white noise
     if nlv:
@@ -243,7 +234,7 @@ psd_dummy_lowN = psd_dummy_lowN[mask]
 
 # Make noise
 slope_a = 2
-noise_params_a = dict(nlv=0.00005, highpass=False, seed=3, slope=slope_a)
+noise_params_a = dict(slope=slope_a, nlv=0.00005, highpass=False, seed=3)
 pink2, _ = osc_signals(**noise_params_a)
 
 # Calc PSD
@@ -317,13 +308,13 @@ osc_params2 = [(3, 0.3, .6),
                (42, 12, 15),
                (360, 25, 70)]
 
-noise1, osc1 = osc_signals(slope=slope1,
+noise1, osc1 = osc_signals(slope1,
                            periodic_params=osc_params1,
-                           nlv=.0002, normalize=False)
+                           nlv=.0002)
 
-noise2, osc2 = osc_signals(slope=slope2,
+noise2, osc2 = osc_signals(slope2,
                            periodic_params=osc_params2,
-                           nlv=.0002, normalize=False)
+                           nlv=.0002)
 
 # Calc Welch
 freq, psd_noise1 = sig.welch(noise1, **welch_params)

@@ -12,7 +12,7 @@ from fooof.sim.gen import gen_aperiodic
 import matplotlib.gridspec as gridspec
 
 
-def osc_signals(slope=1, periodic_params=None, nlv=None, highpass=True,
+def osc_signals(slope, periodic_params=None, nlv=None, highpass=True,
                 srate=2400, duration=180, seed=1):
     """
     Generate colored noise with optionally added oscillations.
@@ -146,7 +146,7 @@ periodic_params = [(freq1, amp1, width1),
                    (freq3, amp3, width3)]
 
 # Sim Toy Signal
-_, toy_signal = osc_signals(slope=toy_slope, periodic_params=periodic_params)
+_, toy_signal = osc_signals(toy_slope, periodic_params=periodic_params)
 freq, toy_psd = sig.welch(toy_signal, **welch_params)
 
 # Filter 1-100Hz
@@ -266,13 +266,13 @@ osc_params_med = [med_delta, *oscillations]
 osc_params_high = [high_delta, *oscillations]
 
 # Make signals
-aperiodic, osc_low = osc_signals(slope=slope,
+aperiodic, osc_low = osc_signals(slope,
                                  periodic_params=osc_params_low,
                                  nlv=nlv)
-aperiodic, osc_med = osc_signals(slope=slope,
+aperiodic, osc_med = osc_signals(slope,
                                  periodic_params=osc_params_med,
                                  nlv=nlv)
-aperiodic, osc_high = osc_signals(slope=slope,
+aperiodic, osc_high = osc_signals(slope,
                                   periodic_params=osc_params_high,
                                   nlv=nlv)
 
