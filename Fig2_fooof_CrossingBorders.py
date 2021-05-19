@@ -344,8 +344,9 @@ exp_med = fm_med.get_params('aperiodic_params', 'exponent')
 exp_high = fm_high.get_params('aperiodic_params', 'exponent')
 
 # Summarize
-exponents = [exp_low, exp_med, exp_high]
-delta_labels = [f"fooof sim{i} a={exp:.2f}" for i, exp in enumerate(exponents)]
+exponents = [("low", exp_low), ("med", exp_med), ("high", exp_high)]
+# delta_labels = [rf"fooof sim $\delta_{i+1}$ a={exp:.2f}" for i, exp in enumerate(exponents)]
+delta_labels = [f"fooof {pwr} delta a={exp:.2f}" for pwr, exp in exponents]
 
 
 ap_fit_LFP = gen_aperiodic(fm_LFP.freqs, fm_LFP.aperiodic_params_)
@@ -418,9 +419,10 @@ xticks_a2 = [1, 10, 100]
 yticks_a2 = [0, 1]
 xlabel_a2 = "Lower fitting range border [Hz]"
 ylabel_a2 = "Fitting error"
+ylim_a2 = (0, 1)
 axes_a2 = dict(xticks=xticks_a2, xticklabels=xticks_a2, yticks=yticks_a2,
-               xlim=xlim_a, xlabel=xlabel_a2)
-hline_height = (1, .7, .4)
+               xlim=xlim_a, xlabel=xlabel_a2, ylim=ylim_a2)
+hline_height = (2.17, 1.9, 1.59)
 
 # b)
 xticks_b = [1, 10, 100, 600]
@@ -505,9 +507,11 @@ for i, (freq_low, color) in enumerate(zip(freqs123, colors123)):
     y = hline_height_log[i]
     xmin = freq_low
     xmax = upper_fitting_border
-    coords = (y, xmin, xmax)
-    hline_dic = dict(color=color, ls="--")
-    ax.hlines(*coords, **hline_dic)
+    h_coords = (y, xmin, xmax)
+    # v_coords = (xmin, -10, y)
+    # hline_dic = dict(color=color, ls="--")
+    ax.hlines(*h_coords, color=color, ls="--")
+    #ax.vlines(*v_coords, clip_on=False, **hline_dic)
     s = f"{freq_low}-{xmax}Hz"
     if i == 0:
         s = "Fitting range: " + s
@@ -524,15 +528,19 @@ ax = ax2
 
 # Plot error
 ax.semilogx(*error_plot)
+ax.set_facecolor('none')  # for vertical lines
 
 # Annotate fitting ranges
+hline_dic = dict(ls="--", clip_on=False, alpha=0.3)
 for i, (freq_low, color) in enumerate(zip(freqs123, colors123)):
-    y = hline_height[i]
     xmin = freq_low
-    xmax = upper_fitting_border
-    coords = (y, xmin, xmax)
-    hline_dic = dict(color=color, ls="--")
-    ax.hlines(*coords, **hline_dic)
+    ymin = 0
+    ymax = hline_height[i]
+    # xmax = upper_fitting_border
+    # h_coords = (y, xmin, xmax)
+    v_coords = (xmin, ymin, ymax)
+    # ax.hlines(*h_coords, **hline_dic)
+    ax.vlines(*v_coords, color=color, **hline_dic)
 
 # Set axes
 ax.set(**axes_a2)
@@ -551,7 +559,15 @@ for fit_range in fit_ranges:
 
 # Set axes
 ax.set(**axes_b)
-ax.legend()
+# =============================================================================
+# leg = ax.legend(handlelength=3)
+# for handle in leg.legendHandles:
+#     handle.set_linewidth(2.6)
+# =============================================================================
+# decrease legend handle linewidth
+leg = ax.legend(handlelength=2)
+for handle in leg.legendHandles:
+    handle.set_linewidth(2.2)
 ax.text(s="b", **abc, transform=ax.transAxes)
 
 
@@ -570,12 +586,12 @@ for i, ax in enumerate(c_axes):
     ax.loglog(*plot_psd_spec10_adj, **spec10_kwargs, label=spec10_label[i])
     ax.loglog(*plot_fit_spec10, **spec10_kwargs, label=spec10_fit_label[i])
 
-    # Plot aperiodic component of sim
-    ax.loglog(*plot_aperiodic, **aperiodic_kwargs, label=aperiodic_label[i])
-
     # Plot sim low delta power and fooof fit
     ax.loglog(*psd_delta_vary[i])
     ax.loglog(*psd_delta_fits[i], **delta_kwargs[i], label=delta_labels[i])
+
+    # Plot aperiodic component of sim
+    ax.loglog(*plot_aperiodic, **aperiodic_kwargs, label=aperiodic_label[i])
 
     # Indicate delta power as fill between aperiodic component
     # and full spectrum
@@ -603,8 +619,8 @@ for i, ax in enumerate(c_axes):
 # Set legend between subplots
 leg = ax_leg.legend(handles, labels, **leg_c)
 leg.set_in_layout(False)
-for lh in leg.legendHandles:
-    lh.set_alpha(1)
+# for lh in leg.legendHandles:
+#    lh.set_alpha(1)
 
 plt.savefig(fig_path + fig_name, bbox_inches="tight")
 plt.show()

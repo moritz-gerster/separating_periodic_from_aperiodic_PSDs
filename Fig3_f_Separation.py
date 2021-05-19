@@ -208,7 +208,7 @@ ap_post_sim, lab_post_sim = ap_fit_label(saw_post, "Post", **fooof_inp)
 
 ticks_time = dict(length=6, width=1.5)
 ticks_psd = dict(length=4, width=1)
-# abc = dict(x=0, y=1.01, fontsize=14, fontdict=dict(fontweight="bold"))
+abc = dict(x=0, y=1.01, fontsize=14, fontdict=dict(fontweight="bold"))
 
 n = 10  # step size plotting
 xticks1 = np.arange(0, (post_seiz-pre_seiz+1)/n, step=(5*srate_ep/n))
@@ -255,7 +255,7 @@ rectangle_post = plt.Rectangle(((seiz_end-pre_seiz)/n, -1000),
 ax.add_patch(rectangle_post)
 ax.set_ylabel(fr"{cha_nm} [$\mu$V]", labelpad=-20)
 ax.tick_params(**ticks_time)
-# ax.text(s="a", **abc, transform=ax.transAxes)
+ax.text(s="a", **abc, transform=ax.transAxes)
 
 
 ax = axes[1, 0]
@@ -291,6 +291,7 @@ ax.set_yticks(yticks)
 ax.set_yticklabels([])
 ax.set_ylabel("Simulation [a.u.]", labelpad=15)
 ax.tick_params(**ticks_time)
+ax.text(s="b", **abc, transform=ax.transAxes)
 
 
 ax = axes[0, 1]
@@ -311,11 +312,17 @@ ax.set_xlabel("")
 xticks = [1, 10, 100]
 ax.set_xticks(xticks)
 ax.set_xticklabels([])
-yticks = [1e-2, 1, 1e2, 1e4]
+
+y_major = mpl.ticker.LogLocator(numticks=50)
+y_minor = mpl.ticker.LogLocator(subs=np.arange(.1, 1, .1), numticks=10)
+ax.yaxis.set_major_locator(y_major)
+ax.yaxis.set_minor_locator(y_minor)
+ax.yaxis.set_minor_formatter(mpl.ticker.NullFormatter())
+
+yticks = [1e-2, 1e-1, 1, 1e1, 1e2, 1e3, 1e4]
 ax.set_yticks(yticks)
-ax.set_yticklabels([r"$10^{-2}$", "", "", r"$10^4$"], fontsize=14)
+ax.set_yticklabels([r"$10^{-2}$", "", "", "", "", "", r"$10^4$"], fontsize=14)
 ax.tick_params(**ticks_psd)
-# ax.text(s="b", **abc, transform=ax.transAxes)
 
 ax = axes[1, 1]
 
@@ -333,7 +340,14 @@ ax.legend(loc=1, fontsize=10)
 ax.set_ylabel("")
 ax.set_xticks(xticks)
 ax.set_xticklabels(xticks, fontsize=14)
-yticks = [1e-3, 1e-1, 1e1, 1e3]
+
+y_major = mpl.ticker.LogLocator(numticks=50)
+y_minor = mpl.ticker.LogLocator(subs=np.arange(.1, 1, .1), numticks=10)
+ax.yaxis.set_major_locator(y_major)
+ax.yaxis.set_minor_locator(y_minor)
+ax.yaxis.set_minor_formatter(mpl.ticker.NullFormatter())
+
+yticks = [1e-3, 1e-2, 1e-1, 1, 1e1, 1e2, 1e3]
 ax.set_yticks(yticks)
 ax.set_yticklabels([])
 ax.set_xlabel("Frequency [Hz]", fontsize=14)

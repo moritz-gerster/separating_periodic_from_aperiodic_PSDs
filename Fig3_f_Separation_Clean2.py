@@ -319,16 +319,16 @@ seiz_len_samples = seiz_end_samples - seiz_start_samples  # behalten
 # Pre- and post-seizure evaluation:
 pre_seconds = 10  # start evaluation 10 seconds before seizure start  # behalten
 duration_seconds = 3 * pre_seconds# + seiz_len_samples / srate # plot time series  # eliminate
-
+duration_samples = duration_seconds * srate
 
 ####
-duration_samples = duration_seconds * srate  # plot time series
+#duration_samples = duration_seconds * srate  # plot time series
 post_samples = 2*pre_seconds*srate - seiz_len_samples
 
 pre_seiz_samples = int(seiz_start_samples - pre_seconds*srate)
-post_seiz_samples = int(pre_seiz_samples + duration_samples)
+post_seiz_samples = int(seiz_end_samples + pre_seconds*srate)
 
-post_seconds = seiz_start_samples / srate - pre_seconds + duration_seconds
+post_seconds = seiz_start_samples / srate + pre_seconds# + duration_seconds
 
 # Welch Params
 nperseg = srate
@@ -339,16 +339,33 @@ fooof_params = dict(verbose=False)
 
 # %% Get data
 
+# Seizure sample timepoints
+#seiz_start_samples = 87800  # behalten
+#seiz_end_samples = 91150  # behalten
+# seiz_len_samples = seiz_end_samples - seiz_start_samples  # behalten
 # Load data
-data_EEG = np.load(data_path + cha_nm + ".npy", allow_pickle=True)
+seiz_data = np.load(data_path + cha_nm + ".npy", allow_pickle=True)
+time_EEG = np.linspace(0, seiz_data.size//srate, num=seiz_data.size)
+
+# Select seizure time points
+seiz_data = seiz_data[pre_seiz_samples:post_seiz_samples]
+time_EEG = time_EEG[pre_seiz_samples:post_seiz_samples]
+
+np.save(data_path + cha_nm + "_short.npy", seiz_data)
+
+
+# Load data
+data_EEG = np.load(data_path + cha_nm + "_short.npy", allow_pickle=True)
 time_EEG = np.linspace(0, data_EEG.size//srate, num=data_EEG.size)
 
 # Select seizure time points
-data_EEG = data_EEG[pre_seiz_samples:post_seiz_samples]
-time_EEG = time_EEG[pre_seiz_samples:post_seiz_samples]
+seiz_start_samples = 10 * srate
+seiz_len_samples = 3350
+seiz_end_samples = seiz_start_samples + seiz_len_samples
 
 # Calc pre, post, and seizure PSDs
-EEG_psds = calc_PSDs(data_EEG, pre_seconds, post_samples, seiz_len_samples, srate, **welch_params)
+EEG_psds = calc_PSDs(data_EEG, pre_seconds, post_samples, seiz_len_samples,
+                     srate, **welch_params)
 freq, psd_EEG_pre, psd_EEG_seiz, psd_EEG_post = EEG_psds
 
 # Sawtooth Signal
@@ -360,7 +377,8 @@ saw_params = dict(slope=slope, saw_power=saw_power, saw_width=saw_width,
                   seed=seed, duration=duration_seconds)
 
 # Simulate saw tooth signal and calc PSDs (inside the function)
-saw_psds = saw_noise_old(srate, pre_seconds, post_samples, seiz_len_samples, **saw_params)
+saw_psds = saw_noise_old(srate, pre_seconds, post_samples, seiz_len_samples,
+                         **saw_params)
 time_saw, noise_saw, _, psd_saw_pre, psd_saw_seiz, psd_saw_post = saw_psds
 # %% Fit
 
@@ -407,7 +425,7 @@ xticks_a = time_EEG[::x_step_samples]
 xticklabels_a = []
 yticks_a = [-200, 0, 200]
 yticklabels_a = [-200, "", 200]
-xlim_a = [seiz_start_samples / srate - pre_seconds, post_seconds]
+xlim_a = [0, None]
 ylabel_a = fr"{cha_nm} [$\mu$V]"
 
 axes_a = dict(xticks=xticks_a, xticklabels=xticklabels_a,
@@ -418,7 +436,7 @@ rect_min = data_EEG.min() * 1.1
 rect_height = np.abs(data_EEG).max() * 2
 rect = dict(height=rect_height, alpha=0.2)
 
-start_pre = seiz_start_samples / srate - pre_seconds
+start_pre = 0
 start_seiz = seiz_start_samples / srate
 start_post = seiz_end_samples / srate
 
@@ -427,8 +445,8 @@ xy_seiz = (start_seiz, rect_min)
 xy_post = (start_post, rect_min)
 
 width_pre = pre_seconds
-width_seiz = seiz_end_samples / srate - seiz_start_samples / srate
-width_post = post_seconds - seiz_end_samples / srate
+width_seiz = seiz_len_samples / srate
+width_post = pre_seconds
 
 rect_EEG_pre_params = dict(xy=xy_pre, width=width_pre, color=c_pre, **rect)
 rect_EEG_seiz_params = dict(xy=xy_seiz, width=width_seiz, color=c_seiz, **rect)
