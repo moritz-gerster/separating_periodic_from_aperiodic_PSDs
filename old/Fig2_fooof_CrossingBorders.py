@@ -380,15 +380,16 @@ colors_c = [c_low, c_med, c_high]
 
 width = 7.25  # inches
 panel_fontsize = 12
-legend_fontsize = 9
-label_fontsize = 9
+legend_fontsize1 = 9
+legend_fontsize2 = 10
+label_fontsize = 10
 tick_fontsize = 9
 annotation_fontsize = 9
 
 mpl.rcParams['xtick.labelsize'] = tick_fontsize
 mpl.rcParams['ytick.labelsize'] = tick_fontsize
 mpl.rcParams['axes.labelsize'] = label_fontsize
-mpl.rcParams['legend.fontsize'] = legend_fontsize
+mpl.rcParams['legend.fontsize'] = legend_fontsize1
 mpl.rcParams["axes.spines.right"] = False
 mpl.rcParams["axes.spines.top"] = False
 mpl.rcParams["font.size"] = 14
@@ -439,7 +440,8 @@ ylabel_c = "PSD [a.u.]"
 axes_c = dict(xticks=xticks_b, xticklabels=xticks_b,
               yticks=[])
 x_label_c2 = f"Fitting range: {frange1[0]}-{frange1[1]} Hz"
-leg_c = dict(ncol=3, loc=10, bbox_to_anchor=(.5, -.7))
+leg_c = dict(ncol=3, loc=10, fontsize=legend_fontsize2,
+             bbox_to_anchor=(.5, -.7))
 delta_fill_dic = dict(alpha=0.5)
 
 # Annotate increased/decreased delta power with arrows
@@ -469,7 +471,7 @@ arr_pos_high = dict(text="", xy=arr_head_high, xytext=arr_tail_high,
 # %% Plot
 
 # Prepare Gridspec
-fig = plt.figure(figsize=[width, 6.5], constrained_layout=True)
+fig = plt.figure(figsize=[8, width], constrained_layout=True)
 
 gs0 = gridspec.GridSpec(3, 1, figure=fig, height_ratios=[10, 1, 10])
 

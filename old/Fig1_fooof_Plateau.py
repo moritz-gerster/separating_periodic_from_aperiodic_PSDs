@@ -9,7 +9,6 @@ import mne
 from pathlib import Path
 from fooof import FOOOF
 from fooof.sim.gen import gen_aperiodic
-import matplotlib.gridspec as gridspec
 
 
 def osc_signals(slope, periodic_params=None, nlv=None,
@@ -156,14 +155,15 @@ c_noise = "darkgray"
 
 # b)
 c_real = "purple"
-# c_low = "limegreen"
-
-# c)
-c_low = "deepskyblue"
-c_med = "limegreen"
+c_low = "limegreen"
 c_high = "orangered"
 
-c_ground = "grey"
+# c)
+c_real2 = "indigo"
+
+# d)
+c_real3 = "mediumvioletred"
+c_dummy = "sienna"
 
 # Save Path
 fig_path = "../paper_figures/"
@@ -174,11 +174,21 @@ Path(fig_path).mkdir(parents=True, exist_ok=True)
 
 # Litvak file names
 path = "../data/Fig1/"
+fname12 = "subj12_off_R7_raw.fif"
 fname9 = "subj9_off_R1_raw.fif"
 
+# Low noise file names
+dummy_name = "Paper-Dummy_2016-11-23_F8-F4.npy"
+sub_lowN = "DBS_2018-03-02_STN_L24_rest.npy"
+
+sub12 = mne.io.read_raw_fif(path + fname12, preload=True)
 sub9 = mne.io.read_raw_fif(path + fname9, preload=True)
 
-# Select channel
+sub_lowN = np.load(path + sub_lowN)
+dummy_lowN = np.load(path + dummy_name)
+
+# Select channels
+sub12.pick_channels(['STN_L23'])
 sub9.pick_channels(['STN_R01'])
 
 # Filter out line noise
@@ -186,26 +196,40 @@ filter_params = {"freqs": np.arange(50, 601, 50),
                  "notch_widths": .5,
                  "method": "spectrum_fit"}
 
+sub12.notch_filter(**filter_params)
 sub9.notch_filter(**filter_params)
+# filtering of low noise data not neccessary
 
 # Convert mne to numpy
 srate = 2400
+srate_lowN = 10000
 start = int(0.5 * srate)  # artefact in beginning of recording
 stop = int(185 * srate)  # artefact at the end of recording
 
+sub12 = sub12.get_data(start=start, stop=stop)[0]
 sub9 = sub9.get_data(start=start, stop=stop)[0]
 
 # Calc Welch
 welch_params = dict(fs=srate, nperseg=srate)  # detrend=False?
-
+welch_lowN = dict(fs=srate_lowN, nperseg=srate_lowN)
 
 freq, psd_sub9 = sig.welch(sub9, **welch_params)
+freq, psd_sub12 = sig.welch(sub12, **welch_params)
 
 # Mask above highpass and below lowpass
 filt = (freq > 0) & (freq <= 600)
 freq = freq[filt]
+psd_sub12 = psd_sub12[filt]
 psd_sub9 = psd_sub9[filt]
 
+f_lowN, psd_sub_lowN = sig.welch(sub_lowN, **welch_lowN)
+f_lowN, psd_dummy_lowN = sig.welch(dummy_lowN, **welch_lowN)
+
+# Mask close to Nyquist frequency
+mask = (f_lowN <= 4900)
+f_lowN = f_lowN[mask]
+psd_sub_lowN = psd_sub_lowN[mask]
+psd_dummy_lowN = psd_dummy_lowN[mask]
 # %% Calc a)
 
 # Make noise
@@ -264,101 +288,29 @@ for i, lim in enumerate(upper_fit_limits):
     vlines.append(vline)
 dic_line = dict(color=c_sim, linestyle="-", lw=.3)
 
-# %% Plot params b)
-
-# Detect Noise floor
-floor_9 = detect_noise_floor(freq, psd_sub9, f_start=1)
-
-# Mask signal/noise
-signal_9 = (freq <= floor_9)
-
-noise_9 = (freq >= floor_9)
-
-# Prepare plot
-plot_sub9 = (freq, psd_sub9, c_real)
-plot_sub9_signal = (freq[signal_9], psd_sub9[signal_9], c_real)
-
-plot_sub9_plateau = (freq[noise_9], psd_sub9[noise_9], c_noise)
-
-# Get Oscillation coordinates sub9
-peak_freq1 = 23
-peak_freq2 = 350
-
-peak_height1 = psd_sub9[freq == peak_freq1]
-peak_height2 = psd_sub9[freq == peak_freq2]
-
-noise_height_osc = psd_sub9[freq == floor_9]
-
-# Create lines, arrows, and text to annotate noise floor
-line_osc1 = dict(x=peak_freq1, ymin=noise_height_osc*0.8, ymax=peak_height1,
-                 color=c_sim, linestyle="--", lw=.5)
-
-line_osc2 = dict(x=peak_freq2, ymin=noise_height_osc*0.8, ymax=peak_height2,
-                 color=c_sim, linestyle="--", lw=.5)
-
-arrow1 = dict(text="",
-              xy=(floor_9, noise_height_osc*0.8),
-              xytext=(peak_freq1, noise_height_osc*0.8),
-              arrowprops=dict(arrowstyle="->", color=c_sim, lw=1))
-arrow2 = dict(text="",
-              xy=(floor_9, noise_height_osc*0.8),
-              xytext=(peak_freq2, noise_height_osc*0.8),
-              arrowprops=dict(arrowstyle="->", color=c_sim, lw=1))
-
-plateau_line9 = dict(text="",
-                     xy=(floor_9, noise_height_osc*0.86),
-                     xytext=(floor_9, noise_height_osc*.5),
-                     arrowprops=dict(arrowstyle="-", color=c_sim, lw=2))
-
-
-plateau_txt9 = dict(text=f"{floor_9}Hz",
-                    xy=(floor_9, noise_height_osc*0.7),
-                    xytext=(floor_9*1.02, noise_height_osc*.53))
-
-xticks_b = [1, 10, 100, 600]
-xlim_b = (1, 826)
-ylim_b = (0.005, 2)
-ylabel_b = r"PSD [$\mu$$V^2$/Hz]"
-
-axes_b = dict(xlabel=None, ylabel=ylabel_b, xlim=xlim_b, ylim=ylim_b,
-              xticks=xticks_b, xticklabels=xticks_b)
-
-
-# %% Calc c)
+# %% Calc b)
 
 # Simulate psd_sub9
 slope1 = 1
-slope15 = 1.5
 slope2 = 2
 
 osc_params1 = [(10.5, 4, 3),
                (16, 2, 1.5),
                (23, 15, 5),
                (40, 10, 15),
-               (360, 25, 80)]
+               (360, 20, 70)]
 
-osc_params15 = [(5, .1, 1),
-                (10.5, 4, 3),
-                (16, 2, 1.5),
-                (23, 15, 5),
-                (42, 14, 20),
-                (360, 30, 80)]
-
-osc_params2 = [(3, 0.1, .6),
+osc_params2 = [(3, 0.3, .6),
                (5, .4, 1),
-               (9, 2.8, 2),
-               (15, 3.9, 2.5),
-               (23, 14, 5),
-               (42, 15, 20),
+               (9, 3.3, 2.1),
+               (15, 4, 2.5),
+               (23, 15, 5),
+               (42, 12, 15),
                (360, 25, 70)]
 
 noise1, osc1 = osc_signals(slope1,
                            periodic_params=osc_params1,
                            nlv=.0002)
-
-noise15, osc15 = osc_signals(slope15,
-                             periodic_params=osc_params15,
-                             nlv=.0002)
 
 noise2, osc2 = osc_signals(slope2,
                            periodic_params=osc_params2,
@@ -366,29 +318,22 @@ noise2, osc2 = osc_signals(slope2,
 
 # Calc Welch
 freq, psd_noise1 = sig.welch(noise1, **welch_params)
-freq, psd_noise15 = sig.welch(noise15, **welch_params)
 freq, psd_noise2 = sig.welch(noise2, **welch_params)
 freq, psc_osc1 = sig.welch(osc1, **welch_params)
-freq, psc_osc15 = sig.welch(osc15, **welch_params)
 freq, psc_osc2 = sig.welch(osc2, **welch_params)
 
 # Filter above highpass and below lowpass
 freq = freq[filt]
 psd_noise1 = psd_noise1[filt]
-psd_noise15 = psd_noise15[filt]
 psd_noise2 = psd_noise2[filt]
 psc_osc1 = psc_osc1[filt]
-psc_osc15 = psc_osc15[filt]
 psc_osc2 = psc_osc2[filt]
 
 # Normalize
 norm1 = psd_noise1[0] / psd_sub9[0]
-norm15 = psd_noise15[0] / psd_sub9[0]
 norm2 = psd_noise2[0] / psd_sub9[0]
 psd_noise1 /= norm1
 psc_osc1 /= norm1
-psd_noise15 /= norm15
-psc_osc15 /= norm15
 psd_noise2 /= norm2
 psc_osc2 /= norm2
 
@@ -397,94 +342,184 @@ freq_range = [1, 95]  # upper border above oscillations range, below plateau
 fooof_params = dict(peak_width_limits=[1, 100], verbose=False)
 
 fm1 = FOOOF(**fooof_params)
-fm15 = FOOOF(**fooof_params)
 fm2 = FOOOF(**fooof_params)
 fm_sub9 = FOOOF(**fooof_params)
 
 fm1.fit(freq, psc_osc1, freq_range)
-fm15.fit(freq, psc_osc15, freq_range)
 fm2.fit(freq, psc_osc2, freq_range)
 fm_sub9.fit(freq, psd_sub9, freq_range)
 
 # Extract fit results
 exp1 = fm1.get_params("aperiodic", "exponent")
-exp15 = fm15.get_params("aperiodic", "exponent")
 exp2 = fm2.get_params("aperiodic", "exponent")
 exp_sub9 = fm_sub9.get_params('aperiodic_params', 'exponent')
 off_sub9 = fm_sub9.get_params('aperiodic_params', 'offset')
 
 # Simulate fitting results
 ap_fit1 = gen_aperiodic(fm1.freqs, fm1.aperiodic_params_)
-ap_fit15 = gen_aperiodic(fm15.freqs, fm15.aperiodic_params_)
 ap_fit2 = gen_aperiodic(fm2.freqs, fm2.aperiodic_params_)
 ap_fit_sub9 = gen_aperiodic(fm_sub9.freqs, fm_sub9.aperiodic_params_)
 
-fit1 = fm1.freqs, 10**ap_fit1, c_low
-fit15 = fm15.freqs, 10**ap_fit15, c_med
+fit1 = fm1.freqs, 10**ap_fit1, c_high
 fit2 = fm2.freqs, 10**ap_fit2, c_low
 fit_sub9 = fm_sub9.freqs, 10**ap_fit_sub9, c_real
 
-psd_plateau_fits = [fit1, fit15, fit2]
-
-spec9_fit_label = f"fooof LFP a={exp_sub9:.2f}"
-
-# % Plot params c)
-
+# %% Plot params b)
 plot_sub9 = freq, psd_sub9, c_real
 
-plot_osc1 = freq, psc_osc1, c_low
-plot_osc15 = freq, psc_osc15, c_med
-plot_osc2 = freq, psc_osc2, c_high
+plot_osc1 = freq, psc_osc1, c_high
+plot_osc2 = freq, psc_osc2, c_low
 
-# Summarize
-psd_plateau_vary = [plot_osc1, plot_osc15, plot_osc2]
+plot_noise1 = freq, psd_noise1, c_high
+plot_noise2 = freq, psd_noise2, c_low
 
-plot_noise1 = freq, psd_noise1, c_ground
-plot_noise15 = freq, psd_noise15, c_ground
-plot_noise2 = freq, psd_noise2, c_ground
+ground1 = gen_aperiodic(freq, np.array([off_sub9, slope1]))
+ground2 = gen_aperiodic(freq, np.array([off_sub9, slope2]))
 
-# ground1 = gen_aperiodic(freq, np.array([off_sub9, slope1]))
-# ground15 = gen_aperiodic(freq, np.array([off_sub9, slope15]))
-# ground2 = gen_aperiodic(freq, np.array([off_sub9, slope2]))
+plot_ground1 = freq, 10**ground1, c_high
+plot_ground2 = freq, 10**ground2, c_low
 
-# plot_ground1 = freq, 10**ground1, c_low
-# plot_ground15 = freq, 10**ground15, c_med
-# plot_ground2 = freq, 10**ground2, c_high
+xticks_b = [1, 10, 100, 600]
+ylim_b = (0.006, 2)
+xlim_b = (1, 825)
 
-xlim_c = (1, 825)
+axes_b = dict(xlim=xlim_b, ylim=ylim_b, xticks=xticks_b, xticklabels=xticks_b)
+
+
+# %% Plot params c)
+
+# Detect Noise floor
+floor_12 = detect_noise_floor(freq, psd_sub12, f_start=1)
+floor_9 = detect_noise_floor(freq, psd_sub9, f_start=1)
+
+# Mask signal/noise
+signal_12 = (freq <= floor_12)
+signal_9 = (freq <= floor_9)
+
+noise_12 = (freq >= floor_12)
+noise_9 = (freq >= floor_9)
+
+# Prepare plot
+plot_sub9_signal = (freq[signal_9], psd_sub9[signal_9], c_real)
+plot_sub12_signal = (freq[signal_12], psd_sub12[signal_12], c_real2)
+
+plot_sub9_plateau = (freq[noise_9], psd_sub9[noise_9], c_noise)
+plot_sub12_plateau = (freq[noise_12], psd_sub12[noise_12], c_noise)
+
+# Get Oscillation coordinates sub9
+peak_freq1 = 23
+peak_freq2 = 350
+
+peak_height1 = psd_sub9[freq == peak_freq1]
+peak_height2 = psd_sub9[freq == peak_freq2]
+
+noise_height = psd_sub12[freq == floor_12]
+noise_height_osc = psd_sub9[freq == floor_9]
+
+# Create lines, arrows, and text to annotate noise floor
+line_osc1 = dict(x=peak_freq1, ymin=noise_height_osc*0.8, ymax=peak_height1,
+                 color=c_sim, linestyle="--", lw=1)
+
+line_osc2 = dict(x=peak_freq2, ymin=noise_height_osc*0.8, ymax=peak_height2,
+                 color=c_sim, linestyle="--", lw=1)
+
+arrow1 = dict(text="",
+              xy=(floor_9, noise_height_osc*0.8),
+              xytext=(peak_freq1, noise_height_osc*0.8),
+              arrowprops=dict(arrowstyle="->", color=c_sim, lw=2))
+arrow2 = dict(text="",
+              xy=(floor_9, noise_height_osc*0.8),
+              xytext=(peak_freq2, noise_height_osc*0.8),
+              arrowprops=dict(arrowstyle="->", color=c_sim, lw=2))
+
+plateau_line9 = dict(text="",
+                     xy=(floor_9, noise_height_osc*0.86),
+                     xytext=(floor_9, noise_height_osc*.4),
+                     arrowprops=dict(arrowstyle="-", color=c_sim, lw=2))
+
+plateau_line12 = dict(text="",
+                      xy=(floor_12, noise_height*.85),
+                      xytext=(floor_12, noise_height*.45),
+                      arrowprops=dict(arrowstyle="-", color=c_sim, lw=2))
+
+plateau_txt9 = dict(text=f"{floor_9}Hz",
+                    xy=(floor_9, noise_height_osc*0.7),
+                    xytext=(floor_9*1.02, noise_height_osc*.43))
+
+plateau_txt12 = dict(text=f"{floor_12}Hz", xy=(floor_12, noise_height*.9),
+                     xytext=(floor_12*1.05, noise_height*.485))
+
+xlim_c = (1, 826)
+ylim_c = (0.001, 2)
 xlabel_c = "Frequency in Hz"
+ylabel_c = r"PSD [$\mu$$V^2$/Hz]"
 
-low_kwargs = dict(c=c_low, ls="--", lw=2, alpha=0.8)
-med_kwargs = dict(c=c_med, ls="--", lw=2, alpha=0.8)
-high_kwargs = dict(c=c_high, ls="--", lw=2, alpha=0.8)
+axes_c = dict(xlabel=xlabel_c, ylabel=ylabel_c, xlim=xlim_c, ylim=ylim_c,
+              xticks=xticks_b, xticklabels=xticks_b)
+# %% Calc d)
 
-# Summarize
-plateau_kwargs = [low_kwargs, med_kwargs, high_kwargs]
-plateau_labels = [r"$a_{fit}$="f"{exp1:.2f}",
-                  r"$a_{fit}$="f"{exp15:.2f}", r"$a_{fit}$="f"{exp2:.2f}"]
-plateau_labels = [f"fooof flat a={exp1:.2f}",
-                  f"fooof med a={exp15:.2f}", f"fooof steep a={exp2:.2f}"]
-psd_aperiodic_vary = [plot_noise1, plot_noise15, plot_noise2]
+# Detect Noise floor
+floor_lowN_start = detect_noise_floor(f_lowN, psd_sub_lowN, f_start=1)
+floor_lowN_end = detect_noise_floor(f_lowN, psd_sub_lowN, f_start=f_lowN[-1],
+                                    f_range=100, step=10, reverse=True)
 
-labelpad = 5
-leg_c = dict(ncol=3, loc=10, bbox_to_anchor=(.54, -.6), borderpad=0.35)
-axes_c = dict(xticks=xticks_b, xticklabels=xticks_b, xlim=xlim_c)
+# Fit low noise spectra
+freq_range = [1, 45]  # no 1/f power law after 45Hz
 
-noise_power = (freq > 1) & (freq <= freq_range[1])
-freq_mask = freq[noise_power]
-plot_delta_low = (freq_mask, psd_noise1[noise_power], 10**ap_fit1[fm1.freqs > 1])
-plot_delta_med = (freq_mask, psd_noise15[noise_power], 10**ap_fit15[fm1.freqs > 1])
-plot_delta_high = (freq_mask, psd_noise2[noise_power], 10**ap_fit2[fm1.freqs > 1])
+fm_lowN_sub = FOOOF(**fooof_params)
+fm_lowN_dummy = FOOOF(**fooof_params, max_n_peaks=0)  # no peaks in dummy
 
-# Summarize
-delta_power = [plot_delta_low, plot_delta_med, plot_delta_high]
-colors_c = [c_low, c_med, c_high]
-# % Plot Params
+fm_lowN_sub.fit(f_lowN, psd_sub_lowN, freq_range)
+fm_lowN_dummy.fit(f_lowN, psd_dummy_lowN, freq_range)
+
+exp_lowN = fm_lowN_sub.get_params("aperiodic", "exponent")
+exp_lowN_d = fm_lowN_dummy.get_params("aperiodic", "exponent")
+
+fit_lowN_sub = gen_aperiodic(fm_lowN_sub.freqs,
+                             fm_lowN_sub.aperiodic_params_)
+fit_lowN_dummy = gen_aperiodic(fm_lowN_dummy.freqs,
+                               fm_lowN_dummy.aperiodic_params_)
+
+# %% Plot params d)
+plot_lowN_fit_sub = fm_lowN_sub.freqs, 10**fit_lowN_sub, c_real3
+plot_lowN_fit_dummy = fm_lowN_dummy.freqs, 10**fit_lowN_dummy, c_dummy
+
+signal_low = (f_lowN <= floor_lowN_start)
+signal_high = (f_lowN >= floor_lowN_end)
+signal_plateau = (f_lowN >= floor_lowN_start) & (f_lowN <= floor_lowN_end)
+
+plot_sub_lowN_low = (f_lowN[signal_low], psd_sub_lowN[signal_low], c_real3)
+plot_sub_lowN_high = (f_lowN[signal_high], psd_sub_lowN[signal_high], c_real3)
+plot_sub_lowN_plateau = (f_lowN[signal_plateau], psd_sub_lowN[signal_plateau],
+                         c_noise)
+
+dummy_lowN = (f_lowN, psd_dummy_lowN, c_dummy)
+
+plateu_line_start = dict(x=floor_lowN_start,
+                         ymin=0,
+                         ymax=psd_sub_lowN[f_lowN == floor_lowN_start],
+                         color=c_sim, ls="--", lw=1)
+plateu_line_end = dict(x=floor_lowN_end,
+                       ymin=0,
+                       ymax=psd_sub_lowN[f_lowN == floor_lowN_end],
+                       color=c_sim, ls="--", lw=1)
+
+
+xlabel_d = "Frequency in Hz"
+xticks_d = [1, 10, 100, 1000, 5000]
+xlim_d = (1, 7490)
+yticklabels_d = ["", "", r"$10^{-5}$", "", r"$10^{-3}$", "", r"$10^{-1}$",
+                 "", r"$10^1$", "", ""]
+
+axes_d = dict(xlabel=xlabel_d, xticks=xticks_d, xticklabels=xticks_d,
+              xlim=xlim_d, yticklabels=yticklabels_d)
+
+# %% Plot Params
 
 width = 7.25  # inches
 panel_fontsize = 12
 legend_fontsize = 9
-label_fontsize = 9
+label_fontsize = 10
 tick_fontsize = 9
 annotation_fontsize = tick_fontsize
 
@@ -497,40 +532,15 @@ mpl.rcParams["axes.spines.top"] = False
 
 panel_labels = dict(x=0, y=1.01, fontsize=panel_fontsize,
                     fontdict=dict(fontweight="bold"))
-
+lw_noise = 1
 line_fit = dict(lw=2, ls="--")
-line_ground = dict(lw=.5, ls="-")
-psd_aperiodic_kwargs = dict(lw=0.5)
+line_ground = dict(lw=1, ls=":")
 
+# %% Plot
+fig, axes = plt.subplots(2, 2, figsize=[8, width])
 
-# % Plot
-
-# Prepare Gridspec
-fig = plt.figure(figsize=[width, 6.5], constrained_layout=True)
-
-gs0 = gridspec.GridSpec(3, 1, figure=fig, height_ratios=[10, 1, 10])
-
-# a) and b)
-gs00 = gridspec.GridSpecFromSubplotSpec(1, 2, subplot_spec=gs0[0])
-ax1 = fig.add_subplot(gs00[0])
-ax2 = fig.add_subplot(gs00[1])
-
-# Legend suplot
-gs01 = gs0[1]
-ax_leg = fig.add_subplot(gs01)
-ax_leg.axis("off")
-
-# c)
-gs02 = gs0[2].subgridspec(1, 3)
-ax3 = fig.add_subplot(gs02[0])
-ax4 = fig.add_subplot(gs02[1])
-ax5 = fig.add_subplot(gs02[2])
-
-c_axes = [ax3, ax4, ax5]
-
-
-# a) =========================================================================
-ax = ax1
+# a)  =========================================================================
+ax = axes[0, 0]
 
 # Plot simulated PSD and ground truth
 ax.loglog(*plot_sim, label=f"1/f a={slope_a} + noise")
@@ -547,19 +557,46 @@ ax.loglog(*plot_plateau, label="Plateau")
 # Set axes
 ax.set(**axes_a)
 ax.legend()
-ax.text(s="a", **panel_labels, transform=ax.transAxes)
 # =============================================================================
 
-
 # b)  =========================================================================
-ax = ax2
+ax = axes[0, 1]
 
-# Plot Sub 9
-ax.loglog(*plot_sub9_signal, label="LFP")
+# Plot spectra
+ax.loglog(*plot_sub9, zorder=6, label="LFP Sub. 9")
+ax.loglog(*plot_osc1, zorder=5, label="Sim a=1")
+ax.loglog(*plot_osc2, zorder=7, label="Sim a=2")
 
-#   ax.loglog(*fit_sub9, **line_fit, label=spec9_fit_label)
+# Plot fits
+ax.loglog(*fit_sub9, **line_fit, zorder=10,
+          label=r"$a_{fit}$="f"{exp_sub9:.2f}")
+ax.loglog(*fit1, **line_fit, zorder=9, label=r"$a_{fit}$="f"{exp1:.2f}")
+ax.loglog(*fit2, **line_fit, zorder=8, label=r"$a_{fit}$="f"{exp2:.2f}")
+
+# Plot ground truth sim1
+# ax.loglog(*plot_ground1, **line_ground, zorder=4, label=f"a={slope1:.0f}")
+
+# Aperiodic components
+ax.loglog(*plot_noise1, lw=lw_noise, ls=":", zorder=1, label="1/f + noise")
+ax.loglog(*plot_noise2, zorder=2, lw=lw_noise, ls=":", label="1/f + noise")
+
+# Plot ground truth sim2
+# ax.loglog(*plot_ground2, **line_ground, zorder=3, label=f"a={slope2:.0f}")
+
+# Set axes
+ax.set(**axes_b)
+ax.legend()
+# =============================================================================
+
+# c)  =========================================================================
+ax = axes[1, 0]
+
+# Plot Sub 9 and 12
+ax.loglog(*plot_sub9_signal, label="LFP Sub. 9")
+ax.loglog(*plot_sub12_signal, label="LFP Sub. 12")
 
 ax.loglog(*plot_sub9_plateau, label="Plateau")
+ax.loglog(*plot_sub12_plateau)
 
 # Plot Peak lines
 ax.vlines(**line_osc1)
@@ -571,69 +608,47 @@ ax.annotate(**arrow2)
 
 # Annotate noise floor start as line
 ax.annotate(**plateau_line9)
+ax.annotate(**plateau_line12)
 
 # Annotate noise floor start as text
 ax.annotate(**plateau_txt9, fontsize=annotation_fontsize)
+ax.annotate(**plateau_txt12, fontsize=annotation_fontsize)
 
 # Set axes
-ax.set(**axes_b)
+ax.set(**axes_c)
 ax.legend(loc=0)
-ax.text(s="b", **panel_labels, transform=ax.transAxes)
-
 # =============================================================================
 
-# c)
 
-# Make sure we have just one label for each repetitive plot
-spec9_label = ["STN-LFP", None, None]
-spec9_fit_labels = [spec9_fit_label, None, None]
-aperiodic_label = [None, None, "1/f + noise"]
+# d)  =========================================================================
+ax = axes[1, 1]
 
-for i, ax in enumerate(c_axes):
+# Plot low noise subject
+ax.loglog(*plot_sub_lowN_low, label="LFP low-noise")
+ax.loglog(*plot_lowN_fit_sub, **line_fit,
+          label=r"$a_{fit}$="f"{exp_lowN:.2f}")
+ax.loglog(*plot_sub_lowN_high)
+ax.loglog(*plot_sub_lowN_plateau)
 
-    # Plot LFP and fooof fit
-    ax.loglog(*plot_sub9, alpha=0.3, lw=2, label=spec9_label[i])
-    ax.loglog(*fit_sub9, **line_fit, alpha=1, label=spec9_fit_labels[i])
+# Plot low noise dummy
+ax.loglog(*dummy_lowN, label="Dummy low-noise")
+ax.loglog(*plot_lowN_fit_dummy, **line_fit,
+          label=r"$a_{fit}$="f"{exp_lowN_d:.2f}")
+ax.loglog(*plot_sub9, alpha=0.2, label="LFP Sub. 9")
 
-    # Plot sim low delta power and fooof fit
-    ax.loglog(*psd_plateau_vary[i])
-    ax.loglog(*psd_plateau_fits[i], **plateau_kwargs[i],
-              label=plateau_labels[i])
+# Plot Plateau lines
+ax.vlines(**plateu_line_start)
+ax.vlines(**plateu_line_end)
 
-    # Plot aperiodic component of sim
-    ax.loglog(*psd_aperiodic_vary[i], **psd_aperiodic_kwargs,
-              label=aperiodic_label[i])
+# Set axes
+ax.set(**axes_d)
+ax.legend()
+# =============================================================================
 
-    # Indicate delta power as fill between aperiodic component
-    # and full spectrum
-    ax.fill_between(*delta_power[i], color=colors_c[i], alpha=0.5)
+# panel labels
+for s, ax in zip("abcd", axes.flat):
+    ax.text(s=s, **panel_labels, transform=ax.transAxes)
 
-    # Draw arrow
-    if i != 1:
-        # ax.annotate(**arrows[i])
-        pass
-    else:
-        ax.set_xlabel(xlabel_c)
-
-    # Save legend handles labels and set axes
-    if i == 0:
-        handles, labels = ax.get_legend_handles_labels()
-        ax.set_ylabel(ylabel_a, labelpad=labelpad)
-        ax.text(s="c", **panel_labels, transform=ax.transAxes)
-    else:
-        hands, labs = ax.get_legend_handles_labels()
-        handles.extend(hands)
-        labels.extend(labs)
-        ax.spines["left"].set_visible(False)
-        ax.set_yticks([], minor=True)
-        ax.set_yticks([])
-    ax.set(**axes_c)
-
-
-# Set legend between subplots
-leg = ax_leg.legend(handles, labels, **leg_c)
-leg.set_in_layout(False)
-
+plt.tight_layout()
 plt.savefig(fig_path + fig_name, bbox_inches="tight")
 plt.show()
-
