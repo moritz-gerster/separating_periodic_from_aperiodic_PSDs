@@ -377,7 +377,7 @@ diff = exp_seiz - np.mean([exp_pre, exp_post])
 axes[1, 0].set_title(f"1/f diff = {diff:.2f}, saw_width={saw_width}")
 
 plt.tight_layout()
-plt.savefig(fig_path + fig_name, bbox_inches="tight")
+#plt.savefig(fig_path + fig_name, bbox_inches="tight")
 plt.show()
 
 
@@ -402,7 +402,7 @@ fm.plot(ax=ax, plt_log=True)
 ax.grid(False)
 ax.set_title(f"1/f={exp_seiz:.2f}")
 plt.suptitle(f"Fooof fit {freq_range[0]}-{freq_range[1]}Hz  sawtooth signal")
-plt.savefig(fig_path + fig_name_supp, bbox_inches="tight")
+#plt.savefig(fig_path + fig_name_supp, bbox_inches="tight")
 plt.show()
 
 

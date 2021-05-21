@@ -256,7 +256,7 @@ for i, lim in enumerate(upper_fit_limits):
     fit = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
     label = f"1-{lim}Hz a={exp:.2f}"
     plot_fit = fm.freqs, 10**fit, "-"
-    dic_fit = dict(c=c_fit, lw=2, alpha=fit_alphas[i], label=label)
+    dic_fit = dict(c=c_fit, lw=2, alpha=fit_alphas[i], ls="--", label=label)
     # annotate x-crossing
     vline = lim, ylim_a[0], 10**fit[-1]
     plot_fits.append(plot_fit)
@@ -454,9 +454,9 @@ plot_noise2 = freq, psd_noise2, c_ground
 xlim_c = (1, 825)
 xlabel_c = "Frequency in Hz"
 
-low_kwargs = dict(c=c_low, ls="--", lw=2, alpha=0.8)
-med_kwargs = dict(c=c_med, ls="--", lw=2, alpha=0.8)
-high_kwargs = dict(c=c_high, ls="--", lw=2, alpha=0.8)
+low_kwargs = dict(c=c_low, ls="--", lw=2, alpha=1)
+med_kwargs = dict(c=c_med, ls="--", lw=2, alpha=1)
+high_kwargs = dict(c=c_high, ls="--", lw=2, alpha=1)
 
 # Summarize
 plateau_kwargs = [low_kwargs, med_kwargs, high_kwargs]
@@ -467,14 +467,17 @@ plateau_labels = [f"fooof flat a={exp1:.2f}",
 psd_aperiodic_vary = [plot_noise1, plot_noise15, plot_noise2]
 
 labelpad = 5
-leg_c = dict(ncol=3, loc=10, bbox_to_anchor=(.54, -.6), borderpad=0.35)
+leg_c = dict(ncol=3, loc=10, bbox_to_anchor=(.54, -.5), borderpad=0.35)
 axes_c = dict(xticks=xticks_b, xticklabels=xticks_b, xlim=xlim_c)
 
 noise_power = (freq > 1) & (freq <= freq_range[1])
 freq_mask = freq[noise_power]
-plot_delta_low = (freq_mask, psd_noise1[noise_power], 10**ap_fit1[fm1.freqs > 1])
-plot_delta_med = (freq_mask, psd_noise15[noise_power], 10**ap_fit15[fm1.freqs > 1])
-plot_delta_high = (freq_mask, psd_noise2[noise_power], 10**ap_fit2[fm1.freqs > 1])
+plot_delta_low = (freq_mask, psd_noise1[noise_power],
+                  10**ap_fit1[fm1.freqs > 1])
+plot_delta_med = (freq_mask, psd_noise15[noise_power],
+                  10**ap_fit15[fm1.freqs > 1])
+plot_delta_high = (freq_mask, psd_noise2[noise_power],
+                   10**ap_fit2[fm1.freqs > 1])
 
 # Summarize
 delta_power = [plot_delta_low, plot_delta_med, plot_delta_high]
@@ -503,7 +506,7 @@ line_ground = dict(lw=.5, ls="-")
 psd_aperiodic_kwargs = dict(lw=0.5)
 
 
-# % Plot
+# %% Plot
 
 # Prepare Gridspec
 fig = plt.figure(figsize=[width, 6.5], constrained_layout=True)
@@ -593,7 +596,7 @@ for i, ax in enumerate(c_axes):
 
     # Plot LFP and fooof fit
     ax.loglog(*plot_sub9, alpha=0.3, lw=2, label=spec9_label[i])
-    ax.loglog(*fit_sub9, **line_fit, alpha=1, label=spec9_fit_labels[i])
+    ax.loglog(*fit_sub9, **line_fit, label=spec9_fit_labels[i])
 
     # Plot sim low delta power and fooof fit
     ax.loglog(*psd_plateau_vary[i])
@@ -606,7 +609,7 @@ for i, ax in enumerate(c_axes):
 
     # Indicate delta power as fill between aperiodic component
     # and full spectrum
-    ax.fill_between(*delta_power[i], color=colors_c[i], alpha=0.5)
+    ax.fill_between(*delta_power[i], color=colors_c[i], alpha=0.3)
 
     # Draw arrow
     if i != 1:
@@ -636,4 +639,3 @@ leg.set_in_layout(False)
 
 plt.savefig(fig_path + fig_name, bbox_inches="tight")
 plt.show()
-

@@ -355,7 +355,7 @@ ax.set_ylabel("PSD [a.u.]", fontsize=14, labelpad=10)
 ax.tick_params(**ticks_psd)
 
 plt.tight_layout()
-plt.savefig(fig_path + fig_name, bbox_inches="tight")
+#plt.savefig(fig_path + fig_name, bbox_inches="tight")
 plt.show()
 
 

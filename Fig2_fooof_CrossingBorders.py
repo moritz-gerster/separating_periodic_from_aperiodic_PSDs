@@ -440,7 +440,7 @@ axes_c = dict(xticks=xticks_b, xticklabels=xticks_b,
               yticks=[])
 x_label_c2 = f"Fitting range: {frange1[0]}-{frange1[1]} Hz"
 leg_c = dict(ncol=3, loc=10, bbox_to_anchor=(.5, -.7))
-delta_fill_dic = dict(alpha=0.5)
+delta_fill_dic = dict(alpha=0.4)
 
 # Annotate increased/decreased delta power with arrows
 x_arrow = 0.9  # set arrow slightly below 1Hz

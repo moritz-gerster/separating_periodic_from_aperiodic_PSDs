@@ -309,7 +309,6 @@ berechne PSDS separat, füge sie im plot manuell zusammen.
 Das Gleche mit saw signal.
 """
 
-
 # Seizure sample timepoints
 seiz_start_samples = 87800  # behalten
 seiz_end_samples = 91150  # behalten
