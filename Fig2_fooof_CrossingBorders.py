@@ -137,9 +137,9 @@ upper_fitting_border = 100
 
 # Oscillations parameters:
 freq1, freq2, freq3 = 5, 15, 25  # Hz
-amp1, amp2, amp3 = 5, 2.5, 1
-width1, width2, width3 = 1, .1, 2
-toy_slope = 1
+amp1, amp2, amp3 = .7, .13, .02
+width1, width2, width3 = .01, .01, .01
+toy_slope = 2
 
 periodic_params = [(freq1, amp1, width1),
                    (freq2, amp2, width2),
@@ -147,21 +147,19 @@ periodic_params = [(freq1, amp1, width1),
 
 # Sim Toy Signal
 _, toy_signal = osc_signals(toy_slope, periodic_params=periodic_params)
-freq, toy_psd = sig.welch(toy_signal, **welch_params)
+freq_a, toy_psd = sig.welch(toy_signal, **welch_params)
 
 # Filter 1-100Hz
-filt = (freq > 0) & (freq <= 100)
-freq = freq[filt]
+filt = (freq_a <= 100)
+freq_a = freq_a[filt]
 toy_psd = toy_psd[filt]
-
-toy_plot = (freq, toy_psd, c_sim)
 
 # Fit fooof and subtract ground truth to obtain fitting error
 fit_errors = []
 fm = FOOOF(verbose=None)
 for low in lower_fitting_borders:
     freq_range = (low, upper_fitting_border)
-    fm.fit(freq, toy_psd, freq_range)
+    fm.fit(freq_a, toy_psd, freq_range)
     exp = fm.get_params("aperiodic", "exponent")
     error = np.abs(toy_slope - exp)
     fit_errors.append(error)
@@ -191,7 +189,7 @@ sub10 = sub10.get_data(start=start, stop=stop)[0]
 freq, spec10 = sig.welch(sub10, **welch_params)
 
 # Filter above highpass and below lowpass
-filt = (freq > 0) & (freq <= 600)
+filt = (freq <= 600)
 
 freq = freq[filt]
 spec10 = spec10[filt]
@@ -409,8 +407,6 @@ axes_a1 = dict(xticklabels=xticklabels_a1, yticks=yticks_a,
                yticklabels=yticklabels_a1, xlim=xlim_a)
 freqs123 = [freq1, freq2, freq3]
 colors123 = [c_range1, c_range2, c_range3]
-hline_height_log = (8e-8, 5.58e-9, 3.9e-10)
-text_height_log = (1.1e-7, 7.1e-9, 5.5e-10)
 text_dic = dict(x=100, ha="right", fontsize=annotation_fontsize)
 
 # a2
@@ -421,7 +417,6 @@ ylabel_a2 = "Fitting error"
 ylim_a2 = (0, 1)
 axes_a2 = dict(xticks=xticks_a2, xticklabels=xticks_a2, yticks=yticks_a2,
                xlim=xlim_a, xlabel=xlabel_a2, ylim=ylim_a2)
-hline_height = (2.17, 1.9, 1.59)
 
 # b)
 xticks_b = [1, 10, 100, 600]
@@ -498,27 +493,31 @@ c_axes = [ax4, ax5, ax6]
 ax = ax1
 
 # Plot sim
-ax.loglog(*toy_plot)
+ax.loglog(freq_a, toy_psd, c_sim)
 
 # Annotate fitting ranges
+vline_dic = dict(ls="--", clip_on=False, alpha=0.3)
+ymin, ymax = ax.get_ylim()
 for i, (freq_low, color) in enumerate(zip(freqs123, colors123)):
-    y = hline_height_log[i]
+    y = toy_psd[freq_low]
     xmin = freq_low
     xmax = upper_fitting_border
     h_coords = (y, xmin, xmax)
-    # v_coords = (xmin, -10, y)
-    # hline_dic = dict(color=color, ls="--")
     ax.hlines(*h_coords, color=color, ls="--")
-    #ax.vlines(*v_coords, clip_on=False, **hline_dic)
+    v_coords = (xmin, ymin, y)
+    ax.vlines(*v_coords, color=color, **vline_dic)
+    # Add annotation
     s = f"{freq_low}-{xmax}Hz"
     if i == 0:
         s = "Fitting range: " + s
-    y = text_height_log[i]
+        y = y**.97
+    else:
+        y = y**.98
     ax.text(s=s, y=y, **text_dic)
 
 # Set axes
 ax.text(s="a", **abc, transform=ax.transAxes)
-ax.set(**axes_a1)
+ax.set(**axes_a1, ylim=(ymin, ymax))
 ax.set_ylabel(ylabel_a1, labelpad=labelpad)
 
 # a2
@@ -526,19 +525,14 @@ ax = ax2
 
 # Plot error
 ax.semilogx(*error_plot)
-ax.set_facecolor('none')  # for vertical lines
 
 # Annotate fitting ranges
-hline_dic = dict(ls="--", clip_on=False, alpha=0.3)
 for i, (freq_low, color) in enumerate(zip(freqs123, colors123)):
     xmin = freq_low
     ymin = 0
-    ymax = hline_height[i]
-    # xmax = upper_fitting_border
-    # h_coords = (y, xmin, xmax)
+    ymax = 1.2
     v_coords = (xmin, ymin, ymax)
-    # ax.hlines(*h_coords, **hline_dic)
-    ax.vlines(*v_coords, color=color, **hline_dic)
+    ax.vlines(*v_coords, color=color, **vline_dic)
 
 # Set axes
 ax.set(**axes_a2)
@@ -563,7 +557,7 @@ ax.set(**axes_b)
 #     handle.set_linewidth(2.6)
 # =============================================================================
 # decrease legend handle linewidth
-leg = ax.legend(handlelength=2)
+leg = ax.legend(handlelength=2, borderaxespad=0)
 for handle in leg.legendHandles:
     handle.set_linewidth(2.2)
 ax.text(s="b", **abc, transform=ax.transAxes)

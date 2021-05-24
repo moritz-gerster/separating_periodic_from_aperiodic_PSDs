@@ -351,7 +351,8 @@ ax.loglog(freq, fit_post_eeg, "--", c=c_post, lw=2, label=lab_post_eeg)
 
 # Set axes
 ax.set(**axes_a2)
-ax.legend(labelspacing=0.3)
+# ax.legend(labelspacing=0.3)
+ax.legend(borderaxespad=0)
 ax.set_ylabel(ylabel_a2, labelpad=-17)
 y_minor = mpl.ticker.LogLocator(subs=np.arange(0, 1, 0.1), numticks=10)
 ax.yaxis.set_minor_locator(y_minor)
@@ -390,7 +391,8 @@ ax.loglog(freq, fit_post_sim, "--", c=c_post, lw=2, label=lab_post_saw)
 
 # Set axes
 ax.set(**axes_b2)
-ax.legend(labelspacing=0.3)
+# ax.legend(labelspacing=0.3)
+ax.legend(borderaxespad=0)
 ax.set_ylabel(ylabel_b2, labelpad=-13)
 ax.tick_params(**ticks_psd)
 y_minor = mpl.ticker.LogLocator(subs=np.arange(0, 1, 0.1), numticks=10)
