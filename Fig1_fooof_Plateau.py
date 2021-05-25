@@ -256,13 +256,13 @@ for i, lim in enumerate(upper_fit_limits):
     fit = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
     label = f"1-{lim}Hz a={exp:.2f}"
     plot_fit = fm.freqs, 10**fit, "-"
-    dic_fit = dict(c=c_fit, lw=2, alpha=fit_alphas[i], ls="--", label=label)
+    dic_fit = dict(c=c_fit, lw=2, alpha=fit_alphas[i], ls="-", label=label)
     # annotate x-crossing
     vline = lim, ylim_a[0], 10**fit[-1]
     plot_fits.append(plot_fit)
     dic_fits.append(dic_fit)
     vlines.append(vline)
-dic_line = dict(color=c_sim, linestyle="-", lw=.3)
+dic_line = dict(color=c_sim, linestyle=":", lw=.3)
 
 # %% Plot params b)
 
@@ -454,9 +454,9 @@ plot_noise2 = freq, psd_noise2, c_ground
 xlim_c = (1, 825)
 xlabel_c = "Frequency in Hz"
 
-low_kwargs = dict(c=c_low, ls="--", lw=2, alpha=1)
-med_kwargs = dict(c=c_med, ls="--", lw=2, alpha=1)
-high_kwargs = dict(c=c_high, ls="--", lw=2, alpha=1)
+low_kwargs = dict(c=c_low, ls="-", lw=2, alpha=1)
+med_kwargs = dict(c=c_med, ls="-", lw=2, alpha=1)
+high_kwargs = dict(c=c_high, ls="-", lw=2, alpha=1)
 
 # Summarize
 plateau_kwargs = [low_kwargs, med_kwargs, high_kwargs]
@@ -501,8 +501,8 @@ mpl.rcParams["axes.spines.top"] = False
 panel_labels = dict(x=0, y=1.01, fontsize=panel_fontsize,
                     fontdict=dict(fontweight="bold"))
 
-line_fit = dict(lw=2, ls="--")
-line_ground = dict(lw=.5, ls="-")
+line_fit = dict(lw=2, ls=":", zorder=5)
+line_ground = dict(lw=.5, ls="-", zorder=5)
 psd_aperiodic_kwargs = dict(lw=0.5)
 
 
@@ -609,7 +609,7 @@ for i, ax in enumerate(c_axes):
 
     # Indicate delta power as fill between aperiodic component
     # and full spectrum
-    ax.fill_between(*delta_power[i], color=colors_c[i], alpha=0.3)
+    ax.fill_between(*delta_power[i], color=colors_c[i], alpha=0.2)
 
     # Draw arrow
     if i != 1:

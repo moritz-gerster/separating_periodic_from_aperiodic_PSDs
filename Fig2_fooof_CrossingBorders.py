@@ -218,6 +218,7 @@ fit_params = [(frange1, fooof_params1, c_fit1),
 
 # Fit for diferent ranges
 fit_ranges = []
+first = True
 for frange, fooof_params, plot_color in fit_params:
     # fit
     fm = FOOOF(**fooof_params)
@@ -232,7 +233,12 @@ for frange, fooof_params, plot_color in fit_params:
         freq_str = "  " + freq_str
     exp = fm.get_params("aperiodic", "exponent")
     plot_label = freq_str + f" a={exp:.2f}"
-    plot_kwargs = dict(lw=3, ls="--", label=plot_label)
+    if first:
+        ls = ":"
+        first = False
+    else:
+        ls = "-"
+    plot_kwargs = dict(lw=2, ls=ls, label=plot_label)
 
     # append plot argument (tuple) and plot_kwargs (dict) as tuple
     fit_ranges.append((plot_args, plot_kwargs))
@@ -343,7 +349,6 @@ exp_high = fm_high.get_params('aperiodic_params', 'exponent')
 
 # Summarize
 exponents = [("low", exp_low), ("med", exp_med), ("high", exp_high)]
-# delta_labels = [rf"fooof sim $\delta_{i+1}$ a={exp:.2f}" for i, exp in enumerate(exponents)]
 delta_labels = [f"fooof {pwr} delta a={exp:.2f}" for pwr, exp in exponents]
 
 
@@ -353,7 +358,7 @@ ap_fit_med = gen_aperiodic(fm_med.freqs, fm_med.aperiodic_params_)
 ap_fit_high = gen_aperiodic(fm_high.freqs, fm_high.aperiodic_params_)
 
 # Create tuples for plotting
-plot_fit_spec10 = (fm_LFP.freqs, 10**ap_fit_LFP, "--")
+plot_fit_spec10 = (fm_LFP.freqs, 10**ap_fit_LFP, ":")
 plot_aperiodic = (freq, psd_aperiodic, c_ground)
 plot_fit_low = (fm_low.freqs, 10**ap_fit_low, "--")
 plot_fit_med = (fm_med.freqs, 10**ap_fit_med, "--")
@@ -363,7 +368,7 @@ plot_fit_high = (fm_high.freqs, 10**ap_fit_high, "--")
 psd_delta_fits = [plot_fit_low, plot_fit_med, plot_fit_high]
 
 
-spec10_kwargs = dict(c=c_real, alpha=.3, lw=2)
+spec10_kwargs = dict(c=c_real, lw=2)
 aperiodic_kwargs = dict(lw=.5)
 low_kwargs = dict(c=c_low, lw=2)
 med_kwargs = dict(c=c_med, lw=2)
@@ -557,7 +562,7 @@ ax.set(**axes_b)
 #     handle.set_linewidth(2.6)
 # =============================================================================
 # decrease legend handle linewidth
-leg = ax.legend(handlelength=2, borderaxespad=0)
+leg = ax.legend(handlelength=1.5, borderaxespad=0)
 for handle in leg.legendHandles:
     handle.set_linewidth(2.2)
 ax.text(s="b", **abc, transform=ax.transAxes)
@@ -575,8 +580,10 @@ arrows = [arr_pos_low, None, arr_pos_high]
 for i, ax in enumerate(c_axes):
 
     # Plot LFP and fooof fit
-    ax.loglog(*plot_psd_spec10_adj, **spec10_kwargs, label=spec10_label[i])
-    ax.loglog(*plot_fit_spec10, **spec10_kwargs, label=spec10_fit_label[i])
+    ax.loglog(*plot_psd_spec10_adj, alpha=.3, **spec10_kwargs,
+              label=spec10_label[i])
+    ax.loglog(*plot_fit_spec10, alpha=1, zorder=5, **spec10_kwargs,
+              label=spec10_fit_label[i])
 
     # Plot sim low delta power and fooof fit
     ax.loglog(*psd_delta_vary[i])
@@ -637,7 +644,7 @@ Make supp. fooof fits for b) and c) and maybe one example of a)
 #     ax.spines['top'].set_visible(True)
 #     if i > 0:
 #         ax.set_ylabel("")
-# 
+#
 #     ax = axes[1, i]
 #     fits[i][0].plot(ax=ax, plt_log=False, **kwargs)
 #     if i > 0:
