@@ -136,17 +136,18 @@ lower_fitting_borders = range(1, 80)
 upper_fitting_border = 100
 
 # Oscillations parameters:
-freq1, freq2, freq3 = 5, 15, 25  # Hz
-amp1, amp2, amp3 = .7, .13, .02
-width1, width2, width3 = .01, .01, .01
 toy_slope = 2
+freq1, freq2, freq3 = 5, 15, 35  # Hz
+amp1, amp2, amp3 = .4, .1, .02
+width = .01
 
-periodic_params = [(freq1, amp1, width1),
-                   (freq2, amp2, width2),
-                   (freq3, amp3, width3)]
+periodic_params = [(freq1, amp1, width),
+                   (freq2, amp2, width),
+                   (freq3, amp3, width)]
 
 # Sim Toy Signal
-_, toy_signal = osc_signals(toy_slope, periodic_params=periodic_params)
+_, toy_signal = osc_signals(toy_slope, periodic_params=periodic_params,
+                            highpass=False)
 freq_a, toy_psd = sig.welch(toy_signal, **welch_params)
 
 # Filter 1-100Hz
@@ -402,13 +403,18 @@ abc = dict(x=0, y=1.04, fontsize=panel_fontsize,
 
 # a)
 # a1
-xticklabels_a1 = []
-yticks_a = [1e-10, 1e-7]
-yticklabels_a1 = []
-xlim_a = (1, 100)
+ymini = -13
+ymaxi = -7
+yticks_a1 = 10**np.arange(ymini, ymaxi, dtype=float)
+ylim_a1 = (yticks_a1[0], yticks_a1[-1])
+yticklabels_a1 = [""] * len(yticks_a1)
+yticklabels_a1[0] = fr"$10^{{{ymini}}}$"
+yticklabels_a1[-1] = fr"$10^{{{ymaxi}}}$"
 ylabel_a1 = "PSD [a.u.]"
-labelpad = 5
-axes_a1 = dict(xticklabels=xticklabels_a1, yticks=yticks_a,
+
+xticklabels_a1 = []
+xlim_a = (1, 100)
+axes_a1 = dict(xticklabels=xticklabels_a1, yticks=yticks_a1, ylim=ylim_a1,
                yticklabels=yticklabels_a1, xlim=xlim_a)
 freqs123 = [freq1, freq2, freq3]
 colors123 = [c_range1, c_range2, c_range3]
@@ -416,9 +422,9 @@ text_dic = dict(x=100, ha="right", fontsize=annotation_fontsize)
 
 # a2
 xticks_a2 = [1, 10, 100]
-yticks_a2 = [0, 1]
+yticks_a2 = [0, .5, 1]
 xlabel_a2 = "Lower fitting range border [Hz]"
-ylabel_a2 = "Fitting error"
+ylabel_a2 = r"$|a_{truth} - a_{IRASA}|$"
 ylim_a2 = (0, 1)
 axes_a2 = dict(xticks=xticks_a2, xticklabels=xticks_a2, yticks=yticks_a2,
                xlim=xlim_a, xlabel=xlabel_a2, ylim=ylim_a2)
@@ -502,7 +508,7 @@ ax.loglog(freq_a, toy_psd, c_sim)
 
 # Annotate fitting ranges
 vline_dic = dict(ls="--", clip_on=False, alpha=0.3)
-ymin, ymax = ax.get_ylim()
+ymin = ylim_a1[0]
 for i, (freq_low, color) in enumerate(zip(freqs123, colors123)):
     y = toy_psd[freq_low]
     xmin = freq_low
@@ -522,8 +528,11 @@ for i, (freq_low, color) in enumerate(zip(freqs123, colors123)):
 
 # Set axes
 ax.text(s="a", **abc, transform=ax.transAxes)
-ax.set(**axes_a1, ylim=(ymin, ymax))
-ax.set_ylabel(ylabel_a1, labelpad=labelpad)
+ax.set(**axes_a1)
+ax.set_ylabel(ylabel_a1, labelpad=-12)
+y_minor = mpl.ticker.LogLocator(subs=np.arange(0, 1, .1), numticks=10)
+ax.yaxis.set_minor_locator(y_minor)
+ax.set_yticklabels([], minor=True)
 
 # a2
 ax = ax2
@@ -605,7 +614,7 @@ for i, ax in enumerate(c_axes):
     # Save legend handles labels and set axes
     if i == 0:
         handles, labels = ax.get_legend_handles_labels()
-        ax.set_ylabel(ylabel_c, labelpad=labelpad)
+        ax.set_ylabel(ylabel_c, labelpad=5)
         ax.text(s="c", **abc, transform=ax.transAxes)
     else:
         hands, labs = ax.get_legend_handles_labels()
