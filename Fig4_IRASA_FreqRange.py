@@ -435,6 +435,7 @@ f_step = 1 / win_sec
 
 band_low_eff = (band_low[0] * h_max, band_low[1] / h_max)
 
+N_h = len(np.arange(1.1, 1.9, 0.05))
 hset = np.linspace(1.1, h_max, N_h)
 
 IRASA_low = irasa(data=sub, sf=srate, band=band_low, hset=hset)

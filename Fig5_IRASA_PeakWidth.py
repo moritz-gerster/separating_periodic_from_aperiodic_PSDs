@@ -19,7 +19,7 @@ from numpy.fft import irfft, rfftfreq
 import scipy as sp
 import scipy.signal as sig
 from pathlib import Path
-# import mne
+import mne
 # from fooof import FOOOF
 # from fooof.sim.gen import gen_aperiodic
 import matplotlib.gridspec as gridspec
@@ -132,9 +132,8 @@ fig_path = "../paper_figures/"
 fig_name = "Fig5_IRASA_PeakWidth.pdf"
 Path(fig_path).mkdir(parents=True, exist_ok=True)
 
-# Litvak file names
+# File names
 path = "../data/Fig5/"
-# fname = "subj6_off_R1_raw.fif"
 
 # Colors
 
@@ -182,7 +181,7 @@ periodic_params_b = [(freq1, amp*2.8, width*.42),
                      (freq2, amp*1, width*.84),
                      (freq3, amp*.6, width*2)]
 
-periodic_params_c = [(freq1, amp*3.5, width*.6),
+periodic_params_c = [(freq1, amp*4.4, width*.8),
                      (freq2, amp*1.7, width*1.2),
                      (freq3, amp*.7, width*2.5)]
 # Sim Toy Signal
@@ -224,6 +223,101 @@ error_plot_a = (lower_fitting_borders, fit_errors_a, c_error)
 error_plot_b = (lower_fitting_borders, fit_errors_b, c_error)
 error_plot_c = (lower_fitting_borders, fit_errors_c, c_error)
 
+# %% B Sim
+
+# Oscillations parameters:
+toy_slope = 2
+freq1, freq2, freq3 = 5, 15, 35  # Hz
+amp = 1
+width = 1
+
+periodic_params = [(freq1, amp*2, width*.2),
+                     (freq2, amp*.4, width*.25),
+                     (freq3, amp*.35, width*1.8)]
+
+
+# Sim Toy Signal
+_, three_peaks = osc_signals(toy_slope, periodic_params=periodic_params_a,
+                             highpass=False)
+
+freq3, three_peaks_psd = sig.welch(three_peaks, **welch_params)
+
+# Filter 1-100Hz
+filt3 = (freq3 <= 100)
+freq3 = freq3[filt3]
+three_peaks_psd = three_peaks_psd[filt3]
+
+
+
+# %% C Real data
+
+fname_MEG = "Subj016_ON_1_raw.fif"
+fname_LFP = "Subj016_OFF_001_STN_r+s_raw.fif"
+
+sub_MEG = mne.io.read_raw_fif(path + fname_MEG, preload=True)
+sub_LFP = mne.io.read_raw_fif(path + fname_LFP, preload=True)
+
+small_grad = "MEG0913"
+med_mag = "MEG2421"
+large_LFP = "R2-R3"
+
+channels = [small_grad, med_mag]
+
+sub_MEG.pick_channels(channels)
+sub_LFP.pick_channels([large_LFP])
+
+# Convert to numpy
+MEG_raw = sub_MEG.get_data()
+LFP_raw = sub_LFP.get_data()[0]
+LFP_raw *= 1e6  # convert V to uV
+
+
+freq, spec_MEG = sig.welch(MEG_raw, **welch_params)
+freq, spec_LFP = sig.welch(LFP_raw, **welch_params)
+
+
+filt = (freq <= 600)
+freq = freq[filt]
+spec_MEG = spec_MEG[:, filt]
+spec_LFP = spec_LFP[filt]
+
+
+plot_small = (freq, spec_MEG[0], c_real)
+plot_med = (freq, spec_MEG[1], c_real)
+plot_large = (freq, spec_LFP, c_real)
+
+# %% C Calc IRASA
+h_max = 1.9
+N_h = 16
+irasa_params = dict(sf=srate, band=(2, 120), win_sec=4,
+                    hset=np.linspace(1.1, h_max, N_h))
+
+IRASA_s19 = irasa(MEG_raw[0], **irasa_params)
+IRASA_m19 = irasa(MEG_raw[1], **irasa_params)
+IRASA_b19 = irasa(LFP_raw, **irasa_params)
+
+freq_I, ap_small19, per_small19, params_small19 = IRASA_s19
+_, ap_med19, per_med19, params_med19 = IRASA_m19
+_, ap_large19, per_large19, params_large19 = IRASA_b19
+
+plot_ap_small19 = (freq_I, ap_small19[0], c_ap)
+plot_ap_med19 = (freq_I, ap_med19[0], c_ap)
+plot_ap_large19 = (freq_I, ap_large19[0], c_ap)
+
+
+h_max = 4.9
+irasa_params["hset"] = np.linspace(1.1, h_max, N_h)
+IRASA_s49 = irasa(MEG_raw[0], **irasa_params)
+IRASA_m49 = irasa(MEG_raw[1], **irasa_params)
+IRASA_l49 = irasa(LFP_raw, **irasa_params)
+
+freq_I, ap_small49, per_small49, params_small49 = IRASA_s49
+_, ap_med49, per_med49, params_med49 = IRASA_m49
+_, ap_large49, per_large49, params_large49 = IRASA_l49
+
+plot_ap_small49 = (freq_I, ap_small49[0], c_ap)
+plot_ap_med49 = (freq_I, ap_med49[0], c_ap)
+plot_ap_large49 = (freq_I, ap_large49[0], c_ap)
 
 # %% Plot Params
 
@@ -279,10 +373,19 @@ axes_b2 = dict(xticks=xticks_a2, xticklabels=xticks_a2, yticks=yticks_a2,
                yticklabels=[],
                xlim=xlim_a, xlabel=xlabel_a2, ylim=ylim_a2)
 
-# %% Plot
-fig = plt.figure(figsize=[width, 5.2], constrained_layout=True)
+# d
+ylabel_d = r"$\left(T/m\right)^2$/Hz"
 
-gs0 = gridspec.GridSpec(2, 1, figure=fig, height_ratios=[1, 1])
+# e
+ylabel_e = r"$T^2/Hz$"
+
+# f
+ylabel_f = r"$\mu V^2/Hz$"
+
+# %% Plot
+fig = plt.figure(figsize=[width, 6.9], constrained_layout=True)
+
+gs0 = gridspec.GridSpec(3, 1, figure=fig)
 
 gs00 = gs0[0].subgridspec(2, 3)
 axA1 = fig.add_subplot(gs00[0, 0])
@@ -296,6 +399,11 @@ gs01 = gridspec.GridSpecFromSubplotSpec(1, 3, subplot_spec=gs0[1])
 ax5 = fig.add_subplot(gs01[0])
 ax6 = fig.add_subplot(gs01[1])
 ax7 = fig.add_subplot(gs01[2])
+
+gs02 = gridspec.GridSpecFromSubplotSpec(1, 3, subplot_spec=gs0[2])
+ax8 = fig.add_subplot(gs02[0])
+ax9 = fig.add_subplot(gs02[1])
+ax10 = fig.add_subplot(gs02[2])
 
 # a
 # a1
@@ -458,5 +566,53 @@ for i, (freq_low, color) in enumerate(zip(freqs123, colors123)):
 # Set axes
 ax.set(**axes_b2)
 
+
+# d
+ax = ax5
+
+ax.text(s="b", **abc, transform=ax.transAxes)
+
+
+# e
+ax = ax6
+
+# f
+ax = ax7
+
+
+
+
+
+
+
+# g
+ax = ax8
+ax.loglog(*plot_small)
+ax.loglog(*plot_ap_small19, ls="--", label="h_max=1.9")
+ax.loglog(*plot_ap_small49, label="h_max=4.9")
+ax.set_ylabel(ylabel_d)
+ax.text(s="c", **abc, transform=ax.transAxes)
+
+
+# h
+ax = ax9
+ax.loglog(*plot_med)
+ax.loglog(*plot_ap_med19, ls="--", label="h_max=1.9")
+ax.loglog(*plot_ap_med49, label="h_max=4.9")
+ax.set_ylabel(ylabel_e)
+
+# i
+ax = ax10
+ax.loglog(*plot_large)
+ax.loglog(*plot_ap_large19, ls="--", label="h_max=1.9")
+ax.loglog(*plot_ap_large49, label="h_max=4.9")
+ax.set_ylabel(ylabel_f)
+
 plt.savefig(fig_path + fig_name, bbox_inches="tight")
 plt.show()
+
+"""
+Sim signal, no noise floor, no highpass, 3 peaks, one ca. 3Hz (small), one
+ca. 20Hz (medium), one ca. 80Hz (large).
+Show three different values of parameter h which works for each peak.
+"""
