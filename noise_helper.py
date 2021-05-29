@@ -567,7 +567,7 @@ def irasa(data, sf=None, ch_names=None, band=(1, 30),
     hset = np.round(hset, 4)  # avoid float precision error with np.arange.
     band = sorted(band)
     assert band[0] > 0, 'first element of band must be > 0.'
-    assert band[1] < (sf / 4), 'second element of band should be < (sf / 4).'
+    # assert band[1] < (sf / 4), 'second element of band should be < (sf / 4).'
     win = int(win_sec * sf)  # nperseg
 
     # Calculate the original PSD over the whole data
@@ -590,9 +590,9 @@ def irasa(data, sf=None, ch_names=None, band=(1, 30),
 # =============================================================================
 #     CHANGED TO ALLOW NAN VALUES
         freqs_up, psd_up = calc_psd(data_up, h * sf, nperseg=win,
-                                        **kwargs_welch)
+                                    **kwargs_welch)
         freqs_dw, psd_dw = calc_psd(data_down, sf / h, nperseg=win,
-                                        **kwargs_welch)
+                                    **kwargs_welch)
 # =============================================================================
         # Geometric mean of h and 1/h
         psds[i, :] = np.sqrt(psd_up * psd_dw)
