@@ -325,20 +325,20 @@ IRASA_l_h2 = irasa(LFP_raw, **irasa_params2)
 IRASA_l_h3 = irasa(LFP_raw, **irasa_params3)
 
 
-freq_I, ap_small_h1, per_small_h1, params_small_h1 = IRASA_small_h1
+freq_I_h1, ap_small_h1, per_small_h1, params_small_h1 = IRASA_small_h1
 _, ap_med_h1, per_med_h1, params_med_h1 = IRASA_med_h1
 _, ap_large_h1, per_large_h1, params_large_h1 = IRASA_large_h1
-_, ap_med_h2, per_med_h2, params_med_h2 = IRASA_m_h2
-_, ap_large_h2, per_large_h2, params_large_h2 = IRASA_l_h2
-_, ap_large_h3, per_large_h3, params_large_h3 = IRASA_l_h3
+freq_I_h2, ap_med_h2, per_med_h2, params_med_h2 = IRASA_m_h2
+freq_I_h2, ap_large_h2, per_large_h2, params_large_h2 = IRASA_l_h2
+freq_I_h3, ap_large_h3, per_large_h3, params_large_h3 = IRASA_l_h3
 
 
-plot_ap_small_h1 = (freq_I, ap_small_h1[0], c_IRASA1)
-plot_ap_med_h1 = (freq_I, ap_med_h1[0], c_IRASA1)
-plot_ap_large_h1 = (freq_I, ap_large_h1[0], c_IRASA1)
-plot_ap_med_h2 = (freq_I, ap_med_h2[0]/100, c_IRASA2)
-plot_ap_large_h2 = (freq_I, ap_large_h2[0]/100, c_IRASA2)
-plot_ap_large_h3 = (freq_I, ap_large_h3[0]/10000, c_IRASA3)
+plot_ap_small_h1 = (freq_I_h1, ap_small_h1[0], c_IRASA1)
+plot_ap_med_h1 = (freq_I_h1, ap_med_h1[0], c_IRASA1)
+plot_ap_large_h1 = (freq_I_h1, ap_large_h1[0], c_IRASA1)
+plot_ap_med_h2 = (freq_I_h2, ap_med_h2[0]/100, c_IRASA2)
+plot_ap_large_h2 = (freq_I_h2, ap_large_h2[0]/100, c_IRASA2)
+plot_ap_large_h3 = (freq_I_h3, ap_large_h3[0]/10000, c_IRASA3)
 
 
 # Show what happens for larger freq ranges
@@ -409,7 +409,7 @@ welch_params = dict(fs=srate_sim, nperseg=nperseg)
 toy_slope = 2
 
 periodic_params_s = [(freq_real_s, pow_real_s, bw_real_s/4)]
-periodic_params_m = [(freq_real_m, pow_real_m*5, bw_real_m/2.5)]
+periodic_params_m = [(freq_real_m + 3, pow_real_m*5, bw_real_m/2.5)]
 periodic_params_l = [(freq_real_l, pow_real_l*7, bw_real_l/2.3)]
 
 # Sim Toy Signal
@@ -437,8 +437,8 @@ plot_psd_med = (freq_b, peak_psd_med, c_sim)
 plot_psd_large = (freq_b, peak_psd_large, c_sim)
 
 # plot_psd_small_low = (freq_b, peak_psd_small/10, c_sim)
-plot_psd_med_low = (freq_b, peak_psd_med/10, c_sim)
-plot_psd_large_low = (freq_b, peak_psd_large/10, c_sim)
+plot_psd_med_low = (freq_b, peak_psd_med/100, c_sim)
+plot_psd_large_low = (freq_b, peak_psd_large/100, c_sim)
 
 # plot_psd_small_lower = (freq_b, peak_psd_small/100, c_sim)
 # plot_psd_med_lower = (freq_b, peak_psd_med/100, c_sim)
@@ -480,8 +480,8 @@ IRASA_sim_small_h1 = irasa(peak_small, **irasa_params1)
 
 IRASA_sim_med_h1 = irasa(peak_med, **irasa_params1)
 IRASA_sim_med_h2 = irasa(peak_med, **irasa_params2)
-IRASA_sim_med12_h1 = irasa(peak_med, **irasa_params1)
-IRASA_sim_med12_h2 = irasa(peak_med, **irasa_params2)
+# IRASA_sim_med12_h1 = irasa(peak_med, **irasa_params1)
+# IRASA_sim_med12_h2 = irasa(peak_med, **irasa_params2)
 
 IRASA_sim_large_h1 = irasa(peak_large, **irasa_params1)
 IRASA_sim_large_h2 = irasa(peak_large, **irasa_params2)
@@ -511,12 +511,12 @@ ap_sim_large_h3 = ap_sim_large_h3[0]
 plot_ap_sim_small_h1 = (freqs_sim_s, ap_sim_small_h1, c_IRASA1)
 
 plot_ap_sim_med_h1 = (freqs_sim_m, ap_sim_med_h1, c_IRASA1)
-plot_ap_sim_med_h2 = (freqs_sim_m, ap_sim_med_h2/10, c_IRASA2)
+plot_ap_sim_med_h2 = (freqs_sim_m, ap_sim_med_h2/100, c_IRASA2)
 # plot_ap_sim_med12_h1 = (freqs_sim_m12, ap_sim_med12_h1, c_IRASA1)
 # plot_ap_sim_med12_h2 = (freqs_sim_m12, ap_sim_med12_h2/10, c_IRASA2)
 
 plot_ap_sim_large_h1 = (freqs_sim_l, ap_sim_large_h1, c_IRASA1)
-plot_ap_sim_large_h2 = (freqs_sim_l, ap_sim_large_h2/10, c_IRASA2)
+plot_ap_sim_large_h2 = (freqs_sim_l, ap_sim_large_h2/100, c_IRASA2)
 plot_ap_sim_large_h3 = (freqs_sim_l, ap_sim_large_h3/10000, c_IRASA3)
 
 # =============================================================================
@@ -576,8 +576,7 @@ mpl.rcParams["axes.spines.top"] = False
 abc = dict(x=0, y=1.01, fontsize=panel_fontsize,
            fontdict=dict(fontweight="bold"))
 
-# a
-# a1
+# a11
 ymini = -13
 ymaxi = -7
 yticks_a1 = 10**np.arange(ymini, ymaxi, dtype=float)
@@ -595,7 +594,7 @@ freqs123 = [freq1, freq2, freq3]
 colors123 = [c_range1, c_range2, c_range3]
 text_dic = dict(x=100, ha="right", fontsize=annotation_fontsize)
 
-# a2
+# a12
 xticks_a2 = [1, 10, 100]
 yticks_a2 = [0, .5, 1]
 xlabel_a2 = "Lower fitting range border [Hz]"
@@ -604,11 +603,11 @@ ylim_a2 = (0, 1)
 axes_a2 = dict(xticks=xticks_a2, xticklabels=xticks_a2, yticks=yticks_a2,
                xlim=xlim_a, xlabel=xlabel_a2, ylim=ylim_a2, ylabel=ylabel_a2)
 
-axes_b1 = dict(xticklabels=xticklabels_a1, xlim=xlim_a, yticks=yticks_a1,
-               yticklabels=[], ylim=ylim_a1)
-axes_b2 = dict(xticks=xticks_a2, xticklabels=xticks_a2, yticks=yticks_a2,
-               yticklabels=[],
-               xlim=xlim_a, xlabel=xlabel_a2, ylim=ylim_a2)
+axes_a21 = dict(xticklabels=xticklabels_a1, xlim=xlim_a, yticks=yticks_a1,
+                yticklabels=[], ylim=ylim_a1)
+axes_a22 = dict(xticks=xticks_a2, xticklabels=xticks_a2, yticks=yticks_a2,
+                yticklabels=[],
+                xlim=xlim_a, xlabel=xlabel_a2, ylim=ylim_a2)
 
 # d
 ylabel_d = r"$\left(T/m\right)^2$/Hz"
@@ -621,6 +620,38 @@ ylabel_f = r"$\mu V^2/Hz$"
 
 # b
 xlim_b = (None, 700)
+xlabel = "Frequency [Hz]"
+xticks_b = [1, 10, 100, 1000]
+
+# c
+xticks_c = [1, 10, 100, 600]
+
+
+def anno_fitrange(ax1, ax2, toy_psd, freqs, colors):
+    vline_dic = dict(ls="--", clip_on=False, alpha=.3)
+    for i, (freq_low, color) in enumerate(zip(freqs, colors)):
+        ymin = ylim_a1[0]
+        y = toy_psd[freq_low]
+        xmin = freq_low
+        xmax = upper_fitting_border
+        coords = (y, xmin, xmax)
+        ax1.hlines(*coords, color=color, ls="--")
+        v_coords = (xmin, ymin, y)
+        ax1.vlines(*v_coords, color=color, **vline_dic)
+
+        # Add annotation
+        s = f"{freq_low}-{xmax}Hz"
+        if i == 0:
+            s = "Fitting range: " + s
+            y = y**.97
+        else:
+            y = y**.98
+        ax1.text(s=s, y=y, **text_dic)
+        # Add vlines below
+        ymin = 0
+        ymax = 1.4
+        v_coords = (xmin, ymin, ymax)
+        ax2.vlines(*v_coords, color=color, **vline_dic)
 
 
 def annotate_fit_range(ax, xmin, xmax, height, ylow=None, yhigh=None,
@@ -687,7 +718,7 @@ def annotate_fit_range(ax, xmin, xmax, height, ylow=None, yhigh=None,
 # %% Plot
 fig = plt.figure(figsize=[width, 6.9], constrained_layout=True)
 
-gs0 = gridspec.GridSpec(3, 1, figure=fig)
+gs0 = gridspec.GridSpec(4, 1, figure=fig, height_ratios=[10, 10, 1, 10])
 
 gs00 = gs0[0].subgridspec(2, 3)
 axA1 = fig.add_subplot(gs00[0, 0])
@@ -702,39 +733,23 @@ ax5 = fig.add_subplot(gs01[0])
 ax6 = fig.add_subplot(gs01[1])
 ax7 = fig.add_subplot(gs01[2])
 
-gs02 = gridspec.GridSpecFromSubplotSpec(1, 3, subplot_spec=gs0[2])
-ax8 = fig.add_subplot(gs02[0])
-ax9 = fig.add_subplot(gs02[1])
-ax10 = fig.add_subplot(gs02[2])
+gs02 = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=gs0[2])
+ax_leg = fig.add_subplot(gs02[0])
+ax_leg.axis("off")
+
+gs03 = gridspec.GridSpecFromSubplotSpec(1, 3, subplot_spec=gs0[3])
+ax8 = fig.add_subplot(gs03[0])
+ax9 = fig.add_subplot(gs03[1])
+ax10 = fig.add_subplot(gs03[2])
 
 # a
-# a1
+# a11
 ax = axA1
 
 # Plot sim
 ax.loglog(freq_a, toy_psd_a, c_sim)
 ax.loglog(freq0, psd_aperiodic_a, c_ap, zorder=0)
-
-# Annotate fitting ranges
-vline_dic = dict(ls="--", clip_on=False, alpha=.3)
-ymin = ylim_a1[0]
-for i, (freq_low, color) in enumerate(zip(freqs123, colors123)):
-    y = toy_psd_a[freq_low]
-    xmin = freq_low
-    xmax = upper_fitting_border
-    coords = (y, xmin, xmax)
-    ax.hlines(*coords, color=color, ls="--")
-    v_coords = (xmin, ymin, y)
-    ax.vlines(*v_coords, color=color, **vline_dic)
-
-    # Add annotation
-    s = f"{freq_low}-{xmax}Hz"
-    if i == 0:
-        s = "Fitting range: " + s
-        y = y**.97
-    else:
-        y = y**.98
-    ax.text(s=s, y=y, **text_dic)
+anno_fitrange(axA1, axA2, toy_psd_a, freqs123, colors123)
 
 # Set axes
 ax.text(s="a", **abc, transform=ax.transAxes)
@@ -744,130 +759,53 @@ ax.set_yticklabels([], minor=True)
 ax.set(**axes_a1)
 ax.set_ylabel(ylabel_a1, labelpad=-8)
 
-# a2
+# a12
 ax = axA2
-
-# Plot error
 ax.semilogx(*error_plot_a)
-
-# Annotate fitting ranges
-for i, (freq_low, color) in enumerate(zip(freqs123, colors123)):
-    xmin = freq_low
-    ymin = 0
-    ymax = 1.2
-    v_coords = (xmin, ymin, ymax)
-    ax.vlines(*v_coords, color=color, **vline_dic)
 
 # Set axes
 ax.set(**axes_a2)
 
-# b
-# b1
+# a21
 ax = axB1
 
 # Plot sim
 ax.loglog(freq_a, toy_psd_b, c_sim)
 ax.loglog(freq0, psd_aperiodic_b, c_ap, zorder=0)
-
-# Annotate fitting ranges
-vline_dic = dict(ls="--", clip_on=False, alpha=.3)
-ymin = ylim_a1[0]
-for i, (freq_low, color) in enumerate(zip(freqs123, colors123)):
-    y = toy_psd_b[freq_low]
-    xmin = freq_low
-    xmax = upper_fitting_border
-    coords = (y, xmin, xmax)
-    ax.hlines(*coords, color=color, ls="--")
-    v_coords = (xmin, ymin, y)
-    ax.vlines(*v_coords, color=color, **vline_dic)
-
-    # Add annotation
-    s = f"{freq_low}-{xmax}Hz"
-    if i == 0:
-        s = "Fitting range: " + s
-        y = y**.97
-    else:
-        y = y**.98
-    ax.text(s=s, y=y, **text_dic)
+anno_fitrange(axB1, axB2, toy_psd_b, freqs123, colors123)
 
 # Set axes
-# ax.text(s="b", **abc, transform=ax.transAxes)
 y_minor = mpl.ticker.LogLocator(subs=np.arange(0, 1, 0.1), numticks=10)
 ax.yaxis.set_minor_locator(y_minor)
 ax.set_yticklabels([], minor=True)
-ax.set(**axes_b1)
+ax.set(**axes_a21)
 
-# b2
+# a22
 ax = axB2
-
-# Plot error
 ax.semilogx(*error_plot_b)
 
-# Annotate fitting ranges
-for i, (freq_low, color) in enumerate(zip(freqs123, colors123)):
-    xmin = freq_low
-    ymin = 0
-    ymax = 1.2
-    v_coords = (xmin, ymin, ymax)
-    ax.vlines(*v_coords, color=color, **vline_dic)
-
 # Set axes
-ax.set(**axes_b2)
+ax.set(**axes_a22)
 
 
-# c
-# c1
+# a31
 ax = axC1
-
-# Plot sim
 ax.loglog(freq_a, toy_psd_c, c_sim)
 ax.loglog(freq0, psd_aperiodic_c, c_ap, zorder=0)
-
-# Annotate fitting ranges
-vline_dic = dict(ls="--", clip_on=False, alpha=.3)
-ymin = ylim_a1[0]
-for i, (freq_low, color) in enumerate(zip(freqs123, colors123)):
-    y = toy_psd_c[freq_low]
-    xmin = freq_low
-    xmax = upper_fitting_border
-    coords = (y, xmin, xmax)
-    ax.hlines(*coords, color=color, ls="--")
-    v_coords = (xmin, ymin, y)
-    ax.vlines(*v_coords, color=color, **vline_dic)
-
-    # Add annotation
-    s = f"{freq_low}-{xmax}Hz"
-    if i == 0:
-        s = "Fitting range: " + s
-        y = y**.97
-    else:
-        y = y**.98
-    ax.text(s=s, y=y, **text_dic)
+anno_fitrange(axC1, axC2, toy_psd_b, freqs123, colors123)
 
 # Set axes
-# ax.text(s="c", **abc, transform=ax.transAxes)
 y_minor = mpl.ticker.LogLocator(subs=np.arange(0, 1, 0.1), numticks=10)
 ax.yaxis.set_minor_locator(y_minor)
 ax.set_yticklabels([], minor=True)
-ax.set(**axes_b1)
+ax.set(**axes_a21)
 
-# c2
+# a32
 ax = axC2
-
-# Plot error
 ax.semilogx(*error_plot_c)
 
-# Annotate fitting ranges
-for i, (freq_low, color) in enumerate(zip(freqs123, colors123)):
-    xmin = freq_low
-    ymin = 0
-    ymax = 1.2
-    v_coords = (xmin, ymin, ymax)
-    ax.vlines(*v_coords, color=color, **vline_dic)
-
 # Set axes
-ax.set(**axes_b2)
-
+ax.set(**axes_a22)
 
 
 
@@ -878,7 +816,7 @@ ax.loglog(*plot_ap_sim_small_h1, label=r"$h_{max}$ = "f"{h_max1}")
 # ax.loglog(*plot_ap_fit_sim_small_h1, label=f"a={sim_small_h1_slope:.2f}")
 
 # ax.set_yticklabels([])
-
+# xticks_bzz = ax.get_xticks()
 # annotate freq bandwidth
 xmin = freq_sim_s - bw_sim_s
 xmax = freq_sim_s + bw_sim_s
@@ -887,6 +825,8 @@ yhigh = plot_psd_small[1][np.argmin(np.abs(plot_psd_small[0] - xmax))]
 height = 1e-17
 annotate_fit_range(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
                    height=height, annotate_middle=False, annotate_range=False)
+ax.set_xticks(xticks_b)
+ax.set_xticklabels(xticks_b)
 
 # ax.legend(loc=1)
 ax.set_ylabel(ylabel_a1)
@@ -906,6 +846,11 @@ ax.loglog(*plot_ap_sim_med_h2, label=r"$h_{max}$ = "f"{h_max2}")
 # ax.loglog(*plot_ap3_m, label=r"$h_{max}$ = "f"{h_max3}")
 # ax.set_xlim(xlim_b)
 # ax.set_ylim((1e-6, 1))
+y_minor = mpl.ticker.LogLocator(subs=np.arange(0, 1, 0.1), numticks=10)
+ax.yaxis.set_minor_locator(y_minor)
+ax.set_yticklabels([])
+ax.set_yticklabels([], minor=True)
+
 height = 1e-17
 xmin = freq_sim_m - bw_sim_m
 xmax = freq_sim_m + bw_sim_m
@@ -913,6 +858,8 @@ ylow = plot_psd_med_low[1][np.argmin(np.abs(plot_psd_med_low[0] - xmin))]
 yhigh = plot_psd_med_low[1][np.argmin(np.abs(plot_psd_med_low[0] - xmax))]
 annotate_fit_range(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
                    height=height, annotate_middle=False, annotate_range=False)
+ax.set_xticks(xticks_b)
+ax.set_xticklabels(xticks_b)
 
 # ax.legend(fontsize=7)
 
@@ -929,8 +876,13 @@ ax.loglog(*plot_ap_sim_large_h2, label=r"$h_{max}$ = "f"{h_max2}")
 ax.loglog(*plot_psd_large_lower, alpha=.5)
 ax.loglog(*plot_ap_sim_large_h3, label=r"$h_{max}$ = "f"{h_max3}")
 # ax.loglog(*plot_ap_fit_sim_large_h3, label=f"a={sim_large_h3_slope:.2f}")
-# ax.set_xlim(xlim_b)
-# ax.set_ylim((1e-6, 1))
+# ax.set_xticks(xticks_b)
+# ax.set_xticklabels(xticks_b)
+y_minor = mpl.ticker.LogLocator(subs=np.arange(0, 1, 0.1), numticks=10)
+ax.yaxis.set_minor_locator(y_minor)
+ax.set_yticklabels([])
+ax.set_yticklabels([], minor=True)
+
 
 # annotate freq bandwidth
 xmin = freq_sim_l - bw_sim_l# * 3
@@ -940,15 +892,19 @@ ylow = plot_psd_large_lower[1][np.argmin(np.abs(plot_psd_large_lower[0] - xmin))
 yhigh = plot_psd_large_lower[1][np.argmin(np.abs(plot_psd_large_lower[0] - xmax))]
 annotate_fit_range(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
                    height=height, annotate_middle=False, annotate_range=False)
+ax.set_xticks(xticks_b)
+ax.set_xticklabels(xticks_b)
 
-ax.legend(fontsize=7, ncol=3)
+handles, labels = ax.get_legend_handles_labels()
+
+ax_leg.legend(handles, labels, fontsize=legend_fontsize, ncol=3, loc=10)
 
 
 
 
 
 
-
+alpha_long = .3
 
 
 # c1
@@ -957,6 +913,7 @@ ax.loglog(*plot_small)
 ax.loglog(*plot_ap_small_h1, label=r"$h_{max}$ = "f"{h_max1}")
 # ax.loglog(*plot_ap_fit_small_h1, label=f"a={small_h1_slope:.2f}")
 ax.set_ylabel(ylabel_d)
+ax.set_xlabel(xlabel)
 # ax.set_xlim(xlim_b)
 ymin, ymax = ax.get_ylim()
 ax.set_ylim((3e-26, ymax))
@@ -969,31 +926,39 @@ yhigh = plot_small[1][np.argmin(np.abs(plot_small[0] - xmax))]
 height = 4e-26
 annotate_fit_range(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
                    height=height, annotate_middle=False, annotate_range=False)
-# ax.legend()
+ax.set_xticks(xticks_c)
+ax.set_xticklabels(xticks_c)
 
 
 # c2
 ax = ax9
 ax.loglog(*plot_med)
 ax.loglog(*plot_ap_med_h1, label=r"$h_{max}$ = "f"{h_max1}")
-ax.loglog(*plot_ap_med_h1_long, ls="--", alpha=.8, label=r"$h_{max}$ = "f"{h_max1}")
+ax.loglog(*plot_ap_med_h1_long, ls="--", alpha=alpha_long, label=r"$h_{max}$ = "f"{h_max1}")
 # ax.loglog(*plot_ap_fit_med_h1, label=f"a={med_h1_slope:.2f}")
 
 ax.loglog(*plot_med_low, alpha=.5)
 ax.loglog(*plot_ap_med_h2, label=r"$h_{max}$ = "f"{h_max2}")
-ax.loglog(*plot_ap_med_h2_long, ls="--", alpha=.8, label=r"$h_{max}$ = "f"{h_max2}")
+ax.loglog(*plot_ap_med_h2_long, ls="--", alpha=alpha_long, label=r"$h_{max}$ = "f"{h_max2}")
 # ax.loglog(*plot_ap_fit_med_h2, label=f"a={med_h2_slope:.2f}")
 ax.set_ylabel(ylabel_e)
+ax.set_xlabel(xlabel)
+y_minor = mpl.ticker.LogLocator(subs=np.arange(0, 1, 0.1), numticks=10)
+ax.yaxis.set_minor_locator(y_minor)
+ax.set_yticklabels([], minor=True)
 # ax.set_xlim(xlim_b)
+ax.set_ylim((3e-29, 2e-23))
 # annotate freq bandwidth
 xmin = freq_real_m - bw_real_m + 2
 xmax = freq_real_m + bw_real_m + 2
 ylow = plot_med_low[1][np.argmin(np.abs(plot_med_low[0] - xmin))]
 yhigh = plot_med_low[1][np.argmin(np.abs(plot_med_low[0] - xmax))]
-height = 1e-27
+height = 1e-28
 annotate_fit_range(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
                    height=height, annotate_middle=False, annotate_range=False)
-# ax.legend(fontsize=7)
+ax.set_xticks(xticks_c)
+ax.set_xticklabels(xticks_c)
+
 
 
 
@@ -1001,46 +966,111 @@ annotate_fit_range(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
 ax = ax10
 ax.loglog(*plot_large)
 ax.loglog(*plot_ap_large_h1, label=r"$h_{max}$ = "f"{h_max1}")
-ax.loglog(*plot_ap_large_h1_long, ls="--", alpha=.8, label=r"$h_{max}$ = "f"{h_max1}")
+ax.loglog(*plot_ap_large_h1_long, ls="--", alpha=alpha_long,
+          label=r"$h_{max}$ = "f"{h_max1}")
 # ax.loglog(*plot_ap_fit_large_h1, label=f"a={large_h1_slope:.2f}")
 
 ax.loglog(*plot_large_low, alpha=.5)
 ax.loglog(*plot_ap_large_h2, label=r"$h_{max}$ = "f"{h_max2}")
-ax.loglog(*plot_ap_large_h2_long, ls="--", alpha=.8, label=r"$h_{max}$ = "f"{h_max2}")
+ax.loglog(*plot_ap_large_h2_long, ls="--", alpha=alpha_long,
+          label=r"$h_{max}$ = "f"{h_max2}")
 # ax.loglog(*plot_ap_fit_large_h2, label=f"a={large_h2_slope:.2f}")
 
 ax.loglog(*plot_large_lower, alpha=.5)
 ax.loglog(*plot_ap_large_h3, label=r"$h_{max}$ = "f"{h_max3}")
-ax.loglog(*plot_ap_large_h3_long, ls="--", alpha=.8, label=r"$h_{max}$ = "f"{h_max3}")
+ax.loglog(*plot_ap_large_h3_long, ls="--", alpha=alpha_long,
+          label=r"$h_{max}$ = "f"{h_max3}")
 # ax.loglog(*plot_ap_fit_large_h3, label=f"a={large_h3_slope:.2f}")
 ax.set_ylabel(ylabel_f)
+ax.set_xlabel(xlabel)
 # ax.set_xlim(xlim_b)
+ax.set_ylim((1e-9, 2))
+x_minor = mpl.ticker.LogLocator(subs=np.arange(0, 1, 0.1), numticks=10)
+ax.xaxis.set_minor_locator(x_minor)
+y_minor = mpl.ticker.LogLocator(subs=np.arange(0, 1, 0.1), numticks=10)
+ax.yaxis.set_minor_locator(y_minor)
+ax.set_yticklabels([], minor=True)
+
 # annotate freq bandwidth
 xmin = freq_real_l - bw_real_l
 xmax = freq_real_l + bw_real_l
 ylow = plot_large_lower[1][np.argmin(np.abs(plot_large_lower[0] - xmin))]
 yhigh = plot_large_lower[1][np.argmin(np.abs(plot_large_lower[0] - xmax))]
-height = 2e-7
+height = 2e-8
 annotate_fit_range(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
                    height=height, annotate_middle=False, annotate_range=False)
+ax.set_xticks(xticks_b)
+ax.set_xticklabels(xticks_b)
 # ax.legend(fontsize=7)
 
 plt.savefig(fig_path + fig_name, bbox_inches="tight")
 plt.show()
 
+
+
+
 """
-Real data: Show aperiodic component for two choices of h_max: In one case,
-h_max is chosen to avoid highpass and noise floor
-in the other h_max is chosen to identify peaks.
+Message:
 
-Show data from lowest freq possible (real data has not highpass filter at 1Hz)
-What is highpass and lowpass range? where does plateau kick in?
--> Show aperiodic component for very large frequency ranged dashed or low alpha
-and show aperiodic component for the frequency range which actually avoids
-plateua and low pass. Show how small it gets for large h.
+Very broad peak widths require very large resampling factors.
 
-Possibly exhnge gridspec with subplot.
+C2 and C3: Show that small H does not capture true aperiodic component.
+But how to choose H?
+In one case, h_max is chosen to avoid highpass and noise floor (short)
+in the other h_max is chosen to identify peaks (shorter).
 
-Top panel: Maybe make one single huge plot with many different annotated
-bandwidths.
+
+Discuss problems:
+
+Problem 1: I want to show that small h-values don't work for real spectra if
+the peak widths are too broad. However, the message "dissappears" because real
+spectra have other strong difficulties such as highpass and noise plateau.
+This makes my message difficult to deliver, it becomes ambigious because of
+the other difficulties which are topic of the last figure.
+
+Problem 2: How to choose H values? Noise plateua is ambigous.
+
+Which h values to choose for real data?
+
+Problem 1:
+-> when h becomes too small/peak too broad irasa gets worse gradually.
+Difficult to choose which h values to show in plot as example for
+(un)successful fits.
+
+Problem 2:
+If I want to show maximum possible h value (as Gabriel suggested) lower border
+is clear but plateau is less well defined. Plateau might be not flat but a
+little flatter than beginning.
+
+Problem 2: Irasa does not behave exactly as I expect. For medium peak width
+and large peak width intermediate h value works just as fine.
+It should work for medium and not work for large. Is the reason maybe in the
+Center frequency of the two peaks 12Hz vs 40Hz?
+-> test in simulation by shifting center freq! If yes: difficult to show
+effect in real data. If no: is it shape of the peak? What is it?
+
+Problem 3: It depends on the center frequency!!!
+
+(Color orangered is NOT ok. Too similar to orange, especially with low alpha.)
 """
+
+"""
+To do:
+    A:
+        - annotate peak widths
+        - if all peaks similar width: increase peak widths and y-error axis
+    
+    C:
+        - Ask Group: LFP+Mag+Grad? Only LFP + MEG?
+"""
+
+
+
+
+
+
+
+
+
+
+
