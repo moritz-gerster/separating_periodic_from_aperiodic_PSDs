@@ -387,13 +387,19 @@ irasa_params_med = dict(band=band, hset=np.linspace(1.1, h_max_m, N_h))
 irasa_params_large = dict(band=band, hset=np.linspace(1.1, h_max_l, N_h))
 
 IRASA_sim_small_h1 = irasa(peak_small, sf=srate_small, **irasa_params_small)
+print("IRASA small done")
 
 IRASA_sim_med_h1 = irasa(peak_med, sf=srate_med, **irasa_params_small)
+print("IRASA medium 1/2 done")
 IRASA_sim_med_h2 = irasa(peak_med, sf=srate_med, **irasa_params_med)
+print("IRASA medium 2/2 done")
 
 IRASA_sim_large_h1 = irasa(peak_large, sf=srate_large, **irasa_params_small)
+print("IRASA large 1/3 done")
 IRASA_sim_large_h2 = irasa(peak_large, sf=srate_large, **irasa_params_med)
+print("IRASA large 2/3 done")
 IRASA_sim_large_h3 = irasa(peak_large, sf=srate_large, **irasa_params_large)
+print("IRASA large 3/3 done")
 
 freqs_sim_s, ap_sim_small_h1, per1_s, params1_s = IRASA_sim_small_h1
 
