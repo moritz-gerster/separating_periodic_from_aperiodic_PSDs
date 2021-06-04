@@ -1,17 +1,4 @@
-"""
-Very broad peak widths require very large resampling factors.
-
-Panel a, b, c:
-    - same as panel a Fig 4 for increasing peak widths!
-    - include aperiodic components
-
-d, e, f:
-    - real data with small, medium, and large peak widths and different
-    resampling factors
-    - large peak: use LFP data of Esther
-    - medium peak: use MEG source data of Esther
-    - small peak:
-"""
+"""Very broad peak widths require very large resampling factors."""
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
@@ -19,7 +6,7 @@ from numpy.fft import irfft, rfftfreq
 import scipy as sp
 import scipy.signal as sig
 from pathlib import Path
-from fooof import FOOOF
+# from fooof import FOOOF
 import matplotlib.gridspec as gridspec
 from noise_helper import irasa
 try:
@@ -118,6 +105,47 @@ def calc_error(signal):
     return fit_errors
 
 
+def peak_width(freq, psd, ground_truth, freq_range=(1, 100), threshold=.001):
+    """
+    Calculate peak width as start- and endpoints from aperiodic ground truth.
+
+    Parameters
+    ----------
+    freq : ndarray
+        Freq array.
+    psd : ndarray
+        PSD Array including oscillation peaks.
+    ground_truth : ndarray
+        Aperiodic ground truth excluding oscillations peaks.
+    freq_range : tuple of floats, optional
+        Range to detect the peak. Multi-peak estimation is not supported.
+        The default is (1, 100).
+    threshold : float, optional
+        Threshold for deviation from ground truth as percentage of peak
+        maximum. The default is .001.
+
+    Returns
+    -------
+    arg_start : int
+        Frequency index of peak start.
+    arg_end : int
+        Frequency index of peak end.
+    """
+    # select range for difference calculation
+    mask = (freq > freq_range[0]) & (freq < freq_range[1])
+    psd_diff = np.abs(psd - ground_truth)[mask]
+
+    # detect start and end indices
+    arg_start = np.where(psd_diff > threshold * psd_diff.max())[0][0]
+    arg_end = np.where(psd_diff > threshold * psd_diff.max())[0][-1]
+
+    # add lower freq range border to correct index
+    arg_start += (freq <= freq_range[0]).sum()
+    arg_end += (freq <= freq_range[0]).sum()
+
+    return arg_start, arg_end
+
+
 # %% PARAMETERS
 
 # Signal params
@@ -138,7 +166,6 @@ path = "../data/Fig5/"
 # a)
 c_sim = "k"
 c_error = "r"
-c_noise = "darkgray"
 
 c_range1 = "b"
 c_range2 = "g"
@@ -147,22 +174,10 @@ c_range3 = "y"
 c_ap = "grey"
 
 # b)
-c_real = "purple"
-
-# c_fit3 = "lime"
-
-# c)
-c_fooof = "deepskyblue"
-c_IRASA1 = "C1"
-c_IRASA2 = "C2"
-c_IRASA3 = "deepskyblue"#"orangered"
-
 c_IRASA1 = "c"
 c_IRASA2 = "m"
-c_IRASA3 = "deepskyblue"#"orangered"
-c_IRASA3 = "y"#"orangered"
+c_IRASA3 = "y"
 
-lw = 2
 
 # %% a Sim Toy Signal with Three Oscillations and Fit
 
@@ -189,25 +204,70 @@ periodic_params_c = [(freq1, amp*4.4, width*.8),
                      (freq2, amp*1.7, width*1.2),
                      (freq3, amp*.7, width*2.5)]
 # Sim Toy Signal
-_, toy_signal_a = osc_signals(toy_slope, periodic_params=periodic_params_a,
-                              highpass=False)
-_, toy_signal_b = osc_signals(toy_slope, periodic_params=periodic_params_b,
-                              highpass=False)
-_, toy_signal_c = osc_signals(toy_slope, periodic_params=periodic_params_c,
-                              highpass=False)
+toy_ground_a, toy_signal_a = osc_signals(toy_slope,
+                                         periodic_params=periodic_params_a,
+                                         highpass=False)
+toy_ground_b, toy_signal_b = osc_signals(toy_slope,
+                                         periodic_params=periodic_params_b,
+                                         highpass=False)
+toy_ground_c, toy_signal_c = osc_signals(toy_slope,
+                                         periodic_params=periodic_params_c,
+                                         highpass=False)
 
 freq_a, toy_psd_a = sig.welch(toy_signal_a, **welch_params)
-freq_b, toy_psd_b = sig.welch(toy_signal_b, **welch_params)
-freq_c, toy_psd_c = sig.welch(toy_signal_c, **welch_params)
+_, toy_psd_b = sig.welch(toy_signal_b, **welch_params)
+_, toy_psd_c = sig.welch(toy_signal_c, **welch_params)
+
+_, ground_psd_a = sig.welch(toy_ground_a, **welch_params)
+_, ground_psd_b = sig.welch(toy_ground_b, **welch_params)
+_, ground_psd_c = sig.welch(toy_ground_c, **welch_params)
 
 # Filter 1-100Hz
 filt_a = (freq_a <= 100)
 freq_a = freq_a[filt_a]
-freq_b = freq_b[filt_a]
-freq_c = freq_c[filt_a]
+
 toy_psd_a = toy_psd_a[filt_a]
 toy_psd_b = toy_psd_b[filt_a]
 toy_psd_c = toy_psd_c[filt_a]
+
+ground_psd_a = ground_psd_a[filt_a]
+ground_psd_b = ground_psd_b[filt_a]
+ground_psd_c = ground_psd_c[filt_a]
+
+# %% A Calc peak widths
+
+argmin11, argmax11 = peak_width(freq_a, toy_psd_a, ground_psd_a,
+                                freq_range=(1, 10))
+argmin12, argmax12 = peak_width(freq_a, toy_psd_a, ground_psd_a,
+                                freq_range=(10, 20))
+argmin13, argmax13 = peak_width(freq_a, toy_psd_a, ground_psd_a,
+                                freq_range=(20, 100))
+
+argmin21, argmax21 = peak_width(freq_a, toy_psd_b, ground_psd_b,
+                                freq_range=(1, 10))
+argmin22, argmax22 = peak_width(freq_a, toy_psd_b, ground_psd_b,
+                                freq_range=(10, 20))
+argmin23, argmax23 = peak_width(freq_a, toy_psd_b, ground_psd_b,
+                                freq_range=(20, 100))
+
+argmin31, argmax31 = peak_width(freq_a, toy_psd_c, ground_psd_c,
+                                freq_range=(1, 10))
+argmin32, argmax32 = peak_width(freq_a, toy_psd_c, ground_psd_c,
+                                freq_range=(10, 20))
+argmin33, argmax33 = peak_width(freq_a, toy_psd_c, ground_psd_c,
+                                freq_range=(20, 100))
+
+xmin_a11, xmax_a11 = (freq_a[argmax11], freq_a[argmin11])
+xmin_a12, xmax_a12 = (freq_a[argmax12], freq_a[argmin12])
+xmin_a12, xmax_a12 = (freq_a[argmax13], freq_a[argmin13])
+
+xmin_a22, xmax_a22 = (freq_a[argmax21], freq_a[argmin21])
+xmin_a22, xmax_a22 = (freq_a[argmax22], freq_a[argmin22])
+xmin_a22, xmax_a22 = (freq_a[argmax23], freq_a[argmin23])
+
+xmin_a32, xmax_a32 = (freq_a[argmax31], freq_a[argmin31])
+xmin_a32, xmax_a32 = (freq_a[argmax32], freq_a[argmin32])
+xmin_a32, xmax_a32 = (freq_a[argmax33], freq_a[argmin33])
 
 # %% Calc Fooof for bandwitdhs
 
@@ -380,20 +440,6 @@ plot_psd_large_low = (freq_med, peak_psd_large/100, c_sim)
 plot_psd_large_lower = (freq_large, peak_psd_large/10000, c_sim)
 
 # %% B Determine peak width
-
-
-def peak_width(freq, psd, ground_truth, freq_range=(1, 100), threshold=.001):
-
-    mask = (freq > freq_range[0]) & (freq < freq_range[1])
-    psd_diff = np.abs(psd - ground_truth)[mask]
-
-    arg_start = np.where(psd_diff > threshold * psd_diff.max())[0][0]
-    arg_end = np.where(psd_diff > threshold * psd_diff.max())[0][-1]
-
-    arg_start += (freq <= freq_range[0]).sum()
-    arg_end += (freq <= freq_range[0]).sum()
-
-    return arg_start, arg_end
 
 
 arg_small_min1, arg_small_max1 = peak_width(freq_small, peak_psd_small,
@@ -652,24 +698,24 @@ draw_fitrange(axB1, axB2, toy_psd_b, freqs123, colors123)
 
 xmin = freq1 - bw_a21
 xmax = freq1 + bw_a21
-ylow = toy_psd_b[np.argmin(np.abs(freq_b - xmin))]
-yhigh = toy_psd_b[np.argmin(np.abs(freq_b - xmax))]
+ylow = toy_psd_b[np.argmin(np.abs(freq_a - xmin))]
+yhigh = toy_psd_b[np.argmin(np.abs(freq_a - xmax))]
 height = ylim_a1[0] * 3
 annotate_fit_range(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
                    height=height, annotate_pos="below", annotate_range=False)
 
 xmin = freq2 - bw_a22
 xmax = freq2 + bw_a22
-ylow = toy_psd_b[np.argmin(np.abs(freq_b - xmin))]
-yhigh = toy_psd_b[np.argmin(np.abs(freq_b - xmax))]
+ylow = toy_psd_b[np.argmin(np.abs(freq_a - xmin))]
+yhigh = toy_psd_b[np.argmin(np.abs(freq_a - xmax))]
 height = ylim_a1[0] * 2.5
 annotate_fit_range(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
                    height=height, annotate_pos="below", annotate_range=False)
 
 xmin = freq3 - bw_a23
 xmax = freq3 + bw_a23
-ylow = toy_psd_b[np.argmin(np.abs(freq_b - xmin))]
-yhigh = toy_psd_b[np.argmin(np.abs(freq_b - xmax))]
+ylow = toy_psd_b[np.argmin(np.abs(freq_a - xmin))]
+yhigh = toy_psd_b[np.argmin(np.abs(freq_a - xmax))]
 height = ylim_a1[0] * 2.5
 annotate_fit_range(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
                    height=height, annotate_pos="below", annotate_range=False)
@@ -697,24 +743,24 @@ draw_fitrange(axC1, axC2, toy_psd_c, freqs123, colors123)
 
 xmin = freq1 - bw_a31
 xmax = freq1 + bw_a31
-ylow = toy_psd_c[np.argmin(np.abs(freq_c - xmin))]
-yhigh = toy_psd_c[np.argmin(np.abs(freq_c - xmax))]
+ylow = toy_psd_c[np.argmin(np.abs(freq_a - xmin))]
+yhigh = toy_psd_c[np.argmin(np.abs(freq_a - xmax))]
 height = ylim_a1[0] * 3
 annotate_fit_range(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
                    height=height, annotate_pos="below", annotate_range=False)
 
 xmin = freq2 - bw_a32
 xmax = freq2 + bw_a32
-ylow = toy_psd_c[np.argmin(np.abs(freq_c - xmin))]
-yhigh = toy_psd_c[np.argmin(np.abs(freq_c - xmax))]
+ylow = toy_psd_c[np.argmin(np.abs(freq_a - xmin))]
+yhigh = toy_psd_c[np.argmin(np.abs(freq_a - xmax))]
 height = ylim_a1[0] * 2.5
 annotate_fit_range(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
                    height=height, annotate_pos="below", annotate_range=False)
 
 xmin = freq3 - bw_a33
 xmax = freq3 + bw_a33
-ylow = toy_psd_c[np.argmin(np.abs(freq_c - xmin))]
-yhigh = toy_psd_c[np.argmin(np.abs(freq_c - xmax))]
+ylow = toy_psd_c[np.argmin(np.abs(freq_a - xmin))]
+yhigh = toy_psd_c[np.argmin(np.abs(freq_a - xmax))]
 height = ylim_a1[0] * 2.5
 annotate_fit_range(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
                    height=height, annotate_pos="below", annotate_range=False)
