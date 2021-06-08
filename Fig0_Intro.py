@@ -11,7 +11,7 @@ from fooof.sim.gen import gen_aperiodic
 from fooof.plts.spectra import plot_spectrum
 # from fooof.plts.annotate import plot_annotated_peak_search
 from fooof.plts.annotate import plot_annotated_peak_search_MG
-import matplotlib.gridspec as gridspec
+# import matplotlib.gridspec as gridspec
 from noise_helper import irasa
 import fractions
 try:
@@ -99,26 +99,12 @@ def osc_signals(slope, periodic_params=None, nlv=None, highpass=True,
     return noise, noise_osc
 
 
-# =============================================================================
-# def calc_error(signal):
-#     """Fit IRASA and subtract ground truth to obtain fitting error."""
-#     fit_errors = []
-#     for i in trange(len(lower_fitting_borders)):
-#         freq_range = (lower_fitting_borders[i], upper_fitting_border)
-#         _, _, _, params = irasa(data=signal, band=freq_range, sf=srate)
-#         exp = -params["Slope"][0]
-#         error = np.abs(toy_slope - exp)
-#         fit_errors.append(error)
-#     return fit_errors
-# =============================================================================
-
-
 # %% PARAMETERS
 
 # Signal params
 srate = 2400
-win_sec = 2
-welch_params_f = dict(fs=srate, nperseg=win_sec*srate)
+win_sec = 4
+welch_params_f = dict(fs=srate, nperseg=1*srate)
 welch_params_I = dict(fs=srate, nperseg=win_sec*srate)
 
 # Save Path
@@ -163,13 +149,15 @@ amp1 = .02
 amp2 = .01
 width = .001
 
-periodic_params = [(freq1, amp1, width),
-                   (freq2, amp2, width)]
+periodic_params = [(freq1, amp1, width)]#,
+                   # (freq2, amp2, width)]
 
 # Sim Toy Signal
 toy_aperiodic, toy_comb = osc_signals(toy_slope,
                                         periodic_params=periodic_params,
                                         highpass=False)
+
+toy_aperiodic, toy_comb = toy_aperiodic*1e6, toy_comb*1e6
 
 _, toy_osc = osc_signals(0,
                          periodic_params=periodic_params,
@@ -181,10 +169,15 @@ freqs_I, psd_comb_I = sig.welch(toy_comb, **welch_params_I)
 _, psd_osc_I = sig.welch(toy_osc, **welch_params_I)
 
 # Filter 1-100Hz
-# mask = (freqs <= 100)
-# freqs = freqs[mask]
-# psd_comb = psd_comb[mask]
-# psd_osc = psd_osc[mask]
+mask_f = (freqs_f <= 100) & (freqs_f >= 1)
+freqs_f = freqs_f[mask_f]
+psd_comb_f = psd_comb_f[mask_f]
+psd_osc_f = psd_osc_f[mask_f]
+
+mask_I = (freqs_I <= 100) & (freqs_I >= 1)
+freqs_I = freqs_I[mask_I]
+psd_comb_I = psd_comb_I[mask_I]
+psd_osc_I = psd_osc_I[mask_I]
 
 # %% Calc fooof
 
@@ -204,54 +197,7 @@ init_ap_fit = gen_aperiodic(fm.freqs,
 
 # Recompute the flattened spectrum using the initial aperiodic fit
 init_flat_spec = fm.power_spectrum - init_ap_fit
-
-
-# =============================================================================
-# # %% Combine fooof
-# 
-# fig_width = 7.25
-# 
-# fig, axes = plt.subplots(3, 3, figsize=[fig_width*3, 6*3])
-# 
-# # plot initial fit
-# ax = axes[0, 0]
-# plot_spectrum(fm.freqs, fm.power_spectrum, plt_log,
-#               label='Original Power Spectrum', color='black', ax=ax)
-# plot_spectrum(fm.freqs, init_ap_fit, plt_log, label='Initial Aperiodic Fit',
-#               color='blue', alpha=0.5, linestyle='dashed', ax=ax)
-# 
-# 
-# # Plot the flattened the power spectrum
-# ax = axes[0, 1]
-# plot_spectrum(fm.freqs, init_flat_spec, plt_log,
-#               label='Flattened Spectrum', color='black', ax=ax)
-# 
-# # show iterations
-# ax = axes[0, 2]
-# plot_annotated_peak_search_MG(fm, 0, ax)
-# 
-# ax = axes[1, 0]
-# plot_annotated_peak_search_MG(fm, 1, ax)
-# 
-# ax = axes[1, 1]
-# plot_annotated_peak_search_MG(fm, 2, ax)
-# 
-# # plot aperiodic
-# ax = axes[1, 2]
-# plot_spectrum(fm.freqs, fm._spectrum_peak_rm, plt_log,
-#               label='Peak Removed Spectrum', color='black', ax=ax)
-# plot_spectrum(fm.freqs, fm._ap_fit, plt_log, label='Final Aperiodic Fit',
-#               color='blue', alpha=0.5, linestyle='dashed', ax=ax)
-# 
-# # plot model
-# ax = axes[2, 0]
-# plot_spectrum(fm.freqs, fm._peak_fit, plt_log, color='green',
-#               label='Final Periodic Fit', ax=ax)
-# 
-# # plot model + ap + real
-# ax = axes[2, 1]
-# fm.plot(plt_log=plt_log, ax=ax)
-# =============================================================================
+init_flat_spec_lin = 10**fm.power_spectrum - 10**init_ap_fit
 
 # %% Calc IRASA
 # hset = np.arange(1.1, 1.95, 0.05)
@@ -272,13 +218,6 @@ IR_slope = -params["Slope"][0]
 
 psd_fit = gen_aperiodic(freqs_irasa, (IR_offset, IR_slope))
 
-# plt.loglog(freqs_irasa, psd_ap)
-# plt.loglog(freqs_irasa, psd_osc)
-
-# %% 1
-
-# hset = [1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4, 1.45, 1.5, 1.55, 1.6,
-#          1.65, 1.7, 1.75, 1.8, 1.85, 1.9]
 hset = [1.1, 1.5, 2]
 
 win = welch_params_I["nperseg"]
@@ -295,18 +234,485 @@ for i, h in enumerate(hset):
     freqs_up, psd_up = sig.welch(data_up, h * srate, nperseg=win)
     freqs_dw, psd_dw = sig.welch(data_down, srate / h, nperseg=win)
     
-    psds_resampled[i, :] = np.sqrt(psd_up * psd_dw)
+    psds_resampled[i, :] = np.sqrt(psd_up * psd_dw)[mask_I]
 
 # Now we take the median PSD of all the resampling factors, which gives
 # a good estimate of the aperiodic component of the PSD.
 psd_median = np.median(psds_resampled, axis=0)
 
-# Mask
-mask = (freqs_I <= 100)
-freqs_I = freqs_I[mask]
-psd_median = psd_median[mask]
-psd_comb_I = psd_comb_I[mask]
-psds_resampled = psds_resampled[:, mask]
+
+# %% Plot
+
+# to do:
+    # fooof: remove grid
+        # understand oscillatory units fooof
+        # correct plot sizes iterations fooof
+        # think of better design, don't think in grids
+        # consider plotting fooof and IRASA together and OMITTING units
+
+# decide: window 4 sec IRASA and 1 sec fooof or both 2 sec?
+
+# add R^2 and exponents
+
+
+fig_width = 7.25  # inches
+panel_fontsize = 12
+legend_fontsize = 9 * .5
+label_fontsize = 9 * .7
+tick_fontsize = 9 * .7
+annotation_fontsize = tick_fontsize
+
+mpl.rcParams['xtick.labelsize'] = tick_fontsize
+mpl.rcParams['ytick.labelsize'] = tick_fontsize
+mpl.rcParams['axes.labelsize'] = label_fontsize
+mpl.rcParams['legend.fontsize'] = legend_fontsize
+mpl.rcParams["axes.spines.right"] = True
+mpl.rcParams["axes.spines.top"] = True
+
+# panel_labels = dict(x=0, y=1.01, fontsize=panel_fontsize,
+ #                   fontdict=dict(fontweight="bold"))
+
+# line_fit = dict(lw=2, ls=":", zorder=5)
+# line_ground = dict(lw=.5, ls="-", zorder=5)
+# psd_aperiodic_kwargs = dict(lw=0.5)
+
+yticks = [10, 100, 1000]
+yticks_small = [1, 5]
+yticks_lin = [0, 1000, 2000]
+
+# yticks_lin_f = [0, 300, 600]
+# ylim_lin_f = [-100, 600]
+yticks_lin_f = [0, .5]
+ylim_lin_f = [-.1, .6]
+
+yticks_lin_I = [0, 1000, 2000]
+ylim_lin_I = [-100, yticks_lin_I[-1]]
+
+
+fig, axes = plt.subplots(4, 4, figsize=[fig_width, 5.5], 
+                         sharex=True, constrained_layout=True)
+
+ax = axes[0, 0]
+plot_spectrum(fm.freqs, 10**fm.power_spectrum, log_freqs=False,
+              label='Original Power Spectrum', color='black', ax=ax)
+plot_spectrum(fm.freqs, 10**init_ap_fit, log_freqs=False,
+              label='Initial Aperiodic Fit',
+              color='blue', alpha=0.5, linestyle='dashed', ax=ax)
+ax.grid(False)
+ax.set_yscale("log")
+ax.set_xlabel("")
+ax.set_ylabel("")
+ax.set_yticks(yticks)
+ax.set_yticklabels(yticks, fontsize=tick_fontsize)
+ax.legend(fontsize=legend_fontsize)
+
+ax = axes[0, 1]
+plot_spectrum(fm.freqs, init_flat_spec, log_freqs=False,
+              label='Flattened Spectrum', color='black', ax=ax)
+ax.grid(False)
+ax.set_xlabel("")
+ax.set_ylabel("")
+ax.set_yticks(yticks_lin_f)
+ax.set_yticklabels([])
+ax.set_ylim(ylim_lin_f)
+ax.legend(fontsize=legend_fontsize)
+# =============================================================================
+# ax = axes[0, 1]
+# plot_spectrum(fm.freqs, init_flat_spec, log_freqs=False,
+#               label='Flattened Spectrum', color='black', ax=ax)
+# ax.grid(False)
+# ax.set_xlabel("")
+# ax.set_ylabel("")
+# # =============================================================================
+# # ax.set_yticks(yticks_lin_f)
+# # ax.set_yticklabels(yticks_lin_f, fontsize=tick_fontsize)
+# # ax.set_ylim(ylim_lin_f)
+# # =============================================================================
+# ax.legend(fontsize=legend_fontsize)
+# =============================================================================
+
+ax = ax = axes[0, 2]
+plot_annotated_peak_search_MG(fm, 0, ax, lw=2, markersize=10)
+# ax.get_legend().remove()
+ax.set_xscale("log")
+# ax.set_yscale("log")
+ax.grid(False)
+ax.set_xlabel("")
+ax.set_ylabel("")
+ax.set_yticks(yticks_lin_f)
+ax.set_yticklabels([])
+ax.set_ylim(ylim_lin_f)
+#ax.set_yticklabels(["", ""])
+ax.legend(fontsize=legend_fontsize)
+# ax.set_title("Iteration #1", fontsize=tick_fontsize)
+ax.set_title(None)
+
+
+ax = ax = axes[0, 3]
+plot_annotated_peak_search_MG(fm, 1, ax, lw=2, markersize=10)
+#ax.get_legend().remove()
+#ax.set_ylabel("")
+#ax.set_yticks([])
+#ax.set_yticklabels([])
+ax.set_xscale("log")
+# ax.set_yscale("log")
+ax.grid(False)
+ax.set_xlabel("")
+ax.set_ylabel("")
+ax.set_yticks(yticks_lin_f)
+ax.set_yticklabels([])
+ax.set_ylim(ylim_lin_f)
+ax.legend(fontsize=legend_fontsize)
+ax.set_title(None)
+
+
+ax = axes[1, 0]
+ax.loglog(freqs_f, psd_comb_f, "k", label="Original Data")
+ax.set_yticks(yticks)
+ax.set_yticklabels(yticks, fontsize=tick_fontsize)
+ax.legend()
+
+
+ax = ax = axes[1, 1]
+fm.plot_lin_MG(plt_log=False, plot_aperiodic=False, ax=ax)
+ax.grid(False)
+ax.set_xscale("log")
+ax.set_yscale("log")
+ax.set_xlabel("")
+ax.set_ylabel("")
+ax.set_yticks(yticks)
+ax.set_yticklabels([])
+ax.legend(fontsize=legend_fontsize)
+
+
+ax = ax = axes[1, 2]
+plot_spectrum(fm.freqs, 10**fm._spectrum_peak_rm, log_freqs=False,
+              label='Peak Removed Spectrum', color='black', ax=ax)
+plot_spectrum(fm.freqs, 10**fm._ap_fit, log_freqs=False, label='Final Aperiodic Fit',
+              color='blue', alpha=0.5, linestyle='dashed', ax=ax)
+ax.grid(False)
+ax.set_yscale("log")
+ax.set_xlabel("")
+ax.set_ylabel("")
+ax.set_yticks(yticks)
+ax.set_yticklabels([])
+ax.legend(fontsize=legend_fontsize)
+
+ax = ax = axes[1, 3]
+
+plot_spectrum(fm.freqs, fm._peak_fit, log_freqs=False, color='green',
+              label='Final Periodic Fit', ax=ax)
+ax.grid(False)
+# ax.set_yscale("log")
+ax.set_xlabel("")
+ax.set_ylabel("")
+ax.set_yticks(yticks_lin_f)
+ax.set_yticklabels([])
+ax.set_ylim(ylim_lin_f)
+ax.legend(fontsize=legend_fontsize)
+
+
+
+
+
+
+
+
+
+ax = ax = axes[2, 0]
+ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
+ax.set_yticks(yticks)
+ax.set_yticklabels(yticks, fontsize=tick_fontsize)
+ax.legend()
+
+
+ax = axes[2, 1]
+ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
+# ax.loglog(freqs_irasa, psd_ap, label="Aperiodic")
+ax.loglog(freqs_irasa, psd_ap + psd_osc, label="Aperiodic + Osc")
+ax.set_yticks(yticks)
+ax.set_yticklabels([])
+
+ax = axes[2, 2]
+ax.semilogx(freqs_irasa, psd_osc, label="Oscillatory Component")
+ax.set_yticks(yticks_lin_I)
+ax.set_yticklabels([])
+ax.set_ylim(ylim_lin_I)
+ax.legend()
+
+ax = axes[2, 3]
+ax.loglog(freqs_I, psd_median, label="Median of resampled PSDs")
+ax.loglog(freqs_irasa, 10**psd_fit, "--", label="Fit")
+ax.set_yticks(yticks)
+ax.set_yticklabels([])
+ax.legend()
+
+ax = axes[3, 0]
+ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
+i = 0
+ax.loglog(freqs_I, psds_resampled[i], label=f"h={hset[i]}")
+ax.set_yticks(yticks)
+ax.set_yticklabels(yticks, fontsize=tick_fontsize)
+ax.legend()
+ax.set_xlabel("Frequency [Hz]")
+
+ax = axes[3, 1]
+ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
+i = 1
+ax.loglog(freqs_I, psds_resampled[i], label=f"h={hset[i]}")
+ax.set_yticks(yticks)
+ax.set_yticklabels([])
+ax.legend()
+ax.set_xlabel("Frequency [Hz]")
+
+ax = axes[3, 2]
+ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
+i = 2
+ax.loglog(freqs_I, psds_resampled[i], label=f"h={hset[i]}")
+ax.set_yticks(yticks)
+ax.set_yticklabels([])
+ax.legend()
+ax.set_xlabel("Frequency [Hz]")
+
+ax = axes[3, 3]
+ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
+for i in range(len(hset)):
+    ax.loglog(freqs_I, psds_resampled[i], label=f"h={hset[i]}")
+ax.set_yticks(yticks)
+ax.set_yticklabels([])
+ax.legend()
+ax.set_xlabel("Frequency [Hz]")
+
+plt.show()
+
+
+
+
+
+# =============================================================================
+# 
+# yticks = [10, 100, 1000]
+# yticks_small = [1, 5]
+# yticks_lin = [0, 1000, 2000]
+# 
+# # yticks_lin_f = [0, 300, 600]
+# # ylim_lin_f = [-100, 600]
+# yticks_lin_f = [0, .5]
+# ylim_lin_f = [-.1, .6]
+# 
+# yticks_lin_I = [0, 1500, 3000]
+# ylim_lin_I = [-100, yticks_lin_I[-1]]
+# 
+# 
+# fig, axes = plt.subplots(4, 4, figsize=[fig_width, 5.5], 
+#                          sharex=True, constrained_layout=True)
+# 
+# ax = axes[0, 0]
+# plot_spectrum(fm.freqs, 10**fm.power_spectrum, log_freqs=False,
+#               label='Original Power Spectrum', color='black', ax=ax)
+# plot_spectrum(fm.freqs, 10**init_ap_fit, log_freqs=False,
+#               label='Initial Aperiodic Fit',
+#               color='blue', alpha=0.5, linestyle='dashed', ax=ax)
+# ax.grid(False)
+# ax.set_yscale("log")
+# ax.set_xlabel("")
+# ax.set_ylabel("")
+# ax.set_yticks(yticks)
+# ax.set_yticklabels(yticks, fontsize=tick_fontsize)
+# ax.legend(fontsize=legend_fontsize)
+# 
+# # =============================================================================
+# # ax = axes[0, 1]
+# # plot_spectrum(fm.freqs, init_flat_spec, log_freqs=False,
+# #               label='Flattened Spectrum', color='black', ax=ax)
+# # ax.grid(False)
+# # ax.set_xlabel("")
+# # ax.set_ylabel("")
+# # ax.set_yticks(yticks_lin_f)
+# # ax.set_yticklabels([])
+# # ax.set_ylim(ylim_lin_f)
+# # ax.legend(fontsize=legend_fontsize)
+# # =============================================================================
+# ax = axes[0, 1]
+# plot_spectrum(fm.freqs, init_flat_spec_lin, log_freqs=False,
+#               label='Flattened Spectrum', color='black', ax=ax)
+# ax.grid(False)
+# ax.set_xlabel("")
+# ax.set_ylabel("")
+# # =============================================================================
+# # ax.set_yticks(yticks_lin_f)
+# # ax.set_yticklabels(yticks_lin_f, fontsize=tick_fontsize)
+# # ax.set_ylim(ylim_lin_f)
+# # =============================================================================
+# ax.legend(fontsize=legend_fontsize)
+# 
+# ax = ax = axes[0, 2]
+# plot_annotated_peak_search_MG(fm, 0, ax, lw=2, markersize=10)
+# # ax.get_legend().remove()
+# ax.set_xscale("log")
+# # ax.set_yscale("log")
+# ax.grid(False)
+# ax.set_xlabel("")
+# ax.set_ylabel("")
+# # =============================================================================
+# # ax.set_yticks(yticks_lin_f)
+# # ax.set_yticklabels([])
+# # ax.set_ylim(ylim_lin_f)
+# # =============================================================================
+# #ax.set_yticklabels(["", ""])
+# ax.legend(fontsize=legend_fontsize)
+# # ax.set_title("Iteration #1", fontsize=tick_fontsize)
+# ax.set_title(None)
+# 
+# 
+# ax = ax = axes[0, 3]
+# plot_annotated_peak_search_MG(fm, 1, ax, lw=2, markersize=10)
+# #ax.get_legend().remove()
+# #ax.set_ylabel("")
+# #ax.set_yticks([])
+# #ax.set_yticklabels([])
+# ax.set_xscale("log")
+# # ax.set_yscale("log")
+# ax.grid(False)
+# ax.set_xlabel("")
+# ax.set_ylabel("")
+# # =============================================================================
+# # ax.set_yticks(yticks_lin_f)
+# # ax.set_yticklabels([])
+# # ax.set_ylim(ylim_lin_f)
+# # =============================================================================
+# ax.legend(fontsize=legend_fontsize)
+# ax.set_title(None)
+# 
+# 
+# ax = axes[1, 0]
+# ax.loglog(freqs_f, psd_comb_f, "k", label="Original Data")
+# ax.set_yticks(yticks)
+# ax.set_yticklabels(yticks, fontsize=tick_fontsize)
+# ax.legend()
+# 
+# 
+# ax = ax = axes[1, 1]
+# fm.plot_lin_MG(plt_log=False, plot_aperiodic=False, ax=ax)
+# ax.grid(False)
+# ax.set_xscale("log")
+# ax.set_yscale("log")
+# ax.set_xlabel("")
+# ax.set_ylabel("")
+# ax.set_yticks(yticks)
+# ax.set_yticklabels(yticks, fontsize=tick_fontsize)
+# ax.legend(fontsize=legend_fontsize)
+# 
+# 
+# ax = ax = axes[1, 2]
+# plot_spectrum(fm.freqs, 10**fm._spectrum_peak_rm, log_freqs=False,
+#               label='Peak Removed Spectrum', color='black', ax=ax)
+# plot_spectrum(fm.freqs, 10**fm._ap_fit, log_freqs=False, label='Final Aperiodic Fit',
+#               color='blue', alpha=0.5, linestyle='dashed', ax=ax)
+# ax.grid(False)
+# ax.set_yscale("log")
+# ax.set_xlabel("")
+# ax.set_ylabel("")
+# ax.set_yticks(yticks)
+# ax.set_yticklabels(yticks, fontsize=tick_fontsize)
+# ax.legend(fontsize=legend_fontsize)
+# 
+# ax = ax = axes[1, 3]
+# freq, amp, width = fm.gaussian_params_[0, :]
+# gauss = gaussian_function(fm.freqs, freq, 10**amp, width)
+# plot_spectrum(fm.freqs, fm._peak_fit, log_freqs=False, color='green',
+#               label='Final Periodic Fit', ax=ax)
+# ax.grid(False)
+# # ax.set_yscale("log")
+# ax.set_xlabel("")
+# ax.set_ylabel("")
+# # =============================================================================
+# # ax.set_yticks(yticks_lin_f)
+# # ax.set_yticklabels([])
+# # ax.set_ylim(ylim_lin_f)
+# # =============================================================================
+# ax.legend(fontsize=legend_fontsize)
+# 
+# 
+# """
+# problem 1: Gaussian fit falsche skala
+# problem 2: iteration zwei plötzlich falsch
+# """
+# 
+# 
+# 
+# 
+# 
+# 
+# 
+# 
+# ax = ax = axes[2, 0]
+# ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
+# ax.set_yticks(yticks)
+# ax.set_yticklabels(yticks, fontsize=tick_fontsize)
+# ax.legend()
+# 
+# 
+# ax = axes[2, 1]
+# ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
+# # ax.loglog(freqs_irasa, psd_ap, label="Aperiodic")
+# ax.loglog(freqs_irasa, psd_ap + psd_osc, label="Aperiodic + Osc")
+# ax.set_yticks(yticks)
+# ax.set_yticklabels(yticks, fontsize=tick_fontsize)
+# 
+# ax = axes[2, 2]
+# ax.semilogx(freqs_irasa, psd_osc, label="Oscillatory Component")
+# ax.set_yticks(yticks_lin_I)
+# ax.set_yticklabels(yticks_lin_I, fontsize=tick_fontsize)
+# ax.set_ylim(ylim_lin_I)
+# ax.legend()
+# 
+# ax = axes[2, 3]
+# ax.loglog(freqs_I, psd_median, label="Median of resampled PSDs")
+# ax.loglog(freqs_irasa, 10**psd_fit, "--", label="Fit")
+# ax.set_yticks(yticks)
+# ax.set_yticklabels(yticks, fontsize=tick_fontsize)
+# ax.legend()
+# 
+# ax = axes[3, 0]
+# ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
+# i = 0
+# ax.loglog(freqs_I, psds_resampled[i], label=f"h={hset[i]}")
+# ax.set_yticks(yticks)
+# ax.set_yticklabels(yticks, fontsize=tick_fontsize)
+# ax.legend()
+# ax.set_xlabel("Frequency [Hz]")
+# 
+# ax = axes[3, 1]
+# ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
+# i = 1
+# ax.loglog(freqs_I, psds_resampled[i], label=f"h={hset[i]}")
+# ax.set_yticks(yticks)
+# ax.set_yticklabels([])
+# ax.legend()
+# ax.set_xlabel("Frequency [Hz]")
+# 
+# ax = axes[3, 2]
+# ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
+# i = 2
+# ax.loglog(freqs_I, psds_resampled[i], label=f"h={hset[i]}")
+# ax.set_yticks(yticks)
+# ax.set_yticklabels([])
+# ax.legend()
+# ax.set_xlabel("Frequency [Hz]")
+# 
+# ax = axes[3, 3]
+# ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
+# for i in range(len(hset)):
+#     ax.loglog(freqs_I, psds_resampled[i], label=f"h={hset[i]}")
+# ax.set_yticks(yticks)
+# ax.set_yticklabels([])
+# ax.legend()
+# ax.set_xlabel("Frequency [Hz]")
+# 
+# plt.show()
+# =============================================================================
+
 
 # We can now calculate the oscillations (= periodic) component.
 # psd_osc = psd_comb_I - psd_aperiodic
@@ -341,284 +747,258 @@ psds_resampled = psds_resampled[:, mask]
 # ax.legend()
 # =============================================================================
 
-# %% Compare fooof IRASA
+
     
-# to do:
-    # combine fooof and IRASA where they are similar
-    # split resampling in 3 itereations and visualize taking the median
-
-# panel 1: original data for fooof and IRASA with two different nperseg
-# panel 2: 5 steps fooof, 3 steps IRASA
-# panel 3: combine aperiodic psd + fit of fooof and IRASA in one figure
-# (consider plotting the ground truth)
-# panel 4: combine oscillatory components fooof and IRASA in one figure
-# (consider plotting the ground truth)
-# panel 5: show full model fooof and IRASA and original
-
-# decide: window 4 sec IRASA and 1 sec fooof or both 2 sec?
-
-# add R^2 and exponents
-
-fig_width = 7.25
-
-fig = plt.figure(figsize=[fig_width*3, 5.5*3], constrained_layout=True)
-
-gs0 = gridspec.GridSpec(2, 1, figure=fig, height_ratios=[3, 2])
-
-gs00 = gs0[0].subgridspec(2, 5)
-
-ax1 = fig.add_subplot(gs00[:, 0])
-ax2 = fig.add_subplot(gs00[0, 1])
-ax3 = fig.add_subplot(gs00[0, 2])
-ax4 = fig.add_subplot(gs00[1, 1])
-ax5 = fig.add_subplot(gs00[1, 2])
-ax6 = fig.add_subplot(gs00[0, 3])
-ax7 = fig.add_subplot(gs00[1, 3])
-ax8 = fig.add_subplot(gs00[:, 4])
-
-gs01 = gridspec.GridSpecFromSubplotSpec(2, 4, subplot_spec=gs0[1])
-ax9 = fig.add_subplot(gs01[:, 0])
-ax10 = fig.add_subplot(gs01[:, 1])
-ax11 = fig.add_subplot(gs01[0, 2])
-ax12 = fig.add_subplot(gs01[1, 2])
-ax13 = fig.add_subplot(gs01[:, 3])
-
-ax = ax1
-plot_spectrum(fm.freqs, fm.power_spectrum, plt_log,
-              label='Original Power Spectrum', color='black', ax=ax)
-plot_spectrum(fm.freqs, init_ap_fit, plt_log, label='Initial Aperiodic Fit',
-              color='blue', alpha=0.5, linestyle='dashed', ax=ax)
 
 
-
-# Plot the flattened the power spectrum
-ax = ax2
-plot_spectrum(fm.freqs, init_flat_spec, plt_log,
-              label='Flattened Spectrum', color='black', ax=ax)
-
-# show iterations
-ax = ax3
-plot_annotated_peak_search_MG(fm, 0, ax)
-ax.get_legend().remove()
-
-ax = ax4
-plot_annotated_peak_search_MG(fm, 1, ax)
-ax.get_legend().remove()
-ax.set_ylabel("")
-ax.set_yticks([])
-ax.set_yticklabels([])
-
-ax = ax5
-plot_annotated_peak_search_MG(fm, 2, ax)
-ax.set_ylabel("")
-ax.set_yticks([])
-ax.set_yticklabels([])
-
-
-ax = ax6
-plot_spectrum(fm.freqs, fm._spectrum_peak_rm, plt_log,
-              label='Peak Removed Spectrum', color='black', ax=ax)
-plot_spectrum(fm.freqs, fm._ap_fit, plt_log, label='Final Aperiodic Fit',
-              color='blue', alpha=0.5, linestyle='dashed', ax=ax)
-
-
-ax = ax7
-plot_spectrum(fm.freqs, fm._peak_fit, plt_log, color='green',
-              label='Final Periodic Fit', ax=ax)
-
-ax = ax8
-fm.plot(plt_log=plt_log, plot_aperiodic=False, ax=ax)
-
-
-# IRASA
-ax = ax9
-ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
-ax.legend()
-
-ax = ax10
-ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
-for i in range(len(hset)):
-    ax.loglog(freqs_I, psds_resampled[i], label=f"h={hset[i]}")
-ax.legend()
-
-ax = ax11
-ax.loglog(freqs_I, psd_median, label="Median of resampled PSDs")
-ax.loglog(freqs_irasa, 10**psd_fit, label="Fit")
-ax.legend()
-
-ax = ax12
-ax.semilogx(freqs_irasa, psd_osc, label="Oscillatory Component")
-ax.legend()
-
-ax = ax13
-ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
-# ax.loglog(freqs_irasa, psd_ap, label="Aperiodic")
-ax.loglog(freqs_irasa, psd_ap + psd_osc, label="Aperiodic + Osc")
-
-ax.legend()
-
-plt.show()
-
-# %
 
 # =============================================================================
-# fig, ax = plt.subplots(1, 1)
-# ax.loglog(freqs_irasa, psd_ap, label="IRASA")
-# ax.loglog(freqs_irasa, 10**psd_fit, label="IRASA fit")
-# ax.loglog(fm.freqs, 10**fm._spectrum_peak_rm, label="fooof")
-# ax.loglog(fm.freqs, 10**fm._ap_fit, label="fooof fit")
+# 
+# fig = plt.figure(figsize=[fig_width*3, 5.5*3], constrained_layout=True)
+# 
+# gs0 = gridspec.GridSpec(2, 1, figure=fig, height_ratios=[3, 2])
+# 
+# gs00 = gs0[0].subgridspec(2, 5)
+# 
+# ax1 = fig.add_subplot(gs00[:, 0])
+# ax2 = fig.add_subplot(gs00[0, 1])
+# ax3 = fig.add_subplot(gs00[0, 2])
+# ax4 = fig.add_subplot(gs00[1, 1])
+# ax5 = fig.add_subplot(gs00[1, 2])
+# ax6 = fig.add_subplot(gs00[0, 3])
+# ax7 = fig.add_subplot(gs00[1, 3])
+# ax8 = fig.add_subplot(gs00[:, 4])
+# 
+# gs01 = gridspec.GridSpecFromSubplotSpec(2, 4, subplot_spec=gs0[1])
+# ax9 = fig.add_subplot(gs01[:, 0])
+# ax10 = fig.add_subplot(gs01[:, 1])
+# ax11 = fig.add_subplot(gs01[0, 2])
+# ax12 = fig.add_subplot(gs01[1, 2])
+# ax13 = fig.add_subplot(gs01[:, 3])
+# 
+# ax = ax1
+# plot_spectrum(fm.freqs, fm.power_spectrum, plt_log,
+#               label='Original Power Spectrum', color='black', ax=ax)
+# plot_spectrum(fm.freqs, init_ap_fit, plt_log, label='Initial Aperiodic Fit',
+#               color='blue', alpha=0.5, linestyle='dashed', ax=ax)
+# 
+# 
+# 
+# # Plot the flattened the power spectrum
+# ax = ax2
+# plot_spectrum(fm.freqs, init_flat_spec, plt_log,
+#               label='Flattened Spectrum', color='black', ax=ax)
+# 
+# # show iterations
+# ax = ax3
+# plot_annotated_peak_search_MG(fm, 0, ax)
+# ax.get_legend().remove()
+# 
+# ax = ax4
+# plot_annotated_peak_search_MG(fm, 1, ax)
+# ax.get_legend().remove()
+# ax.set_ylabel("")
+# ax.set_yticks([])
+# ax.set_yticklabels([])
+# 
+# ax = ax5
+# plot_annotated_peak_search_MG(fm, 2, ax)
+# ax.set_ylabel("")
+# ax.set_yticks([])
+# ax.set_yticklabels([])
+# 
+# 
+# ax = ax6
+# plot_spectrum(fm.freqs, fm._spectrum_peak_rm, plt_log,
+#               label='Peak Removed Spectrum', color='black', ax=ax)
+# plot_spectrum(fm.freqs, fm._ap_fit, plt_log, label='Final Aperiodic Fit',
+#               color='blue', alpha=0.5, linestyle='dashed', ax=ax)
+# 
+# 
+# ax = ax7
+# plot_spectrum(fm.freqs, fm._peak_fit, plt_log, color='green',
+#               label='Final Periodic Fit', ax=ax)
+# 
+# ax = ax8
+# fm.plot(plt_log=plt_log, plot_aperiodic=False, ax=ax)
+# 
+# 
+# # IRASA
+# ax = ax9
+# ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
+# ax.legend()
+# 
+# ax = ax10
+# ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
+# for i in range(len(hset)):
+#     ax.loglog(freqs_I, psds_resampled[i], label=f"h={hset[i]}")
+# ax.legend()
+# 
+# ax = ax11
+# ax.loglog(freqs_I, psd_median, label="Median of resampled PSDs")
+# ax.loglog(freqs_irasa, 10**psd_fit, label="Fit")
+# ax.legend()
+# 
+# ax = ax12
+# ax.semilogx(freqs_irasa, psd_osc, label="Oscillatory Component")
+# ax.legend()
+# 
+# ax = ax13
+# ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
+# # ax.loglog(freqs_irasa, psd_ap, label="Aperiodic")
+# ax.loglog(freqs_irasa, psd_ap + psd_osc, label="Aperiodic + Osc")
+# 
+# ax.legend()
+# 
+# plt.show()
+# 
+# # %
+# 
+# # =============================================================================
+# # fig, ax = plt.subplots(1, 1)
+# # ax.loglog(freqs_irasa, psd_ap, label="IRASA")
+# # ax.loglog(freqs_irasa, 10**psd_fit, label="IRASA fit")
+# # ax.loglog(fm.freqs, 10**fm._spectrum_peak_rm, label="fooof")
+# # ax.loglog(fm.freqs, 10**fm._ap_fit, label="fooof fit")
+# # ax.legend()
+# # 
+# # 
+# # fig, ax = plt.subplots(1, 1)
+# # ax.plot(fm.freqs, 10**fm._peak_fit, label="osc fooof")
+# # osc_irasa = psd_osc * 1e12
+# # osc_irasa = np.log10(osc_irasa)
+# # osc_irasa = np.nan_to_num(osc_irasa)
+# # ax.plot(freqs_irasa, osc_irasa, label="osc IRASA")
+# # ax.plot(freqs_f, psd_osc_f * 1e9, label="ground osc")
+# # ax.plot(freqs_f, np.log10(psd_osc_f*1e12), label="ground osc")
+# # ax.set_xlim(1, 100)
+# # ax.legend()
+# # =============================================================================
+# 
+# # %%
+# 
+# 
+# fig = plt.figure(figsize=[fig_width*3, 5.5*3], constrained_layout=True)
+# 
+# gs0 = gridspec.GridSpec(3, 2, figure=fig, height_ratios=[1, 1, 2],
+#                         width_ratios=[1, 5])
+# 
+# ax1 = fig.add_subplot(gs0[:, 0])
+# ax = ax1
+# ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
 # ax.legend()
 # 
 # 
-# fig, ax = plt.subplots(1, 1)
-# ax.plot(fm.freqs, 10**fm._peak_fit, label="osc fooof")
-# osc_irasa = psd_osc * 1e12
-# osc_irasa = np.log10(osc_irasa)
-# osc_irasa = np.nan_to_num(osc_irasa)
-# ax.plot(freqs_irasa, osc_irasa, label="osc IRASA")
-# ax.plot(freqs_f, psd_osc_f * 1e9, label="ground osc")
-# ax.plot(freqs_f, np.log10(psd_osc_f*1e12), label="ground osc")
-# ax.set_xlim(1, 100)
-# ax.legend()
-# =============================================================================
-
-# %%
-fig = plt.figure(figsize=[fig_width*3, 5.5*3], constrained_layout=True)
-
-gs0 = gridspec.GridSpec(2, 1, figure=fig, height_ratios=[3, 2])
-
-gs00 = gs0[0].subgridspec(4, 6)
-
-ax1 = fig.add_subplot(gs00[:, 0])
-ax = ax1
-ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
-ax.legend()
-
-
-ax2 = fig.add_subplot(gs00[0, 1])
-ax = ax2
-plot_spectrum(fm.freqs, fm.power_spectrum, plt_log,
-              label='Original Power Spectrum', color='black', ax=ax)
-plot_spectrum(fm.freqs, init_ap_fit, plt_log, label='Initial Aperiodic Fit',
-              color='blue', alpha=0.5, linestyle='dashed', ax=ax)
-
-
-ax3 = fig.add_subplot(gs00[0, 2])
-ax = ax3
-plot_spectrum(fm.freqs, init_flat_spec, plt_log,
-              label='Flattened Spectrum', color='black', ax=ax)
-
-
-ax4 = fig.add_subplot(gs00[0, 3])
-ax = ax4
-plot_annotated_peak_search_MG(fm, 0, ax)
-ax.get_legend().remove()
-
-
-ax5 = fig.add_subplot(gs00[0, 4])
-ax = ax5
-plot_annotated_peak_search_MG(fm, 1, ax)
-ax.get_legend().remove()
-ax.set_ylabel("")
-ax.set_yticks([])
-ax.set_yticklabels([])
-
-
-ax6 = fig.add_subplot(gs00[1, 4])
-ax = ax6
-plot_annotated_peak_search_MG(fm, 2, ax)
-ax.set_ylabel("")
-ax.set_yticks([])
-ax.set_yticklabels([])
-
-
-ax7 = fig.add_subplot(gs00[1, 3])
-ax = ax7
-plot_spectrum(fm.freqs, fm._peak_fit, plt_log, color='green',
-              label='Final Periodic Fit', ax=ax)
-
-
-ax8 = fig.add_subplot(gs00[1, 2])
-ax = ax8
-plot_spectrum(fm.freqs, fm._spectrum_peak_rm, plt_log,
-              label='Peak Removed Spectrum', color='black', ax=ax)
-plot_spectrum(fm.freqs, fm._ap_fit, plt_log, label='Final Aperiodic Fit',
-              color='blue', alpha=0.5, linestyle='dashed', ax=ax)
-
-
-ax9 = fig.add_subplot(gs00[1, 1])
-ax = ax9
-fm.plot(plt_log=plt_log, plot_aperiodic=False, ax=ax)
-
-
-
-
-
-
-
-
-
-ax10 = fig.add_subplot(gs00[3, 1])
-ax = ax10
-ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
-i = 0
-ax.loglog(freqs_I, psds_resampled[i], label=f"h={hset[i]}")
-ax.legend()
-
-ax11 = fig.add_subplot(gs00[3, 2])
-ax = ax11
-ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
-i = 1
-ax.loglog(freqs_I, psds_resampled[i], label=f"h={hset[i]}")
-ax.legend()
-
-ax12 = fig.add_subplot(gs00[3, 3])
-ax = ax12
-ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
-i = 2
-ax.loglog(freqs_I, psds_resampled[i], label=f"h={hset[i]}")
-ax.legend()
-
-ax13 = fig.add_subplot(gs00[2, 3])
-ax = ax13
-ax.loglog(freqs_I, psd_median, label="Median of resampled PSDs")
-ax.loglog(freqs_irasa, 10**psd_fit, label="Fit")
-ax.legend()
-
-ax14 = fig.add_subplot(gs00[2, 2])
-ax = ax14
-ax.semilogx(freqs_irasa, psd_osc, label="Oscillatory Component")
-ax.legend()
-
-ax15 = fig.add_subplot(gs00[2, 1])
-ax = ax15
-ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
-# ax.loglog(freqs_irasa, psd_ap, label="Aperiodic")
-ax.loglog(freqs_irasa, psd_ap + psd_osc, label="Aperiodic + Osc")
-
-ax.legend()
-
-plt.show()
-
-# %
-
-# =============================================================================
-# fig, ax = plt.subplots(1, 1)
-# ax.loglog(freqs_irasa, psd_ap, label="IRASA")
-# ax.loglog(freqs_irasa, 10**psd_fit, label="IRASA fit")
-# ax.loglog(fm.freqs, 10**fm._spectrum_peak_rm, label="fooof")
-# ax.loglog(fm.freqs, 10**fm._ap_fit, label="fooof fit")
-# ax.legend()
+# 
+# gs00 = gs0[0, 1:].subgridspec(1, 5)
 # 
 # 
-# fig, ax = plt.subplots(1, 1)
-# ax.plot(fm.freqs, 10**fm._peak_fit, label="osc fooof")
-# osc_irasa = psd_osc * 1e12
-# osc_irasa = np.log10(osc_irasa)
-# osc_irasa = np.nan_to_num(osc_irasa)
-# ax.plot(freqs_irasa, osc_irasa, label="osc IRASA")
-# ax.plot(freqs_f, psd_osc_f * 1e9, label="ground osc")
-# ax.plot(freqs_f, np.log10(psd_osc_f*1e12), label="ground osc")
-# ax.set_xlim(1, 100)
+# ax2 = fig.add_subplot(gs00[0, 0])
+# ax = ax2
+# plot_spectrum(fm.freqs, fm.power_spectrum, plt_log,
+#               label='Original Power Spectrum', color='black', ax=ax)
+# plot_spectrum(fm.freqs, init_ap_fit, plt_log, label='Initial Aperiodic Fit',
+#               color='blue', alpha=0.5, linestyle='dashed', ax=ax)
+# 
+# 
+# ax3 = fig.add_subplot(gs00[0, 1])
+# ax = ax3
+# plot_spectrum(fm.freqs, init_flat_spec, plt_log,
+#               label='Flattened Spectrum', color='black', ax=ax)
+# 
+# 
+# ax4 = fig.add_subplot(gs00[0, 2])
+# ax = ax4
+# plot_annotated_peak_search_MG(fm, 0, ax)
+# ax.get_legend().remove()
+# 
+# 
+# ax5 = fig.add_subplot(gs00[0, 3])
+# ax = ax5
+# plot_annotated_peak_search_MG(fm, 1, ax)
+# ax.get_legend().remove()
+# ax.set_ylabel("")
+# ax.set_yticks([])
+# ax.set_yticklabels([])
+# 
+# 
+# ax6 = fig.add_subplot(gs00[0, 4])
+# ax = ax6
+# plot_annotated_peak_search_MG(fm, 2, ax)
+# ax.set_ylabel("")
+# ax.set_yticks([])
+# ax.set_yticklabels([])
+# 
+# 
+# 
+# 
+# 
+# gs01 = gs0[1, 1:].subgridspec(1, 3)
+# 
+# ax7 = fig.add_subplot(gs01[0, 2])
+# ax = ax7
+# plot_spectrum(fm.freqs, fm._peak_fit, plt_log, color='green',
+#               label='Final Periodic Fit', ax=ax)
+# 
+# 
+# ax8 = fig.add_subplot(gs01[0, 1])
+# ax = ax8
+# plot_spectrum(fm.freqs, fm._spectrum_peak_rm, plt_log,
+#               label='Peak Removed Spectrum', color='black', ax=ax)
+# plot_spectrum(fm.freqs, fm._ap_fit, plt_log, label='Final Aperiodic Fit',
+#               color='blue', alpha=0.5, linestyle='dashed', ax=ax)
+# 
+# 
+# ax9 = fig.add_subplot(gs01[0, 0])
+# ax = ax9
+# fm.plot(plt_log=plt_log, plot_aperiodic=False, ax=ax)
+# 
+# 
+# 
+# gs02 = gs0[2, 1:].subgridspec(2, 3)
+# 
+# 
+# 
+# 
+# ax10 = fig.add_subplot(gs02[0, 0])
+# ax = ax10
+# ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
+# i = 0
+# ax.loglog(freqs_I, psds_resampled[i], label=f"h={hset[i]}")
 # ax.legend()
+# 
+# ax11 = fig.add_subplot(gs02[0, 1])
+# ax = ax11
+# ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
+# i = 1
+# ax.loglog(freqs_I, psds_resampled[i], label=f"h={hset[i]}")
+# ax.legend()
+# 
+# ax12 = fig.add_subplot(gs02[0, 2])
+# ax = ax12
+# ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
+# i = 2
+# ax.loglog(freqs_I, psds_resampled[i], label=f"h={hset[i]}")
+# ax.legend()
+# 
+# ax13 = fig.add_subplot(gs02[1, 2])
+# ax = ax13
+# ax.loglog(freqs_I, psd_median, label="Median of resampled PSDs")
+# ax.loglog(freqs_irasa, 10**psd_fit, "--", label="Fit")
+# ax.legend()
+# 
+# ax14 = fig.add_subplot(gs02[1, 1])
+# ax = ax14
+# ax.semilogx(freqs_irasa, psd_osc, label="Oscillatory Component")
+# ax.legend()
+# 
+# ax15 = fig.add_subplot(gs02[1, 0])
+# ax = ax15
+# ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
+# # ax.loglog(freqs_irasa, psd_ap, label="Aperiodic")
+# ax.loglog(freqs_irasa, psd_ap + psd_osc, label="Aperiodic + Osc")
+# 
+# ax.legend()
+# 
+# plt.show()
 # =============================================================================
