@@ -659,7 +659,7 @@ import numpy as np
 from scipy import signal
 from scipy.optimize import curve_fit
 
-from neurodsp.spectral import compute_spectrum, trim_spectrum
+# from neurodsp.spectral import compute_spectrum, trim_spectrum
 
 ###################################################################################################
 ###################################################################################################

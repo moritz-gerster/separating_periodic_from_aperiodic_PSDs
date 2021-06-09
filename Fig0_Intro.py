@@ -6,12 +6,13 @@ from numpy.fft import irfft, rfftfreq
 import scipy as sp
 import scipy.signal as sig
 from pathlib import Path
-from fooof import FOOOF
 from fooof.sim.gen import gen_aperiodic
 from fooof.plts.spectra import plot_spectrum
 # from fooof.plts.annotate import plot_annotated_peak_search
-from fooof.plts.annotate import plot_annotated_peak_search_MG
-# import matplotlib.gridspec as gridspec
+from fooof_fit_MG import FOOOF
+from fooof_annotate_MG import plot_annotated_peak_search_MG
+# from fooof_fm_MG import plot_fm_lin_MG
+import matplotlib.gridspec as gridspec
 from noise_helper import irasa
 import fractions
 try:
@@ -371,7 +372,7 @@ ax.loglog(freqs_f, psd_comb_f, "k", label="Original Data")
 ax.set_yticks(yticks)
 ax.set_yticklabels(yticks, fontsize=tick_fontsize)
 ax.legend()
-
+fm.plot
 
 ax = ax = axes[1, 1]
 fm.plot_lin_MG(plt_log=False, plot_aperiodic=False, ax=ax)
@@ -483,10 +484,592 @@ ax.set_yticklabels([])
 ax.legend()
 ax.set_xlabel("Frequency [Hz]")
 
+plt.savefig(fig_path + fig_name, bbox_inches="tight")
 plt.show()
 
 
 
+
+# %% Plot
+
+# to do:
+    # fooof: remove grid
+        # understand oscillatory units fooof
+        # correct plot sizes iterations fooof
+        # think of better design, don't think in grids
+        # consider plotting fooof and IRASA together and OMITTING units
+
+# decide: window 4 sec IRASA and 1 sec fooof or both 2 sec?
+
+# add R^2 and exponents
+
+
+fig_width = 7.25  # inches
+panel_fontsize = 12
+legend_fontsize = 9 * .5
+label_fontsize = 9 * .7
+tick_fontsize = 9 * .7
+annotation_fontsize = tick_fontsize
+
+mpl.rcParams['xtick.labelsize'] = tick_fontsize
+mpl.rcParams['ytick.labelsize'] = tick_fontsize
+mpl.rcParams['axes.labelsize'] = label_fontsize
+mpl.rcParams['legend.fontsize'] = legend_fontsize
+mpl.rcParams["axes.spines.right"] = True
+mpl.rcParams["axes.spines.top"] = True
+
+panel_labels = dict(x=-.3, y=1.1, fontsize=panel_fontsize,
+                    fontdict=dict(fontweight="bold"))
+panel_labels_small = dict(x=0, y=1.01, fontsize=panel_fontsize)
+
+# line_fit = dict(lw=2, ls=":", zorder=5)
+# line_ground = dict(lw=.5, ls="-", zorder=5)
+# psd_aperiodic_kwargs = dict(lw=0.5)
+
+xticks = [0.01, .1, 1, 10, 100, 1000, 10000]
+
+yticks = [10, 100, 1000]
+yticks_small = [1, 5]
+yticks_lin = [0, 1000, 2000]
+
+# yticks_lin_f = [0, 300, 600]
+# ylim_lin_f = [-100, 600]
+yticks_lin_f = [0, .5]
+ylim_lin_f = [-.1, .6]
+
+yticks_lin_I = [0, 1000, 2000]
+ylim_lin_I = [-100, yticks_lin_I[-1]]
+
+
+fig = plt.figure(figsize=[fig_width, 5.5], constrained_layout=True)
+ 
+gs0 = gridspec.GridSpec(2, 1, figure=fig, height_ratios=[2, 1])
+# 
+gs00 = gs0[0].subgridspec(2, 4)
+# 
+ax1 = fig.add_subplot(gs00[0, 0])
+ax2 = fig.add_subplot(gs00[0, 1], sharex=ax1)
+ax3 = fig.add_subplot(gs00[0, 2], sharex=ax1)
+ax4 = fig.add_subplot(gs00[0, 3], sharex=ax1)
+ax5 = fig.add_subplot(gs00[1, 0], sharex=ax1)
+ax6 = fig.add_subplot(gs00[1, 1], sharex=ax1)
+ax7 = fig.add_subplot(gs00[1, 2], sharex=ax1)
+ax8 = fig.add_subplot(gs00[1, 3], sharex=ax1)
+ 
+gs01 = gs0[1].subgridspec(1, 5)
+
+ax9 = fig.add_subplot(gs01[0])
+ax10 = fig.add_subplot(gs01[1])
+ax11 = fig.add_subplot(gs01[2])
+ax12 = fig.add_subplot(gs01[3])
+ax13 = fig.add_subplot(gs01[4])
+
+ax = ax1
+ax.loglog(freqs_f, psd_comb_f, "k", label="Original Data")
+ax.set_yticks(yticks)
+ax.set_yticklabels(yticks, fontsize=tick_fontsize)
+ax.set_xticks(xticks)
+ax.set_xticklabels(xticks, fontsize=tick_fontsize)
+ax.text(s="a", **panel_labels, transform=ax.transAxes)
+ax.text(s="1", **panel_labels_small, transform=ax.transAxes)
+ax.legend()
+
+#xticks = ax.get_xticks()
+#xticklabels = ax.get_xticks()
+
+
+ax = ax2
+plot_spectrum(fm.freqs, 10**fm.power_spectrum, log_freqs=False,
+              label='Original Power Spectrum', color='black', ax=ax)
+plot_spectrum(fm.freqs, 10**init_ap_fit, log_freqs=False,
+              label='Initial Aperiodic Fit',
+              color='blue', alpha=0.5, linestyle='dashed', ax=ax)
+ax.grid(False)
+ax.set_yscale("log")
+ax.set_xlabel("")
+ax.set_ylabel("")
+ax.set_yticks(yticks)
+ax.set_yticklabels(yticks, fontsize=tick_fontsize)
+ax.set_xticks(xticks)
+ax.set_xticklabels(xticks, fontsize=tick_fontsize)
+ax.legend(fontsize=legend_fontsize)
+ax.text(s="2", **panel_labels_small, transform=ax.transAxes)
+
+
+ax = ax3
+plot_spectrum(fm.freqs, init_flat_spec, log_freqs=False,
+              label='Flattened Spectrum', color='black', ax=ax)
+ax.grid(False)
+ax.set_xlabel("")
+ax.set_ylabel("")
+ax.set_yticks(yticks_lin_f)
+ax.set_yticklabels([])
+ax.set_ylim(ylim_lin_f)
+ax.set_xticks(xticks)
+ax.set_xticklabels(xticks, fontsize=tick_fontsize)
+ax.legend(fontsize=legend_fontsize)
+ax.text(s="3", **panel_labels_small, transform=ax.transAxes)
+
+# =============================================================================
+# ax = axes[0, 1]
+# plot_spectrum(fm.freqs, init_flat_spec, log_freqs=False,
+#               label='Flattened Spectrum', color='black', ax=ax)
+# ax.grid(False)
+# ax.set_xlabel("")
+# ax.set_ylabel("")
+# # =============================================================================
+# # ax.set_yticks(yticks_lin_f)
+# # ax.set_yticklabels(yticks_lin_f, fontsize=tick_fontsize)
+# # ax.set_ylim(ylim_lin_f)
+# # =============================================================================
+# ax.legend(fontsize=legend_fontsize)
+# =============================================================================
+
+ax = ax4
+plot_annotated_peak_search_MG(fm, 0, ax, lw=2, markersize=10)
+# ax.get_legend().remove()
+ax.set_xscale("log")
+# ax.set_yscale("log")
+ax.grid(False)
+ax.set_xlabel("")
+ax.set_ylabel("")
+ax.set_yticks(yticks_lin_f)
+ax.set_yticklabels([])
+ax.set_ylim(ylim_lin_f)
+#ax.set_yticklabels(["", ""])
+ax.legend(fontsize=legend_fontsize)
+# ax.set_title("Iteration #1", fontsize=tick_fontsize)
+ax.set_title(None)
+ax.text(s="4", **panel_labels_small, transform=ax.transAxes)
+
+
+
+ax = ax5
+plot_annotated_peak_search_MG(fm, 1, ax, lw=2, markersize=10)
+#ax.get_legend().remove()
+#ax.set_ylabel("")
+#ax.set_yticks([])
+#ax.set_yticklabels([])
+ax.set_xscale("log")
+# ax.set_yscale("log")
+ax.grid(False)
+ax.set_xlabel("")
+ax.set_ylabel("")
+ax.set_yticks(yticks_lin_f)
+ax.set_yticklabels([])
+ax.set_ylim(ylim_lin_f)
+ax.legend(fontsize=legend_fontsize)
+ax.set_title(None)
+ax.text(s="5", **panel_labels_small, transform=ax.transAxes)
+
+
+
+
+ax = ax6
+plot_spectrum(fm.freqs, fm._peak_fit, log_freqs=False, color='green',
+              label='Final Periodic Fit', ax=ax)
+ax.grid(False)
+# ax.set_yscale("log")
+ax.set_xlabel("")
+ax.set_ylabel("")
+ax.set_yticks(yticks_lin_f)
+ax.set_yticklabels([])
+ax.set_ylim(ylim_lin_f)
+ax.legend(fontsize=legend_fontsize)
+ax.text(s="6", **panel_labels_small, transform=ax.transAxes)
+ax.set_xticklabels(xticks, fontsize=tick_fontsize)
+
+
+ax = ax7
+plot_spectrum(fm.freqs, 10**fm._spectrum_peak_rm, log_freqs=False,
+              label='Peak Removed Spectrum', color='black', ax=ax)
+plot_spectrum(fm.freqs, 10**fm._ap_fit, log_freqs=False, label='Final Aperiodic Fit',
+              color='blue', alpha=0.5, linestyle='dashed', ax=ax)
+ax.grid(False)
+ax.set_yscale("log")
+ax.set_xlabel("")
+ax.set_ylabel("")
+ax.set_yticks(yticks)
+ax.set_yticklabels([])
+ax.legend(fontsize=legend_fontsize)
+ax.set_xticks(xticks)
+ax.set_xticklabels(xticks, fontsize=tick_fontsize)
+ax.text(s="7", **panel_labels_small, transform=ax.transAxes)
+
+
+
+
+
+ax = ax8
+fm.plot_lin_MG(plt_log=False, plot_aperiodic=False, ax=ax)
+ax.grid(False)
+ax.set_xscale("log")
+ax.set_yscale("log")
+ax.set_xlabel("")
+ax.set_ylabel("")
+ax.set_yticks(yticks)
+ax.set_yticklabels([])
+ax.legend(fontsize=legend_fontsize)
+ax.text(s="8", **panel_labels_small, transform=ax.transAxes)
+ax.set_xticks(xticks)
+ax.set_xticklabels(xticks, fontsize=tick_fontsize)
+ax.set_xlim([.8, 110])
+x_minor = mpl.ticker.LogLocator(subs=np.arange(0, 1, .1), numticks=10)
+ax.xaxis.set_minor_locator(x_minor)
+ax.set_xticklabels([], minor=True)
+
+
+
+
+
+
+ax = ax9
+ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
+ax.set_yticks(yticks)
+ax.set_yticklabels(yticks, fontsize=tick_fontsize)
+ax.legend()
+ax.text(s="b", **panel_labels, transform=ax.transAxes)
+ax.text(s="1", **panel_labels_small, transform=ax.transAxes)
+ax.set_xlabel("Frequency [Hz]")
+
+ax = ax10
+ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
+for i in range(len(hset)):
+    ax.loglog(freqs_I, psds_resampled[i], label=f"h={hset[i]}")
+ax.set_yticks(yticks)
+ax.set_yticklabels([])
+ax.legend()
+ax.set_xlabel("Frequency [Hz]")
+ax.text(s="2", **panel_labels_small, transform=ax.transAxes)
+
+
+
+ax = ax11
+ax.loglog(freqs_I, psd_median, label="Median of resampled PSDs")
+ax.loglog(freqs_irasa, 10**psd_fit, "--", label="Fit")
+ax.set_yticks(yticks)
+ax.set_yticklabels([])
+ax.text(s="3", **panel_labels_small, transform=ax.transAxes)
+ax.legend()
+ax.set_xlabel("Frequency [Hz]")
+
+ax = ax12
+ax.semilogx(freqs_irasa, psd_osc, label="Oscillatory Component")
+ax.set_yticks(yticks_lin_I)
+ax.set_yticklabels([])
+ax.set_ylim(ylim_lin_I)
+ax.legend()
+ax.text(s="4", **panel_labels_small, transform=ax.transAxes)
+ax.set_xlabel("Frequency [Hz]")
+
+
+ax = ax13
+ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
+# ax.loglog(freqs_irasa, psd_ap, label="Aperiodic")
+ax.loglog(freqs_irasa, psd_ap + psd_osc, label="Aperiodic + Osc")
+ax.set_yticks(yticks)
+ax.set_yticklabels([])
+ax.text(s="5", **panel_labels_small, transform=ax.transAxes)
+ax.set_xlabel("Frequency [Hz]")
+
+
+
+plt.savefig(fig_path + "diff_" + fig_name, bbox_inches="tight")
+plt.show()
+
+
+
+
+
+# %% Plot
+
+# to do:
+    # fooof: remove grid
+        # understand oscillatory units fooof
+        # correct plot sizes iterations fooof
+        # think of better design, don't think in grids
+        # consider plotting fooof and IRASA together and OMITTING units
+
+# decide: window 4 sec IRASA and 1 sec fooof or both 2 sec?
+
+# add R^2 and exponents
+
+
+fig_width = 7.25  # inches
+panel_fontsize = 12
+legend_fontsize = 9 * .5
+label_fontsize = 9 * .7
+tick_fontsize = 9 * .7
+annotation_fontsize = tick_fontsize
+
+mpl.rcParams['xtick.labelsize'] = tick_fontsize
+mpl.rcParams['ytick.labelsize'] = tick_fontsize
+mpl.rcParams['axes.labelsize'] = label_fontsize
+mpl.rcParams['legend.fontsize'] = legend_fontsize
+mpl.rcParams["axes.spines.right"] = True
+mpl.rcParams["axes.spines.top"] = True
+
+panel_labels = dict(x=-.3, y=1.1, fontsize=panel_fontsize,
+                    fontdict=dict(fontweight="bold"))
+panel_labels_small = dict(x=0, y=1.01, fontsize=panel_fontsize)
+
+# line_fit = dict(lw=2, ls=":", zorder=5)
+# line_ground = dict(lw=.5, ls="-", zorder=5)
+# psd_aperiodic_kwargs = dict(lw=0.5)
+
+xticks = [0.01, .1, 1, 10, 100, 1000, 10000]
+
+yticks = [10, 100, 1000]
+yticks_small = [1, 5]
+yticks_lin = [0, 1000, 2000]
+
+# yticks_lin_f = [0, 300, 600]
+# ylim_lin_f = [-100, 600]
+yticks_lin_f = [0, .5]
+ylim_lin_f = [-.1, .6]
+
+yticks_lin_I = [0, 1000, 2000]
+ylim_lin_I = [-100, yticks_lin_I[-1]]
+
+
+fig = plt.figure(figsize=[fig_width, 5.5], constrained_layout=True)
+ 
+gs0 = gridspec.GridSpec(3, 1, figure=fig)
+# 
+gs00 = gs0[0].subgridspec(1, 5)
+# 
+ax1 = fig.add_subplot(gs00[0])
+ax2 = fig.add_subplot(gs00[1], sharex=ax1)
+ax3 = fig.add_subplot(gs00[2], sharex=ax1)
+ax4 = fig.add_subplot(gs00[3], sharex=ax1)
+ax5 = fig.add_subplot(gs00[4], sharex=ax1)
+
+gs01 = gs0[1].subgridspec(1, 3)
+
+ax6 = fig.add_subplot(gs01[0], sharex=ax1)
+ax7 = fig.add_subplot(gs01[1], sharex=ax1)
+ax8 = fig.add_subplot(gs01[2], sharex=ax1)
+ 
+gs02 = gs0[2].subgridspec(1, 5)
+
+ax9 = fig.add_subplot(gs02[0])
+ax10 = fig.add_subplot(gs02[1])
+ax11 = fig.add_subplot(gs02[2])
+ax12 = fig.add_subplot(gs02[3])
+ax13 = fig.add_subplot(gs02[4])
+
+ax = ax1
+ax.loglog(freqs_f, psd_comb_f, "k", label="Original Data")
+ax.set_yticks(yticks)
+ax.set_yticklabels(yticks, fontsize=tick_fontsize)
+ax.set_xticks(xticks)
+ax.set_xticklabels(xticks, fontsize=tick_fontsize)
+ax.text(s="a", **panel_labels, transform=ax.transAxes)
+ax.text(s="1", **panel_labels_small, transform=ax.transAxes)
+ax.legend()
+
+#xticks = ax.get_xticks()
+#xticklabels = ax.get_xticks()
+
+
+ax = ax2
+plot_spectrum(fm.freqs, 10**fm.power_spectrum, log_freqs=False,
+              label='Original Power Spectrum', color='black', ax=ax)
+plot_spectrum(fm.freqs, 10**init_ap_fit, log_freqs=False,
+              label='Initial Aperiodic Fit',
+              color='blue', alpha=0.5, linestyle='dashed', ax=ax)
+ax.grid(False)
+ax.set_yscale("log")
+ax.set_xlabel("")
+ax.set_ylabel("")
+ax.set_yticks(yticks)
+ax.set_yticklabels(yticks, fontsize=tick_fontsize)
+ax.set_xticks(xticks)
+ax.set_xticklabels(xticks, fontsize=tick_fontsize)
+ax.legend(fontsize=legend_fontsize)
+ax.text(s="2", **panel_labels_small, transform=ax.transAxes)
+
+
+ax = ax3
+plot_spectrum(fm.freqs, init_flat_spec, log_freqs=False,
+              label='Flattened Spectrum', color='black', ax=ax)
+ax.grid(False)
+ax.set_xlabel("")
+ax.set_ylabel("")
+ax.set_yticks(yticks_lin_f)
+ax.set_yticklabels([])
+ax.set_ylim(ylim_lin_f)
+ax.set_xticks(xticks)
+ax.set_xticklabels(xticks, fontsize=tick_fontsize)
+ax.legend(fontsize=legend_fontsize)
+ax.text(s="3", **panel_labels_small, transform=ax.transAxes)
+
+# =============================================================================
+# ax = axes[0, 1]
+# plot_spectrum(fm.freqs, init_flat_spec, log_freqs=False,
+#               label='Flattened Spectrum', color='black', ax=ax)
+# ax.grid(False)
+# ax.set_xlabel("")
+# ax.set_ylabel("")
+# # =============================================================================
+# # ax.set_yticks(yticks_lin_f)
+# # ax.set_yticklabels(yticks_lin_f, fontsize=tick_fontsize)
+# # ax.set_ylim(ylim_lin_f)
+# # =============================================================================
+# ax.legend(fontsize=legend_fontsize)
+# =============================================================================
+
+ax = ax4
+plot_annotated_peak_search_MG(fm, 0, ax, lw=2, markersize=10)
+# ax.get_legend().remove()
+ax.set_xscale("log")
+# ax.set_yscale("log")
+ax.grid(False)
+ax.set_xlabel("")
+ax.set_ylabel("")
+ax.set_yticks(yticks_lin_f)
+ax.set_yticklabels([])
+ax.set_ylim(ylim_lin_f)
+#ax.set_yticklabels(["", ""])
+ax.legend(fontsize=legend_fontsize)
+# ax.set_title("Iteration #1", fontsize=tick_fontsize)
+ax.set_title(None)
+ax.text(s="4", **panel_labels_small, transform=ax.transAxes)
+
+
+
+ax = ax5
+plot_annotated_peak_search_MG(fm, 1, ax, lw=2, markersize=10)
+#ax.get_legend().remove()
+#ax.set_ylabel("")
+#ax.set_yticks([])
+#ax.set_yticklabels([])
+ax.set_xscale("log")
+# ax.set_yscale("log")
+ax.grid(False)
+ax.set_xlabel("")
+ax.set_ylabel("")
+ax.set_yticks(yticks_lin_f)
+ax.set_yticklabels([])
+ax.set_ylim(ylim_lin_f)
+ax.legend(fontsize=legend_fontsize)
+ax.set_title(None)
+ax.text(s="5", **panel_labels_small, transform=ax.transAxes)
+
+
+
+
+ax = ax6
+
+plot_spectrum(fm.freqs, fm._peak_fit, log_freqs=False, color='green',
+              label='Final Periodic Fit', ax=ax)
+ax.grid(False)
+# ax.set_yscale("log")
+ax.set_xlabel("")
+ax.set_ylabel("")
+ax.set_yticks(yticks_lin_f)
+ax.set_yticklabels([])
+ax.set_ylim(ylim_lin_f)
+ax.legend(fontsize=legend_fontsize)
+ax.text(s="6", **panel_labels_small, transform=ax.transAxes)
+ax.set_xticklabels(xticks, fontsize=tick_fontsize)
+
+
+
+ax = ax7
+plot_spectrum(fm.freqs, 10**fm._spectrum_peak_rm, log_freqs=False,
+              label='Peak Removed Spectrum', color='black', ax=ax)
+plot_spectrum(fm.freqs, 10**fm._ap_fit, log_freqs=False, label='Final Aperiodic Fit',
+              color='blue', alpha=0.5, linestyle='dashed', ax=ax)
+ax.grid(False)
+ax.set_yscale("log")
+ax.set_xlabel("")
+ax.set_ylabel("")
+ax.set_yticks(yticks)
+ax.set_yticklabels([])
+ax.legend(fontsize=legend_fontsize)
+ax.set_xticks(xticks)
+ax.set_xticklabels(xticks, fontsize=tick_fontsize)
+ax.text(s="7", **panel_labels_small, transform=ax.transAxes)
+
+
+
+ax = ax8
+fm.plot_lin_MG(plt_log=False, plot_aperiodic=False, ax=ax)
+ax.grid(False)
+ax.set_xscale("log")
+ax.set_yscale("log")
+ax.set_xlabel("")
+ax.set_ylabel("")
+ax.set_yticks(yticks)
+ax.set_yticklabels([])
+ax.legend(fontsize=legend_fontsize)
+ax.text(s="8", **panel_labels_small, transform=ax.transAxes)
+ax.set_xticks(xticks)
+ax.set_xticklabels(xticks, fontsize=tick_fontsize)
+ax.set_xlim([.8, 110])
+x_minor = mpl.ticker.LogLocator(subs=np.arange(0, 1, .1), numticks=10)
+ax.xaxis.set_minor_locator(x_minor)
+ax.set_xticklabels([], minor=True)
+
+
+
+
+
+
+ax = ax9
+ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
+ax.set_yticks(yticks)
+ax.set_yticklabels(yticks, fontsize=tick_fontsize)
+ax.legend()
+ax.text(s="b", **panel_labels, transform=ax.transAxes)
+ax.text(s="1", **panel_labels_small, transform=ax.transAxes)
+ax.set_xlabel("Frequency [Hz]")
+
+ax = ax10
+ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
+for i in range(len(hset)):
+    ax.loglog(freqs_I, psds_resampled[i], label=f"h={hset[i]}")
+ax.set_yticks(yticks)
+ax.set_yticklabels([])
+ax.legend()
+ax.set_xlabel("Frequency [Hz]")
+ax.text(s="2", **panel_labels_small, transform=ax.transAxes)
+
+
+
+ax = ax11
+ax.loglog(freqs_I, psd_median, label="Median of resampled PSDs")
+ax.loglog(freqs_irasa, 10**psd_fit, "--", label="Fit")
+ax.set_yticks(yticks)
+ax.set_yticklabels([])
+ax.text(s="3", **panel_labels_small, transform=ax.transAxes)
+ax.legend()
+ax.set_xlabel("Frequency [Hz]")
+
+ax = ax12
+ax.semilogx(freqs_irasa, psd_osc, label="Oscillatory Component")
+ax.set_yticks(yticks_lin_I)
+ax.set_yticklabels([])
+ax.set_ylim(ylim_lin_I)
+ax.legend()
+ax.text(s="4", **panel_labels_small, transform=ax.transAxes)
+ax.set_xlabel("Frequency [Hz]")
+
+
+ax = ax13
+ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
+# ax.loglog(freqs_irasa, psd_ap, label="Aperiodic")
+ax.loglog(freqs_irasa, psd_ap + psd_osc, label="Aperiodic + Osc")
+ax.set_yticks(yticks)
+ax.set_yticklabels([])
+ax.text(s="5", **panel_labels_small, transform=ax.transAxes)
+ax.set_xlabel("Frequency [Hz]")
+
+
+
+plt.savefig(fig_path + "diff2_" + fig_name, bbox_inches="tight")
+plt.show()
 
 
 # =============================================================================
