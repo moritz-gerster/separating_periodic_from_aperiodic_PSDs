@@ -151,7 +151,7 @@ def detect_noise_floor(freq, psd, f_start, f_range=50, thresh=0.05,
 # Colors
 # a)
 c_sim = "k"
-c_fit = "b"  # c="dodgerblue"
+c_fits = ["limegreen", "r", "r", "r"]  # c="dodgerblue"
 c_noise = "darkgray"
 
 # b)
@@ -256,7 +256,9 @@ for i, lim in enumerate(upper_fit_limits):
     fit = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
     label = f"1-{lim}Hz a={exp:.2f}"
     plot_fit = fm.freqs, 10**fit, "-"
-    dic_fit = dict(c=c_fit, lw=2, alpha=fit_alphas[i], ls="-", label=label)
+    dic_fit = dict(c=c_fits[i], lw=2,
+                   # alpha=fit_alphas[i],
+                   label=label)
     # annotate x-crossing
     vline = lim, ylim_a[0], 10**fit[-1]
     plot_fits.append(plot_fit)
