@@ -23,6 +23,7 @@ from fooof import FOOOF
 import mne
 from mne.time_frequency import psd_welch
 from fooof.sim.gen import gen_aperiodic
+from noise_helper import irasa
 supp = False
 
 
@@ -106,18 +107,37 @@ a9_straight = DeltaY9 / DeltaX
 fm5_straight = gen_aperiodic(fm5.freqs, np.array([offset5, a5_straight]))
 fm9_straight = gen_aperiodic(fm9.freqs, np.array([offset9, a9_straight]))
 
+# IRASA fit
+get_data = dict(start=srate_pd//2, stop=srate_pd*180, reject_by_annotation="NaN")
+sub5_I = sub5.get_data(**get_data)
+sub9_I = sub9.get_data(**get_data)
+
+freq_I, _, _, params5_I = irasa(sub5_I, band=freq_range, sf=srate_pd)
+_, _, _, params9_I = irasa(sub9_I, band=freq_range, sf=srate_pd)
+
+off5_I = params5_I["Intercept"][0]
+off9_I = params9_I["Intercept"][0]
+
+a5_I = -params5_I["Slope"][0]
+a9_I = -params9_I["Slope"][0]
+
+fm5_I = gen_aperiodic(freq_I, np.array([off5_I, a5_I]))
+fm9_I = gen_aperiodic(freq_I, np.array([off9_I, a9_I]))
+
 # Low fit
-offset5_low = np.log10(spec5[freq == freq_range[0]][0] * 0.5)
-DeltaY5_low = offset5_low - endpoint5
-
-offset9_low = np.log10(spec9[freq == freq_range[0]][0] * 0.5)
-DeltaY9_low = offset9_low - endpoint9
-
-a5_low = DeltaY5_low / DeltaX
-a9_low = DeltaY9_low / DeltaX
-
-fm5_low = gen_aperiodic(fm5.freqs, np.array([offset5_low, a5_low]))
-fm9_low = gen_aperiodic(fm9.freqs, np.array([offset9_low, a9_low]))
+# =============================================================================
+# offset5_low = np.log10(spec5[freq == freq_range[0]][0] * 0.5)
+# DeltaY5_low = offset5_low - endpoint5
+# 
+# offset9_low = np.log10(spec9[freq == freq_range[0]][0] * 0.5)
+# DeltaY9_low = offset9_low - endpoint9
+# 
+# a5_low = DeltaY5_low / DeltaX
+# a9_low = DeltaY9_low / DeltaX
+# 
+# fm5_low = gen_aperiodic(fm5.freqs, np.array([offset5_low, a5_low]))
+# fm9_low = gen_aperiodic(fm9.freqs, np.array([offset9_low, a9_low]))
+# =============================================================================
 
 spec5_real = freq, spec5, c_empirical
 spec9_real = freq, spec9, c_empirical
@@ -128,9 +148,13 @@ spec9_fooof = fm9.freqs, 10**fm9_fooof, c_fooof
 spec5_straight = fm5.freqs, 10**fm5_straight, c_straight
 spec9_straight = fm9.freqs, 10**fm9_straight, c_straight
 
-spec5_low = fm5.freqs, 10**fm5_low, c_low
-spec9_low = fm9.freqs, 10**fm9_low, c_low
+spec5_I = freq_I, 10**fm5_I, c_low
+spec9_I = freq_I, 10**fm9_I, c_low
 
+# =============================================================================
+# spec5_low = fm5.freqs, 10**fm5_low, c_low
+# spec9_low = fm9.freqs, 10**fm9_low, c_low
+# =============================================================================
 # %% Plot b)
 
 fig, ax = plt.subplots(2, 2, figsize=(8, 5))
@@ -154,14 +178,14 @@ ax[1, 0].loglog(*spec5_straight, label=f"straight a={a5_straight:.2f}")
 ax[1, 1].loglog(*spec9_straight, label=f"straight a={a9_straight:.2f}")
 
 # Low fit
-ax[1, 0].loglog(*spec5_low, label=f"low        a={a5_low:.2f}")
-ax[1, 1].loglog(*spec9_low, label=f"low        a={a9_low:.2f}")
+ax[1, 0].loglog(*spec5_I, label=f"IRASA    a={a5_I:.2f}")
+ax[1, 1].loglog(*spec9_I, label=f"IRASA    a={a9_I:.2f}")
 
 for axes in ax.flatten():
     axes.spines["top"].set_visible(False)
     axes.spines["right"].set_visible(False)
-ax[0, 0].legend()
-ax[0, 1].legend()
+    axes.legend()
+
 ax[0, 0].set(xlabel=None, ylabel=r"PSD [$\mu$$V^2/Hz$]")
 ax[0, 1].set(xlabel=None, ylabel=None)
 ax[1, 0].set(xlabel="Frequency [Hz]", ylabel=r"PSD [$\mu$$V^2/Hz$]")
