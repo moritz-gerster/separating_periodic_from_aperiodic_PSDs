@@ -77,7 +77,7 @@ def plot_annotated_peak_search(fm, plot_style=style_spectrum_plot):
 
 
 @check_dependency(plt, 'matplotlib')
-def plot_annotated_peak_search_MG(fm, ind_max, ax,
+def plot_annotated_peak_search_MG(fm, ind_max, ax, c_flat="k", c_thresh="orange", c_fit="g",
                                   plot_style=style_spectrum_plot, lw=1, markersize=10):
     """Plot a series of plots illustrating the peak search from a flattened spectrum.
 
@@ -108,10 +108,10 @@ def plot_annotated_peak_search_MG(fm, ind_max, ax,
         if ind == ind_max:
         
             plot_spectrum(fm.freqs, flatspec, ax=ax, plot_style=None,
-                          label='Flattened Spectrum', color=PLT_COLORS['data'], linewidth=lw)
+                          label='Flattened Spectrum', color=c_flat, linewidth=lw)
             plot_spectrum(fm.freqs, np.array([fm.peak_threshold * np.std(flatspec)]*len(fm.freqs)),
                           ax=ax, plot_style=None, label='Relative Threshold',
-                          color='orange', linewidth=lw, linestyle='dashed')
+                          color=c_thresh, linewidth=lw, linestyle='dashed')
 # =============================================================================
 #             plot_spectrum(fm.freqs, [fm.min_peak_height]*len(fm.freqs),
 #                           ax=ax, plot_style=None, label='Absolute Threshold',
@@ -122,9 +122,11 @@ def plot_annotated_peak_search_MG(fm, ind_max, ax,
     
         maxi = np.argmax(flatspec)
         
-        if ind == ind_max:
-            ax.plot(fm.freqs[maxi], flatspec[maxi], '.',
-                    color=PLT_COLORS['periodic'], alpha=0.75, markersize=markersize)
+# =============================================================================
+#         if ind == ind_max:
+#             ax.plot(fm.freqs[maxi], flatspec[maxi], '.',
+#                     color=c_fit, alpha=0.75, markersize=markersize)
+# =============================================================================
             #ax.set_yticks([])
             #ax.set_yticklabels([])
         
@@ -138,7 +140,7 @@ def plot_annotated_peak_search_MG(fm, ind_max, ax,
             if ind == ind_max:
                     
                 plot_spectrum(fm.freqs, gauss, ax=ax, plot_style=None,
-                              label='Gaussian Fit', color=PLT_COLORS['periodic'],
+                              label='Gaussian Fit', color=c_fit,
                               linestyle=':', linewidth=lw)
                 #ax.set_yticks([])
                 #ax.set_yticklabels([])

@@ -118,27 +118,32 @@ Path(fig_path).mkdir(parents=True, exist_ok=True)
 
 # a)
 c_sim = "k"
-c_error = "r"
-c_noise = "darkgray"
+c_ap = "b"
+c_osc = "g"
+c_full = "r"
+c_fit = "grey"
 
-c_range1 = "b"
-c_range2 = "g"
-c_range3 = "y"
+# Boxes
+c_inp = "#73DCFF"
+c_alg = "#FFC6FF"
+c_mod = "#FFFF7E" # tab:orange, darkorange
+c_sub = "#9EFFA2"
 
-c_ap = "grey"
-
-# b)
-c_real = "purple"
-
-# c_fit3 = "lime"
+# Algorithm
+c_h1 = c_inp
+c_h2 = "yellow"
+c_h3 = "g"
+# c_h3 = "orange"
 
 # c)
-c_fooof = "deepskyblue"
-c_IRASA1 = "C1"
-c_IRASA2 = "C2"
-c_IRASA3 = "orangered"
-# c_IRASA3 = "C4"
-
+# =============================================================================
+# c_fooof = "deepskyblue"
+# c_IRASA1 = "C1"
+# c_IRASA2 = "C2"
+# c_IRASA3 = "orangered"
+# # c_IRASA3 = "C4"
+# 
+# =============================================================================
 lw = 2
 
 
@@ -246,7 +251,7 @@ psd_median = np.median(psds_resampled, axis=0)
 
 """
 Details:
-    - add text, arrows, colors
+    - arrows, colors
     - (add R^2 and exponents)
     - change design fooof, change all colors
     - nice legends, labels, and sizes
@@ -254,15 +259,17 @@ Details:
 
 
 fig_width = 7.25  # inches
-panel_fontsize = 12
-legend_fontsize = 9 * .5
-label_fontsize = 9 * .7
-tick_fontsize = 9 * .7
-annotation_fontsize = tick_fontsize
+panel_fontsize = 15
+legend_fontsize = 7
+# label_fontsize = 1
+# tick_fontsize = 1
+# annotation_fontsize = tick_fontsize
 
-mpl.rcParams['xtick.labelsize'] = tick_fontsize
-mpl.rcParams['ytick.labelsize'] = tick_fontsize
-mpl.rcParams['axes.labelsize'] = label_fontsize
+# mpl.rcParams['xtick.labelsize'] = tick_fontsize
+# mpl.rcParams['ytick.labelsize'] = tick_fontsize
+# mpl.rcParams['axes.labelsize'] = label_fontsize
+# mpl.rcParams['axes.titlesize'] = 15
+mpl.rcParams['font.size'] = panel_fontsize
 mpl.rcParams['legend.fontsize'] = legend_fontsize
 mpl.rcParams["axes.spines.right"] = True
 mpl.rcParams["axes.spines.top"] = True
@@ -292,19 +299,20 @@ ylim_lin_I = [-100, yticks_lin_I[-1]]
 
 
 def fooof_1(ax):    
-    ax.loglog(freqs_f, psd_comb_f, "k", label="Original Data")
+    ax.loglog(freqs_f, psd_comb_f, c_sim, label="Original Data")
     ax.set(xticks=[], yticks=[], xticklabels=[], yticklabels=[])
     ax.set_yticks([], minor=True)
     ax.set_xticks([], minor=True)
     ax.set_yticklabels([], minor=True)
     ax.set_xticklabels([], minor=True)
+    ax.set_title("FOOOF")
     ax.spines["right"].set_linestyle(ls)
     ax.spines["left"].set_linestyle(ls)
     ax.spines["top"].set_linestyle(ls)
     ax.spines["bottom"].set_linestyle(ls)
-    ax.set_facecolor("C0")
-    ax.patch.set_alpha(0.3)
-    ax.legend()
+    ax.set_facecolor(c_inp)
+    # ax.patch.set_alpha(0.3)
+    # ax.legend()
     fm.plot
 
 #    ax.rcParams["axes.spines.top"] = True
@@ -314,16 +322,17 @@ def fooof_1(ax):
 
 def fooof_2(ax):
     plot_spectrum(fm.freqs, 10**fm.power_spectrum, log_freqs=False,
-                  label='Original Power Spectrum', color='black', ax=ax)
+                  label='Original Power Spectrum', color=c_sim, ax=ax)
     plot_spectrum(fm.freqs, 10**init_ap_fit, log_freqs=False,
                   label='Initial Aperiodic Fit',
-                  color='blue', alpha=0.5, linestyle='dashed', ax=ax)
+                  color=c_fit, alpha=1, linestyle='--', ax=ax)
     ax.grid(False)
     ax.set_yscale("log")
     ax.set_xscale("log")
     ax.set_xlabel("")
     ax.set_ylabel("")
     ax.axis("off")
+    ax.get_legend().remove()
 # =============================================================================
 #     ax.set(xticks=[], yticks=[], xticklabels=[], yticklabels=[])
 #     ax.set_yticks([], minor=True)
@@ -331,12 +340,12 @@ def fooof_2(ax):
 #     ax.set_yticklabels([], minor=True)
 #     ax.set_xticklabels([], minor=True)
 # =============================================================================
-    ax.legend(fontsize=legend_fontsize)
+    # ax.legend(fontsize=legend_fontsize)
     
 
 def fooof_3(ax):
     plot_spectrum(fm.freqs, init_flat_spec, log_freqs=False,
-                  label='Flattened Spectrum', color='black', ax=ax)
+                  label='Flattened Spectrum', color="C0", ax=ax)
     ax.grid(False)
     ax.set_xlabel("")
     ax.set_ylabel("")
@@ -349,11 +358,13 @@ def fooof_3(ax):
 #     ax.set_xticklabels([], minor=True)
 # =============================================================================
     ax.set_ylim(ylim_lin_f)
-    ax.legend(fontsize=legend_fontsize)
+    ax.get_legend().remove()
+    # ax.legend(fontsize=legend_fontsize)
     
     
 def fooof_4(ax):
-    plot_annotated_peak_search_MG(fm, 0, ax, lw=2, markersize=10)
+    plot_annotated_peak_search_MG(fm, 0, ax, lw=2, markersize=10,
+                                  c_flat="C0", c_fit="g", c_thresh="orange")
     ax.set_xscale("log")
     ax.grid(False)
     ax.set_xlabel("")
@@ -367,12 +378,13 @@ def fooof_4(ax):
 #     ax.set_xticklabels([], minor=True)
 # =============================================================================
     ax.set_ylim(ylim_lin_f)
-    ax.legend(fontsize=legend_fontsize)
+    # ax.legend(fontsize=legend_fontsize)
     ax.set_title(None)
 
 
 def fooof_5(ax):
-    plot_annotated_peak_search_MG(fm, 1, ax, lw=2, markersize=10)
+    plot_annotated_peak_search_MG(fm, 1, ax, lw=2, markersize=10,
+                                  c_flat="C0", c_fit="g", c_thresh="orange")
     ax.set_xscale("log")
     ax.grid(False)
     ax.set_xlabel("")
@@ -386,12 +398,12 @@ def fooof_5(ax):
 #     ax.set_xticklabels([], minor=True)
 # =============================================================================
     ax.set_ylim(ylim_lin_f)
-    ax.legend(fontsize=legend_fontsize)
+    # ax.legend(fontsize=legend_fontsize)
     ax.set_title(None)
 
 
 def fooof_6(ax):
-    plot_spectrum(fm.freqs, fm._peak_fit, log_freqs=False, color='green',
+    plot_spectrum(fm.freqs, fm._peak_fit, log_freqs=False, color=c_osc,
                   label='Final Periodic Fit', ax=ax)
     ax.grid(False)
     ax.set_xlabel("")
@@ -402,21 +414,22 @@ def fooof_6(ax):
     ax.set_yticklabels([], minor=True)
     ax.set_xticklabels([], minor=True)
     ax.set_ylim(ylim_lin_f)
-    ax.legend(fontsize=legend_fontsize)
+    # ax.legend(fontsize=legend_fontsize)
     ax.spines["right"].set_linestyle(ls)
     ax.spines["left"].set_linestyle(ls)
     ax.spines["top"].set_linestyle(ls)
     ax.spines["bottom"].set_linestyle(ls)
-    ax.set_facecolor("C2")
-    ax.patch.set_alpha(0.3)
+    ax.set_facecolor(c_mod)
+    # ax.patch.set_alpha(0.3)
+    ax.get_legend().remove()
 
 
 def fooof_7(ax):
     plot_spectrum(fm.freqs, 10**fm._spectrum_peak_rm, log_freqs=False,
-                  label='Peak Removed Spectrum', color='black', ax=ax)
+                  label='Peak Removed Spectrum', color=c_ap, ax=ax)
     plot_spectrum(fm.freqs, 10**fm._ap_fit, log_freqs=False,
                   label='Final Aperiodic Fit',
-                  color='blue', alpha=0.5, linestyle='dashed', ax=ax)
+                  color=c_fit, alpha=0.5, linestyle='dashed', ax=ax)
     ax.grid(False)
     ax.set_yscale("log")
     ax.set_xscale("log")
@@ -430,36 +443,39 @@ def fooof_7(ax):
 #     ax.set_yticklabels([], minor=True)
 #     ax.set_xticklabels([], minor=True)
 # =============================================================================
-    ax.legend(fontsize=legend_fontsize)
+    # ax.legend(fontsize=legend_fontsize)
+    ax.get_legend().remove()
 
 def fooof_8(ax):
-    fm.plot_lin_MG(plt_log=False, plot_aperiodic=False, ax=ax)
+    fm.plot_lin_MG(plt_log=False, plot_aperiodic=False, add_legend=False,
+                   ax=ax, model_kwargs=dict(color=c_full, alpha=1, lw=lw))
     ax.grid(False)
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel("")
     ax.set_ylabel("")
     ax.axis("off")
-# =============================================================================
+    # =============================================================================
 #     ax.set(xticks=[], yticks=[], xticklabels=[], yticklabels=[])
 #     ax.set_yticks([], minor=True)
 #     ax.set_xticks([], minor=True)
 #     ax.set_yticklabels([], minor=True)
 #     ax.set_xticklabels([], minor=True)
 # =============================================================================
-    ax.legend(fontsize=legend_fontsize)
+    # ax.legend(fontsize=legend_fontsize)
 
 
 def IRASA_1(ax):
-    ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
+    ax.loglog(freqs_I, psd_comb_I, c_sim, label="Original Data")
     ax.set(xticks=[], yticks=[], xticklabels=[], yticklabels=[])
     ax.set_yticks([], minor=True)
     ax.set_xticks([], minor=True)
     ax.set_yticklabels([], minor=True)
     ax.set_xticklabels([], minor=True)
-    ax.legend()
-    ax.set_facecolor("C0")
-    ax.patch.set_alpha(0.3)
+    # ax.legend()
+    ax.set_title("IRASA")
+    ax.set_facecolor(c_inp)
+    # ax.patch.set_alpha(0.3)
     ax.spines["right"].set_linestyle(ls)
     ax.spines["left"].set_linestyle(ls)
     ax.spines["top"].set_linestyle(ls)
@@ -467,9 +483,9 @@ def IRASA_1(ax):
 
 
 def IRASA_2(ax):
-    ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
+    ax.loglog(freqs_I, psd_comb_I, c_sim, label="Original Data")
     i = 0
-    ax.loglog(freqs_I, psds_resampled[i], "C0", label=f"h={hset[i]}")
+    ax.loglog(freqs_I, psds_resampled[i], c_h1, label=f"h={hset[i]}")
     ax.axis("off")
 # =============================================================================
 #     ax.set(xticks=[], yticks=[], xticklabels=[], yticklabels=[])
@@ -478,14 +494,14 @@ def IRASA_2(ax):
 #     ax.set_yticklabels([], minor=True)
 #     ax.set_xticklabels([], minor=True)
 # =============================================================================
-    ax.legend()
+    # ax.legend()
     ax.set_xlabel("Frequency [Hz]")
 
 
 def IRASA_3(ax):        
-    ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
+    ax.loglog(freqs_I, psd_comb_I, c_sim, label="Original Data")
     i = 1
-    ax.loglog(freqs_I, psds_resampled[i],  "C1", label=f"h={hset[i]}")
+    ax.loglog(freqs_I, psds_resampled[i],  c_h2, label=f"h={hset[i]}")
     ax.axis("off")
 # =============================================================================
 #     ax.set(xticks=[], yticks=[], xticklabels=[], yticklabels=[])
@@ -494,14 +510,14 @@ def IRASA_3(ax):
 #     ax.set_yticklabels([], minor=True)
 #     ax.set_xticklabels([], minor=True)
 # =============================================================================
-    ax.legend()
+    # ax.legend()
     ax.set_xlabel("Frequency [Hz]")
 
 
 def IRASA_4(ax):
-    ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
+    ax.loglog(freqs_I, psd_comb_I, c_sim, label="Original Data")
     i = 2
-    ax.loglog(freqs_I, psds_resampled[i],  "C2", label=f"h={hset[i]}")
+    ax.loglog(freqs_I, psds_resampled[i],  c_h3, label=f"h={hset[i]}")
     ax.axis("off")
 # =============================================================================
 #     ax.set(xticks=[], yticks=[], xticklabels=[], yticklabels=[])
@@ -510,13 +526,13 @@ def IRASA_4(ax):
 #     ax.set_yticklabels([], minor=True)
 #     ax.set_xticklabels([], minor=True)
 # =============================================================================
-    ax.legend()
+    # ax.legend()
     
     
 def IRASA_5(ax):
-    ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
-    for i in range(len(hset)):
-        ax.loglog(freqs_I, psds_resampled[i], label=f"h={hset[i]}")
+    ax.loglog(freqs_I, psd_comb_I, c_sim, label="Original Data")
+    for i, c in enumerate([c_h1, c_h2, c_h3]):
+        ax.loglog(freqs_I, psds_resampled[i], c, label=f"h={hset[i]}")
     ax.axis("off")
 # =============================================================================
 #     ax.set(xticks=[], yticks=[], xticklabels=[], yticklabels=[])
@@ -525,29 +541,29 @@ def IRASA_5(ax):
 #     ax.set_yticklabels([], minor=True)
 #     ax.set_xticklabels([], minor=True)
 # =============================================================================
-    ax.legend()
+    # ax.legend()
     
 
 def IRASA_6(ax):
-    ax.loglog(freqs_I, psd_median, label="Median of resampled PSDs")
-    ax.loglog(freqs_irasa, 10**psd_fit, "--", label="Fit")
+    ax.loglog(freqs_I, psd_median, c_ap, label="Median of resampled PSDs")
+    ax.loglog(freqs_irasa, 10**psd_fit, c_fit, label="Fit")
     ax.set(xticks=[], yticks=[], xticklabels=[], yticklabels=[])
     ax.set_yticks([], minor=True)
     ax.set_xticks([], minor=True)
     ax.set_yticklabels([], minor=True)
     ax.set_xticklabels([], minor=True)
-    ax.legend()
+    # ax.legend()
     ax.spines["right"].set_linestyle(ls)
     ax.spines["left"].set_linestyle(ls)
     ax.spines["top"].set_linestyle(ls)
     ax.spines["bottom"].set_linestyle(ls)
-    ax.set_facecolor("C2")
-    ax.patch.set_alpha(0.3)
+    ax.set_facecolor(c_mod)
+    # ax.patch.set_alpha(0.3)
 
     
     
 def IRASA_7(ax):
-    ax.semilogx(freqs_irasa, psd_osc, label="Oscillatory Component")
+    ax.semilogx(freqs_irasa, psd_osc, c_osc, label="Oscillatory Component")
     ax.axis("off")
 # =============================================================================
 #     ax.set(xticks=[], yticks=[], xticklabels=[], yticklabels=[])
@@ -557,12 +573,12 @@ def IRASA_7(ax):
 #     ax.set_xticklabels([], minor=True)
 # =============================================================================
     ax.set_ylim(ylim_lin_I)
-    ax.legend()
+    # ax.legend()
 
 
 def IRASA_8(ax):
-    ax.loglog(freqs_I, psd_comb_I, "k", label="Original Data")
-    ax.loglog(freqs_irasa, psd_ap + psd_osc, label="Aperiodic + Osc")
+    ax.loglog(freqs_I, psd_comb_I, c_sim, label="Original Data")
+    ax.loglog(freqs_irasa, psd_ap + psd_osc, c_full, label="Aperiodic + Osc")
     ax.axis("off")
 # =============================================================================
 #     ax.set(xticks=[], yticks=[], xticklabels=[], yticklabels=[])
@@ -577,7 +593,7 @@ def make_frame(ax, c):
     ax.tick_params(axis='both',which='both',bottom=0,left=0,
                             labelbottom=0, labelleft=0)
     ax.set_facecolor(c)
-    ax.patch.set_alpha(0.3)
+    # ax.patch.set_alpha(0.3)
     ax.spines["right"].set_linestyle(ls)
     ax.spines["left"].set_linestyle(ls)
     ax.spines["top"].set_linestyle(ls)
@@ -587,48 +603,51 @@ def make_frame(ax, c):
 
 fig = plt.figure(constrained_layout=False, figsize=(fig_width, 9))
 
-gs = fig.add_gridspec(nrows=4, ncols=4, height_ratios=[2, 3, 2, 2],
-                      width_ratios=[1, 2, 2, 1], wspace=0.05)
+gs = fig.add_gridspec(nrows=4, ncols=4,
+                      height_ratios=[2, 3, 2, 2],
+                      width_ratios=[1, 1.5, 1.5, 1],
+                      wspace=.1, hspace=.25, left=.1, right=.9)
 
 # 4 steps in infographics
 inp_f = fig.add_subplot(gs[0, 1])
 inp_I = fig.add_subplot(gs[0, 2])
 
 # Algorithm gs
-make_frame(gs[1, :2], "C1")
-gs_alg_f = gs[1, :2].subgridspec(2, 2, wspace=0.05, hspace=0.025)
+make_frame(gs[1, :2], c_alg)
+gs_alg_f = gs[1, :2].subgridspec(2, 2, wspace=0, hspace=0)
 
 gs_alg_f1 = fig.add_subplot(gs_alg_f[0, 1])
 gs_alg_f2 = fig.add_subplot(gs_alg_f[0, 0])
 gs_alg_f3 = fig.add_subplot(gs_alg_f[1, 0])
 gs_alg_f4 = fig.add_subplot(gs_alg_f[1, 1])
 
-make_frame(gs[1, 2:], "C1")
-gs_alg_I = gs[1, 2:].subgridspec(2, 2, wspace=0.05, hspace=0.025)
+make_frame(gs[1, 2:], c_alg)
+gs_alg_I = gs[1, 2:].subgridspec(2, 2, wspace=0, hspace=0)
 
 gs_alg_I1 = fig.add_subplot(gs_alg_I[0, 0])
 gs_alg_I2 = fig.add_subplot(gs_alg_I[0, 1])
 gs_alg_I3 = fig.add_subplot(gs_alg_I[1, 0])
 gs_alg_I4 = fig.add_subplot(gs_alg_I[1, 1])
 
-# Modle gs
+# Model gs
 mod_f = fig.add_subplot(gs[2, 1])
 mod_I = fig.add_subplot(gs[2, 2])
 
 # Subtraction gs
-make_frame(gs[3, :2], "C3")
-gs_sub_f = gs[3, :2].subgridspec(1, 2, wspace=0.05, hspace=0.025)
+make_frame(gs[3, :2], c_sub)
+gs_sub_f = gs[3, :2].subgridspec(1, 2, wspace=0, hspace=0)
 sub_f1 = fig.add_subplot(gs_sub_f[1])
 sub_f2 = fig.add_subplot(gs_sub_f[0])
 
-make_frame(gs[3, 2:], "C3")
-gs_sub_I = gs[3, 2:].subgridspec(1, 2, wspace=0.05, hspace=0.025)
+make_frame(gs[3, 2:], c_sub)
+gs_sub_I = gs[3, 2:].subgridspec(1, 2, wspace=0, hspace=0)
 sub_I1 = fig.add_subplot(gs_sub_I[0])
 sub_I2 = fig.add_subplot(gs_sub_I[1])
 
 
 fooof_1(inp_f)
 IRASA_1(inp_I)
+
 
 fooof_2(gs_alg_f1)
 fooof_3(gs_alg_f2)
@@ -649,8 +668,83 @@ fooof_7(sub_f1)
 fooof_8(sub_f2)
 IRASA_7(sub_I1)
 IRASA_8(sub_I2)
-#IRASA_8.axis("off")
-# plt.savefig(fig_path + fig_name, bbox_inches="tight")
+
+# Add text
+fig.text(.1, 0.81, "Input", ha="left", color=c_inp)
+fig.text(.1, 0.706, "Algorithm", ha="left", color=c_alg)
+fig.text(.1, 0.38, "Model", ha="left", color=c_mod)
+fig.text(.1, 0.275, "Subtraction", ha="left", color=c_sub) # "Input - Model"
+
+# Add arrows
+"""Find way to position arrows FIXED. They should not move after adding
+additional arrows."""
+# =============================================================================
+
+x_large_f = .36
+x_large_I = .65
+
+y_inp_tail = .735
+y_inp_head = .765
+
+y_alg_tail = .42
+y_alg_head = .45
+
+y_mod_tail = .2
+y_mod_head = .23
+
+
+arr_props = dict(facecolor='k', width=1.5, headwidth=6, headlength=5, shrink=0)
+
+plt.annotate(text="", xy=(x_large_f, y_inp_tail),
+             xytext=(x_large_f, y_inp_head),
+             xycoords='figure fraction',
+             annotation_clip=False, arrowprops=arr_props)
+plt.annotate(text="", xy=(x_large_I, y_inp_tail),
+             xytext=(x_large_I, y_inp_head),
+             xycoords='figure fraction',
+             annotation_clip=False, arrowprops=arr_props)
+
+
+plt.annotate(text="", xy=(x_large_f, y_alg_tail),
+             xytext=(x_large_f, y_alg_head),
+             xycoords='figure fraction',
+             annotation_clip=False, arrowprops=arr_props)
+plt.annotate(text="", xy=(x_large_I, y_alg_tail),
+             xytext=(x_large_I, y_alg_head),
+             xycoords='figure fraction',
+             annotation_clip=False, arrowprops=arr_props)
+
+plt.annotate(text="", xy=(x_large_f, y_mod_tail),
+             xytext=(x_large_f, y_mod_head),
+             xycoords='figure fraction',
+             annotation_clip=False, arrowprops=arr_props)
+plt.annotate(text="", xy=(x_large_I, y_mod_tail),
+             xytext=(x_large_I, y_mod_head),
+             xycoords='figure fraction',
+             annotation_clip=False, arrowprops=arr_props)
+
+x_small_tail_f = .26
+x_small_head_f = .23
+
+x_small_tail_I = .74
+x_small_head_I = .77
+
+y_sub_small = .115
+
+# =============================================================================
+# plt.annotate(text="", xy=(x_small_head_f, y_sub_small),
+#              xytext=(x_small_tail_f, y_sub_small),
+#              xycoords='figure fraction',
+#              annotation_clip=False, arrowprops=arr_props)
+# plt.annotate(text="", xy=(x_small_head_I, y_sub_small),
+#              xytext=(x_small_tail_I, y_sub_small),
+#              xycoords='figure fraction',
+#              annotation_clip=False, arrowprops=arr_props)
+# =============================================================================
+
+
+
+plt.savefig(fig_path + fig_name, bbox_inches="tight")
 plt.show()
 
 
