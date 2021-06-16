@@ -636,84 +636,12 @@ class FOOOF():
     def plot_lin_MG(self, plot_peaks=None, plot_aperiodic=True, plt_log=False,
              add_legend=True, save_fig=False, file_name=None, file_path=None,
              ax=None, plot_style=style_spectrum_plot,
-             data_kwargs=None, model_kwargs=None, aperiodic_kwargs=None, peak_kwargs=None):
-
-# =============================================================================
-#         def plot_fm_lin_MG(fm, plot_peaks=None, plot_aperiodic=True, plt_log=False, add_legend=True,
-#             save_fig=False, file_name=None, file_path=None,
-#             ax=None, plot_style=style_spectrum_plot,
-#             data_kwargs=None, model_kwargs=None, aperiodic_kwargs=None, peak_kwargs=None):
-#             """Plot the power spectrum and model fit results from a FOOOF object.
-#         
-#             Parameters
-#             ----------
-#             fm : FOOOF
-#                 Object containing a power spectrum and (optionally) results from fitting.
-#             plot_peaks : None or {'shade', 'dot', 'outline', 'line'}, optional
-#                 What kind of approach to take to plot peaks. If None, peaks are not specifically plotted.
-#                 Can also be a combination of approaches, separated by '-', for example: 'shade-line'.
-#             plot_aperiodic : boolean, optional, default: True
-#                 Whether to plot the aperiodic component of the model fit.
-#             plt_log : boolean, optional, default: False
-#                 Whether to plot the frequency values in log10 spacing.
-#             add_legend : boolean, optional, default: False
-#                 Whether to add a legend describing the plot components.
-#             save_fig : bool, optional, default: False
-#                 Whether to save out a copy of the plot.
-#             file_name : str, optional
-#                 Name to give the saved out file.
-#             file_path : str, optional
-#                 Path to directory to save to. If None, saves to current directory.
-#             ax : matplotlib.Axes, optional
-#                 Figure axes upon which to plot.
-#             plot_style : callable, optional, default: style_spectrum_plot
-#                 A function to call to apply styling & aesthetics to the plot.
-#             data_kwargs, model_kwargs, aperiodic_kwargs, peak_kwargs : None or dict, optional
-#                 Keyword arguments to pass into the plot call for each plot element.
-#         
-#             Notes
-#             -----
-#             Since FOOOF objects store power values in log spacing,
-#             the y-axis (power) is plotted in log spacing by default.
-#             """
-#         
-#             ax = check_ax(ax, PLT_FIGSIZES['spectral'])
-#         
-#             # Log settings - note that power values in FOOOF objects are already logged
-#             log_freqs = plt_log
-#             log_powers = False
-#         
-#             # Plot the data, if available
-#             if fm.has_data:
-#                 data_kwargs = check_plot_kwargs(data_kwargs, \
-#                     {'color' : PLT_COLORS['data'], 'linewidth' : 2.0,
-#                      'label' : 'Original Spectrum' if add_legend else None})
-#                 plot_spectrum(fm.freqs, 10**fm.power_spectrum, log_freqs, log_powers,
-#                               ax=ax, plot_style=None, **data_kwargs)
-#         
-#             # Add the full model fit, and components (if requested)
-#             if fm.has_model:
-#                 model_kwargs = check_plot_kwargs(model_kwargs, \
-#                     {'color' : PLT_COLORS['model'], 'linewidth' : 3.0, 'alpha' : 0.5,
-#                      'label' : 'Full Model Fit' if add_legend else None})
-#                 plot_spectrum(fm.freqs, 10**fm.fooofed_spectrum_, log_freqs, log_powers,
-#                               ax=ax, plot_style=None, **model_kwargs)
-#         
-#                 # Plot the aperiodic component of the model fit
-#                 if plot_aperiodic:
-#                     aperiodic_kwargs = check_plot_kwargs(aperiodic_kwargs, \
-#                         {'color' : PLT_COLORS['aperiodic'], 'linewidth' : 3.0, 'alpha' : 0.5,
-#                          'linestyle' : 'dashed', 'label' : 'Aperiodic Fit' if add_legend else None})
-#                     plot_spectrum(fm.freqs, 10**fm._ap_fit, log_freqs, log_powers,
-#                                   ax=ax, plot_style=None, **aperiodic_kwargs)
-#         
-#             # Apply style to plot
-#             check_n_style(plot_style, ax, log_freqs, True)
-# =============================================================================
+             data_kwargs=None, model_kwargs=None, aperiodic_kwargs=None, peak_kwargs=None,
+             label=None):
         
         plot_fm_lin_MG(self, plot_peaks, plot_aperiodic, plt_log, add_legend,
         save_fig, file_name, file_path, ax, plot_style,
-        data_kwargs, model_kwargs, aperiodic_kwargs, peak_kwargs)
+        data_kwargs, model_kwargs, aperiodic_kwargs, peak_kwargs, label=label)
 
 
 
@@ -1366,7 +1294,8 @@ from fooof.plts.style import check_n_style, style_spectrum_plot
 def plot_fm_lin_MG(fm, plot_peaks=None, plot_aperiodic=True, plt_log=False, add_legend=True,
             save_fig=False, file_name=None, file_path=None,
             ax=None, plot_style=style_spectrum_plot,
-            data_kwargs=None, model_kwargs=None, aperiodic_kwargs=None, peak_kwargs=None):
+            data_kwargs=None, model_kwargs=None, aperiodic_kwargs=None, peak_kwargs=None,
+            label='Fit +\nOscillatory PSD'):
             """Plot the power spectrum and model fit results from a FOOOF object.
         
             Parameters
@@ -1411,7 +1340,7 @@ def plot_fm_lin_MG(fm, plot_peaks=None, plot_aperiodic=True, plt_log=False, add_
             if fm.has_data:
                 data_kwargs = check_plot_kwargs(data_kwargs, \
                     {'color' : PLT_COLORS['data'], 'linewidth' : 2.0,
-                     'label' : 'Original Spectrum' if add_legend else None})
+                     'label' : None})
                 plot_spectrum(fm.freqs, 10**fm.power_spectrum, log_freqs, log_powers,
                               ax=ax, plot_style=None, **data_kwargs)
         
@@ -1419,7 +1348,7 @@ def plot_fm_lin_MG(fm, plot_peaks=None, plot_aperiodic=True, plt_log=False, add_
             if fm.has_model:
                 model_kwargs = check_plot_kwargs(model_kwargs, \
                     {'color' : PLT_COLORS['model'], 'linewidth' : 3.0, 'alpha' : 0.5,
-                     'label' : 'Full Model Fit' if add_legend else None})
+                     'label' : label if add_legend else None})
                 plot_spectrum(fm.freqs, 10**fm.fooofed_spectrum_, log_freqs, log_powers,
                               ax=ax, plot_style=None, **model_kwargs)
         
@@ -1427,7 +1356,7 @@ def plot_fm_lin_MG(fm, plot_peaks=None, plot_aperiodic=True, plt_log=False, add_
                 if plot_aperiodic:
                     aperiodic_kwargs = check_plot_kwargs(aperiodic_kwargs, \
                         {'color' : PLT_COLORS['aperiodic'], 'linewidth' : 3.0, 'alpha' : 0.5,
-                         'linestyle' : 'dashed', 'label' : 'Aperiodic Fit' if add_legend else None})
+                         'linestyle' : 'dashed', 'label' : None})
                     plot_spectrum(fm.freqs, 10**fm._ap_fit, log_freqs, log_powers,
                                   ax=ax, plot_style=None, **aperiodic_kwargs)
         
