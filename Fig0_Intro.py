@@ -104,8 +104,8 @@ def osc_signals(slope, periodic_params=None, nlv=None, highpass=True,
 
 # Signal params
 srate = 2400
-win_sec = 4
-welch_params_f = dict(fs=srate, nperseg=1*srate)
+win_sec = 2
+welch_params_f = dict(fs=srate, nperseg=2*srate)
 welch_params_I = dict(fs=srate, nperseg=win_sec*srate)
 
 # Save Path
@@ -197,7 +197,7 @@ psd_osc_I = psd_osc_I[mask_I]
 plt_log = True
 freq_range = (1, 100)
 
-fm = FOOOF() # use default settings
+fm = FOOOF(max_n_peaks=1) # use default settings
 fm.add_data(freqs_f, psd_comb_f, freq_range)
 
 # Fit the power spectrum model
@@ -296,15 +296,14 @@ yticks_lin_I = [0, 1000, 2000]
 ylim_lin_I = [-100, yticks_lin_I[-1]]
 
 
-def fooof_1(ax):    
+def input_psd(ax):    
     f_res = welch_params_f["fs"] / welch_params_f["nperseg"]
-    ax.loglog(freqs_f, psd_comb_f, c_sim, label=rf"$\Delta f={{{f_res:.0f}}}Hz$")
+    ax.loglog(freqs_f, psd_comb_f, c_sim)
     ax.set(xticks=[], yticks=[], xticklabels=[], yticklabels=[])
     ax.set_yticks([], minor=True)
     ax.set_xticks([], minor=True)
     ax.set_yticklabels([], minor=True)
     ax.set_xticklabels([], minor=True)
-    ax.set_title("FOOOF")
     ax.spines["right"].set_linestyle(ls_box)
     ax.spines["left"].set_linestyle(ls_box)
     ax.spines["top"].set_linestyle(ls_box)
@@ -315,12 +314,36 @@ def fooof_1(ax):
     ax.spines["bottom"].set_linewidth(lw_box)
     ax.set_facecolor(c_inp)
     ax.patch.set_alpha(alpha_box)
-    ax.legend(handlelength=0, borderpad=.2)
+    # ax.legend(handlelength=0, borderpad=.2)
     fm.plot
 
-#    ax.rcParams["axes.spines.top"] = True
- #   ax.rcParams["axes.spines.left"] = True
-  #  ax.rcParams["axes.spines.bottom"] = True
+
+# =============================================================================
+# def fooof_1(ax):    
+#     f_res = welch_params_f["fs"] / welch_params_f["nperseg"]
+#     ax.loglog(freqs_f, psd_comb_f, c_sim)
+#     ax.set(xticks=[], yticks=[], xticklabels=[], yticklabels=[])
+#     ax.set_yticks([], minor=True)
+#     ax.set_xticks([], minor=True)
+#     ax.set_yticklabels([], minor=True)
+#     ax.set_xticklabels([], minor=True)
+#     ax.set_title("FOOOF")
+#     ax.spines["right"].set_linestyle(ls_box)
+#     ax.spines["left"].set_linestyle(ls_box)
+#     ax.spines["top"].set_linestyle(ls_box)
+#     ax.spines["bottom"].set_linestyle(ls_box)
+#     ax.spines["right"].set_linewidth(lw_box)
+#     ax.spines["left"].set_linewidth(lw_box)
+#     ax.spines["top"].set_linewidth(lw_box)
+#     ax.spines["bottom"].set_linewidth(lw_box)
+#     ax.set_facecolor(c_inp)
+#     ax.patch.set_alpha(alpha_box)
+#     # ax.legend(handlelength=0, borderpad=.2)
+#     fm.plot
+# #    ax.rcParams["axes.spines.top"] = True
+#  #   ax.rcParams["axes.spines.left"] = True
+#   #  ax.rcParams["axes.spines.bottom"] = True
+# =============================================================================
 
 
 def fooof_2(ax):
@@ -427,7 +450,7 @@ def fooof_7(ax):
     fm.plot_lin_MG(plt_log=False, plot_aperiodic=False,
                    ax=ax, model_kwargs=dict(color=c_full, alpha=1, lw=lw),
                    data_kwargs=dict(alpha=0),
-                   label="Fit +\nOscillatory PSD")
+                   label="Fit +\nOscillatory")
     ax.grid(False)
     ax.set_xscale("log")
     ax.set_yscale("log")
@@ -454,26 +477,28 @@ def fooof_8(ax):
     leg.get_frame().set_facecolor((0, 0, 1, 0))
 
 
-def IRASA_1(ax):
-    f_res = welch_params_I["fs"] / welch_params_I["nperseg"]
-    ax.loglog(freqs_I, psd_comb_I, c_sim, label=rf"$\Delta f={{{f_res:.2f}}}Hz$")
-    ax.set(xticks=[], yticks=[], xticklabels=[], yticklabels=[])
-    ax.set_yticks([], minor=True)
-    ax.set_xticks([], minor=True)
-    ax.set_yticklabels([], minor=True)
-    ax.set_xticklabels([], minor=True)
-    ax.legend(handlelength=0, borderpad=.2)
-    ax.set_title("IRASA")
-    ax.set_facecolor(c_inp)
-    ax.patch.set_alpha(alpha_box)
-    ax.spines["right"].set_linestyle(ls_box)
-    ax.spines["left"].set_linestyle(ls_box)
-    ax.spines["top"].set_linestyle(ls_box)
-    ax.spines["bottom"].set_linestyle(ls_box)
-    ax.spines["right"].set_linewidth(lw_box)
-    ax.spines["left"].set_linewidth(lw_box)
-    ax.spines["top"].set_linewidth(lw_box)
-    ax.spines["bottom"].set_linewidth(lw_box)
+# =============================================================================
+# def IRASA_1(ax):
+#     f_res = welch_params_I["fs"] / welch_params_I["nperseg"]
+#     ax.loglog(freqs_I, psd_comb_I, c_sim)
+#     ax.set(xticks=[], yticks=[], xticklabels=[], yticklabels=[])
+#     ax.set_yticks([], minor=True)
+#     ax.set_xticks([], minor=True)
+#     ax.set_yticklabels([], minor=True)
+#     ax.set_xticklabels([], minor=True)
+#     # ax.legend(handlelength=0, borderpad=.2)
+#     ax.set_title("IRASA")
+#     ax.set_facecolor(c_inp)
+#     ax.patch.set_alpha(alpha_box)
+#     ax.spines["right"].set_linestyle(ls_box)
+#     ax.spines["left"].set_linestyle(ls_box)
+#     ax.spines["top"].set_linestyle(ls_box)
+#     ax.spines["bottom"].set_linestyle(ls_box)
+#     ax.spines["right"].set_linewidth(lw_box)
+#     ax.spines["left"].set_linewidth(lw_box)
+#     ax.spines["top"].set_linewidth(lw_box)
+#     ax.spines["bottom"].set_linewidth(lw_box)
+# =============================================================================
 
 def IRASA_2(ax):
     ax.loglog(freqs_I, psd_comb_I, c_sim)
@@ -485,6 +510,8 @@ def IRASA_2(ax):
 
 
 def IRASA_3(ax):        
+    i = 0
+    ax.loglog(freqs_I, psds_resampled[i], c_h1, lw=lw_h, label=f"h={hset[i]}")
     ax.loglog(freqs_I, psd_comb_I, c_sim)
     i = 1
     ax.loglog(freqs_I, psds_resampled[i],  c_h2, lw=lw_h, label=f"h={hset[i]}")
@@ -493,12 +520,14 @@ def IRASA_3(ax):
     ax.set_xlabel("Frequency [Hz]")
 
 
-def IRASA_4(ax):
-    ax.loglog(freqs_I, psd_comb_I, c_sim)
-    i = 2
-    ax.loglog(freqs_I, psds_resampled[i],  c_h3, lw=lw_h, label=f"h={hset[i]}")
-    ax.axis("off")
-    ax.legend(handlelength=1)
+# =============================================================================
+# def IRASA_4(ax):
+#     ax.loglog(freqs_I, psd_comb_I, c_sim)
+#     i = 2
+#     ax.loglog(freqs_I, psds_resampled[i],  c_h3, lw=lw_h, label=f"h={hset[i]}")
+#     ax.axis("off")
+#     ax.legend(handlelength=1)
+# =============================================================================
     
     
 def IRASA_5(ax):
@@ -587,6 +616,11 @@ def make_frame(ax, c):
 
 # %% Plot
 
+"""
+TO DO:
+    - make input plot smaller
+"""
+
 fig = plt.figure(constrained_layout=False, figsize=(fig_width, 9))
 
 gs = fig.add_gridspec(nrows=4, ncols=4,
@@ -595,8 +629,7 @@ gs = fig.add_gridspec(nrows=4, ncols=4,
                       wspace=.1, hspace=.25, left=.1, right=.9)
 
 # 4 steps in infographics
-inp_f = fig.add_subplot(gs[0, 1])
-inp_I = fig.add_subplot(gs[0, 2])
+inp = fig.add_subplot(gs[0, 1:3])
 
 # Algorithm gs
 make_frame(gs[1, :2], c_alg)
@@ -631,8 +664,7 @@ sub_I1 = fig.add_subplot(gs_sub_I[0])
 sub_I2 = fig.add_subplot(gs_sub_I[1])
 
 
-fooof_1(inp_f)
-IRASA_1(inp_I)
+input_psd(inp)
 
 
 fooof_2(gs_alg_f1)
@@ -789,5 +821,239 @@ plt.annotate(text="", xy=(x_sub_tail_I, y_alg_small3),
 
 
 
+
+
+# %% Plot Gunnar
+
+
+fig = plt.figure(constrained_layout=False, figsize=(fig_width, 6))
+
+
+gs = fig.add_gridspec(nrows=3, ncols=2,
+                      height_ratios=[1, 2, 1])
+                      #wspace=.1, hspace=.25, left=.1, right=.9)
+
+
+
+# 4 steps in infographics
+inp = gs[0, :].subgridspec(1, 3, width_ratios=[1, 2, 1])
+inp_sub = fig.add_subplot(inp[1])
+input_psd(inp_sub)
+
+# Algorithm gs
+# make_frame(gs[1, :2], c_alg)
+gs_alg_f = gs[1, 0].subgridspec(3, 1, wspace=0, hspace=0)
+
+gs_alg_f1 = fig.add_subplot(gs_alg_f[0])
+gs_alg_f2 = fig.add_subplot(gs_alg_f[1])
+gs_alg_f3 = fig.add_subplot(gs_alg_f[2])
+
+fooof_2(gs_alg_f1)
+fooof_4(gs_alg_f2)
+fooof_5(gs_alg_f3)
+
+
+gs_alg_I = gs[1, 1].subgridspec(3, 1, wspace=0, hspace=0)
+
+gs_alg_I1 = fig.add_subplot(gs_alg_I[0])
+gs_alg_I2 = fig.add_subplot(gs_alg_I[1])
+gs_alg_I3 = fig.add_subplot(gs_alg_I[2])
+
+IRASA_2(gs_alg_I1)
+IRASA_3(gs_alg_I2)
+IRASA_5(gs_alg_I3)
+
+gs_sub_f = gs[2, :].subgridspec(1, 4, wspace=0, hspace=0)
+make_frame(gs_sub_f[1:3], c_sub)
+sub_f1 = fig.add_subplot(gs_sub_f[1])
+sub_f2 = fig.add_subplot(gs_sub_f[2])
+
+
+fooof_8(sub_f1)
+fooof_6(sub_f2)
+
 plt.savefig(fig_path + fig_name, bbox_inches="tight")
 plt.show()
+
+# =============================================================================
+# 
+# # %% Arrows
+# 
+# 
+# fig = plt.figure(constrained_layout=False, figsize=(fig_width, 9))
+# 
+# gs = fig.add_gridspec(nrows=4, ncols=4,
+#                       height_ratios=[2, 3, 2, 2],
+#                       width_ratios=[1, 1.5, 1.5, 1],
+#                       wspace=.1, hspace=.25, left=.1, right=.9)
+# 
+# # 4 steps in infographics
+# inp_f = fig.add_subplot(gs[0, 1])
+# inp_I = fig.add_subplot(gs[0, 2])
+# 
+# # Algorithm gs
+# make_frame(gs[1, :2], c_alg)
+# gs_alg_f = gs[1, :2].subgridspec(2, 2, wspace=0, hspace=0)
+# 
+# gs_alg_f1 = fig.add_subplot(gs_alg_f[0, 1])
+# gs_alg_f2 = fig.add_subplot(gs_alg_f[0, 0])
+# gs_alg_f3 = fig.add_subplot(gs_alg_f[1, 0])
+# gs_alg_f4 = fig.add_subplot(gs_alg_f[1, 1])
+# 
+# make_frame(gs[1, 2:], c_alg)
+# gs_alg_I = gs[1, 2:].subgridspec(2, 2, wspace=0, hspace=0)
+# 
+# gs_alg_I1 = fig.add_subplot(gs_alg_I[0, 0])
+# gs_alg_I2 = fig.add_subplot(gs_alg_I[0, 1])
+# gs_alg_I3 = fig.add_subplot(gs_alg_I[1, 1])
+# gs_alg_I4 = fig.add_subplot(gs_alg_I[1, 0])
+# 
+# # Model gs
+# mod_f = fig.add_subplot(gs[2, 1])
+# mod_I = fig.add_subplot(gs[2, 2])
+# 
+# # Subtraction gs
+# make_frame(gs[3, :2], c_sub)
+# gs_sub_f = gs[3, :2].subgridspec(1, 2, wspace=0, hspace=0)
+# sub_f1 = fig.add_subplot(gs_sub_f[1])
+# sub_f2 = fig.add_subplot(gs_sub_f[0])
+# 
+# make_frame(gs[3, 2:], c_sub)
+# gs_sub_I = gs[3, 2:].subgridspec(1, 2, wspace=0, hspace=0)
+# sub_I1 = fig.add_subplot(gs_sub_I[0])
+# sub_I2 = fig.add_subplot(gs_sub_I[1])
+# 
+# x_large_f = .36
+# x_large_I = .65
+# 
+# y_inp_tail = .735
+# y_inp_head = .765
+# 
+# y_alg_tail = .43
+# y_alg_head = .46
+# 
+# y_mod_tail = .21
+# y_mod_head = .24
+# 
+# 
+# arr_props = dict(facecolor='k', width=1.5, headwidth=6, headlength=5, shrink=0)
+# 
+# plt.annotate(text="", xy=(x_large_f, y_inp_tail),
+#              xytext=(x_large_f, y_inp_head),
+#              xycoords='figure fraction',
+#              annotation_clip=False, arrowprops=arr_props)
+# plt.annotate(text="", xy=(x_large_I, y_inp_tail),
+#              xytext=(x_large_I, y_inp_head),
+#              xycoords='figure fraction',
+#              annotation_clip=False, arrowprops=arr_props)
+# 
+# 
+# plt.annotate(text="", xy=(x_large_f, y_alg_tail),
+#              xytext=(x_large_f, y_alg_head),
+#              xycoords='figure fraction',
+#              annotation_clip=False, arrowprops=arr_props)
+# plt.annotate(text="", xy=(x_large_I, y_alg_tail),
+#              xytext=(x_large_I, y_alg_head),
+#              xycoords='figure fraction',
+#              annotation_clip=False, arrowprops=arr_props)
+# 
+# plt.annotate(text="", xy=(x_large_f, y_mod_tail),
+#              xytext=(x_large_f, y_mod_head),
+#              xycoords='figure fraction',
+#              annotation_clip=False, arrowprops=arr_props)
+# plt.annotate(text="", xy=(x_large_I, y_mod_tail),
+#              xytext=(x_large_I, y_mod_head),
+#              xycoords='figure fraction',
+#              annotation_clip=False, arrowprops=arr_props)
+# 
+# 
+# 
+# plt.annotate(text="", xy=(.135, y_mod_tail),
+#              xytext=(.135, y_alg_head),
+#              xycoords='figure fraction',
+#              annotation_clip=False, arrowprops=arr_props)
+# 
+# 
+# 
+# 
+# 
+# # =============================================================================
+# # plt.annotate(text="", xy=(.135, .9),
+# #              xytext=(.135, .1),
+# #              xycoords='figure fraction',
+# #              annotation_clip=False, arrowprops=arr_props)
+# # =============================================================================
+# 
+# 
+# 
+# 
+# x_sub_tail_f = .23
+# x_sub_head_f = .26
+# 
+# x_sub_tail_I = .74
+# x_sub_head_I = .77
+# 
+# y_sub_small = .115
+# y_alg_small1 = .66
+# y_alg_small3 = .55
+# 
+# y_alg_head_I = .615
+# y_alg_tail_I = .645
+# 
+# y_alg_head_f = .6
+# y_alg_tail_f = .62
+# 
+# x_alg_f = .135
+# x_alg_I = .865
+# 
+# plt.annotate(text="", xy=(x_sub_head_f, y_sub_small),
+#              xytext=(x_sub_tail_f, y_sub_small),
+#              xycoords='figure fraction',
+#              annotation_clip=False, arrowprops=arr_props)
+# plt.annotate(text="", xy=(x_sub_head_I, y_sub_small),
+#              xytext=(x_sub_tail_I, y_sub_small),
+#              xycoords='figure fraction',
+#              annotation_clip=False, arrowprops=arr_props)
+# 
+# 
+# plt.annotate(text="", xy=(x_sub_head_f, y_sub_small),
+#              xytext=(x_sub_tail_f, y_sub_small),
+#              xycoords='figure fraction',
+#              annotation_clip=False, arrowprops=arr_props)
+# plt.annotate(text="", xy=(x_sub_head_I, y_sub_small),
+#              xytext=(x_sub_tail_I, y_sub_small),
+#              xycoords='figure fraction',
+#              annotation_clip=False, arrowprops=arr_props)
+# 
+# 
+# plt.annotate(text="", xy=(x_sub_tail_f, y_alg_small1),
+#              xytext=(x_sub_head_f, y_alg_small1),
+#              xycoords='figure fraction',
+#              annotation_clip=False, arrowprops=arr_props)
+# plt.annotate(text="", xy=(x_sub_head_I, y_alg_small1),
+#              xytext=(x_sub_tail_I, y_alg_small1),
+#              xycoords='figure fraction',
+#              annotation_clip=False, arrowprops=arr_props)
+# 
+# plt.annotate(text="", xy=(x_alg_f, y_alg_head_f),
+#              xytext=(x_alg_f, y_alg_tail_f),
+#              xycoords='figure fraction',
+#              annotation_clip=False, arrowprops=arr_props)
+# plt.annotate(text="", xy=(x_alg_I, y_alg_head_I),
+#              xytext=(x_alg_I, y_alg_tail_I),
+#              xycoords='figure fraction',
+#              annotation_clip=False, arrowprops=arr_props)
+# 
+# plt.annotate(text="", xy=(x_sub_head_f, y_alg_small3),
+#              xytext=(x_sub_tail_f, y_alg_small3),
+#              xycoords='figure fraction',
+#              annotation_clip=False, arrowprops=arr_props)
+# plt.annotate(text="", xy=(x_sub_tail_I, y_alg_small3),
+#              xytext=(x_sub_head_I, y_alg_small3),
+#              xycoords='figure fraction',
+#              annotation_clip=False, arrowprops=arr_props)
+# 
+# 
+# plt.show()
+# 
+# =============================================================================

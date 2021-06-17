@@ -79,6 +79,7 @@ def plot_annotated_peak_search(fm, plot_style=style_spectrum_plot):
 @check_dependency(plt, 'matplotlib')
 def plot_annotated_peak_search_MG(fm, ind_max, ax, c_flat="k", c_thresh="orange", c_gauss="g",
                                   plot_style=style_spectrum_plot,
+                                  label_flat="Flattened PSD",
                                   label_SD="standard deviation",
                                   label_gauss="Gaussian fit",
                                   lw=1, markersize=10):
@@ -111,7 +112,7 @@ def plot_annotated_peak_search_MG(fm, ind_max, ax, c_flat="k", c_thresh="orange"
         if ind == ind_max:
         
             plot_spectrum(fm.freqs, flatspec, ax=ax, plot_style=None,
-                          color=c_flat, linewidth=lw)
+                          color=c_flat, linewidth=lw, label=label_flat)
             plot_spectrum(fm.freqs, np.array([fm.peak_threshold * np.std(flatspec)]*len(fm.freqs)),
                           ax=ax, plot_style=None, label=label_SD,
                           color=c_thresh, linewidth=lw, linestyle='dashed')
