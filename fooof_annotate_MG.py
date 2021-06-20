@@ -82,7 +82,8 @@ def plot_annotated_peak_search_MG(fm, ind_max, ax, c_flat="k", c_thresh="orange"
                                   label_flat="Flattened PSD",
                                   label_SD="standard deviation",
                                   label_gauss="Gaussian fit",
-                                  lw=1, markersize=10):
+                                  lw=1, markersize=10,
+                                  anno_SD_font=None):
     """Plot a series of plots illustrating the peak search from a flattened spectrum.
 
     Parameters
@@ -113,9 +114,15 @@ def plot_annotated_peak_search_MG(fm, ind_max, ax, c_flat="k", c_thresh="orange"
         
             plot_spectrum(fm.freqs, flatspec, ax=ax, plot_style=None,
                           color=c_flat, linewidth=lw, label=label_flat)
-            plot_spectrum(fm.freqs, np.array([fm.peak_threshold * np.std(flatspec)]*len(fm.freqs)),
+            SD = fm.peak_threshold * np.std(flatspec)
+            plot_spectrum(fm.freqs, np.array([SD]*len(fm.freqs)),
                           ax=ax, plot_style=None, label=label_SD,
                           color=c_thresh, linewidth=lw, linestyle='dashed')
+            if anno_SD_font:
+                ax.annotate("std", xy=(fm.freqs[-1], SD), ha="left",
+                            xytext=(fm.freqs[-1]*1.2, SD),
+                            annotation_clip=False,
+                            fontsize=anno_SD_font)
 # =============================================================================
 #             plot_spectrum(fm.freqs, [fm.min_peak_height]*len(fm.freqs),
 #                           ax=ax, plot_style=None, label='Absolute Threshold',
@@ -124,7 +131,7 @@ def plot_annotated_peak_search_MG(fm, ind_max, ax, c_flat="k", c_thresh="orange"
             #ax.set_yticks([])
             #ax.set_yticklabels([])
     
-        maxi = np.argmax(flatspec)
+        # maxi = np.argmax(flatspec)
         
 # =============================================================================
 #         if ind == ind_max:
