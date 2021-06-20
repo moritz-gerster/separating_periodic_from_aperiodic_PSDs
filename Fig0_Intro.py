@@ -122,37 +122,41 @@ Path(fig_path).mkdir(parents=True, exist_ok=True)
 
 # a)
 c_sim = "k"
-c_ap = "#4daf4a" # g
-c_osc = "#377eb8" # b
-c_fit = "#ff7f00" # orange
+c_ap = "#ff7f00" 
+c_osc = "#4daf4a"
+c_fit = "#377eb8" 
 
 # Boxes
-c_inp = "#ff7f00" # orange
-c_alg = "#ffff33" # y
-c_out = "#f781bf" # pink
+c_inp = "gainsboro" # orange
+c_alg = "gainsboro" # y
+c_out = "gainsboro" # pink
 
 c_inp_dark = "k"
 c_alg_dark = "k"
 c_out_dark = "k"
 
 # Algorithm
-c_h1 = "#377eb8" # b
-c_h2 = "#4daf4a" # g
-c_h3 = "#984ea3" # purple
+c_h1 = "c" 
+c_h2 = "#984ea3"
 
 c_tresh = "#999999"
 c_flat = "#f781bf" # pink
 
+
+
 ls_box = (0, (5, 7))
 ls_box = "-"
-lw_box = .5
+lw_box = 0
 alpha_box = .6
 
 lw = 2
 lw_fit = 2
 lw_ap = 3
 ls_fit = (0, (3, 3))
-lw_h = 2
+lw_IR = 1.5
+lw_PSD = 1
+lw_fooof = 2
+lw_osc = 2
 #ls_fit = "-."
 
 
@@ -223,7 +227,8 @@ init_flat_spec_lin = 10**fm.power_spectrum - 10**init_ap_fit
 
 # %% Calc IRASA
 # hset = np.arange(1.1, 1.95, 0.05)
-hset = [1.3, 1.6, 2]
+hset = np.array([1.5, 2])
+hset_inv = 1 / hset
 
 irasa_params = dict(sf=srate, band=freq_range,
                     win_sec=win_sec, hset=hset)
@@ -234,16 +239,16 @@ freqs_irasa, psd_ap, psd_osc, params = IRASA
 
 psd_ap, psd_osc = psd_ap[0], psd_osc[0]
 
-
 IR_offset = params["Intercept"][0]
 IR_slope = -params["Slope"][0]
 
 psd_fit = gen_aperiodic(freqs_irasa, (IR_offset, IR_slope))
 
 
-
 win = welch_params_I["nperseg"]
 psds_resampled = np.zeros((len(hset), *psd_comb_I.shape))
+psds_up = np.zeros((len(hset), *psd_comb_I.shape))
+psds_dw = np.zeros((len(hset), *psd_comb_I.shape))
 
 for i, h in enumerate(hset):
     # Get the upsampling/downsampling (h, 1/h) factors as integer
@@ -255,7 +260,11 @@ for i, h in enumerate(hset):
 
     freqs_up, psd_up = sig.welch(data_up, h * srate, nperseg=win)
     freqs_dw, psd_dw = sig.welch(data_down, srate / h, nperseg=win)
+
+    psds_up[i, :] = psd_up[mask_I]
+    psds_dw[i, :] = psd_dw[mask_I]
     
+    # geometric mean:
     psds_resampled[i, :] = np.sqrt(psd_up * psd_dw)[mask_I]
 
 # Now we take the median PSD of all the resampling factors, which gives
@@ -267,7 +276,7 @@ psd_median = np.median(psds_resampled, axis=0)
 
 
 fig_width = 7.25  # inches
-panel_fontsize = 10
+panel_fontsize = 7
 legend_fontsize = 6.5
 # label_fontsize = 1
 # tick_fontsize = 1
@@ -300,11 +309,16 @@ ylim_lin_I = [-100, yticks_lin_I[-1]]
 
 def input_series(ax, duration=1, step=srate//100):
     mask = [(time >= duration) & (time <= 2*duration)]
-    ax.plot(time[mask][::step], time_series[mask][::step], c_sim,
+    ax.plot(time[mask][::step], time_series[mask][::step], c_sim, lw=lw_PSD,
             label="Signal")
     ax.set(xticks=[], yticks=[], xticklabels=[], yticklabels=[])
     # ax.legend()
     ax.axis("off")
+    # pos = ax.get_position()
+#    rec = plt.Rectangle((pos.x0, pos.y0), pos.x1-pos.x0, pos.y1-pos.y1,
+ #                       transform=ax.transAxes)
+  #  ax.add_patch(rec)
+    # return pos
 #    ax.text(x=-.17, y=.5, s="Input", va="center", ha="right",
 #            c=c_inp_dark, transform=ax.transAxes)
     # ax.set_title("Input", c=c_inp_dark, y=1)
@@ -324,7 +338,7 @@ def input_series(ax, duration=1, step=srate//100):
 
 
 def input_psd(ax):
-    ax.loglog(freqs_f, psd_comb_f, c_sim, label="PSD")
+    ax.loglog(freqs_f, psd_comb_f, c_sim, lw=lw_PSD, label="PSD")
     ax.set(xticks=[], yticks=[], xticklabels=[], yticklabels=[])
     ax.set_yticks([], minor=True)
     ax.set_xticks([], minor=True)
@@ -378,6 +392,7 @@ def input_psd(ax):
 
 def fooof_1(ax):
     plot_spectrum(fm.freqs, 10**fm.power_spectrum, log_freqs=False,
+                  lw=lw_fooof,
                   # label='Original Power Spectrum',
                   color=c_sim, ax=ax)
     plot_spectrum(fm.freqs, 10**init_ap_fit, log_freqs=False,
@@ -412,7 +427,7 @@ def fooof_1(ax):
 
 def fooof_2(ax):
     plot_spectrum(fm.freqs, init_flat_spec, log_freqs=False,
-                  label='PSD - initial fit', color=c_flat, ax=ax)
+                  label='PSD - initial fit', lw=lw_fooof, color=c_flat, ax=ax)
     ax.set_xscale("log")
     ax.grid(False)
     ax.set_xlabel("")
@@ -439,7 +454,8 @@ def fooof_2(ax):
     
     
 def fooof_3(ax, ylim=None):
-    plot_annotated_peak_search_MG(fm, 0, ax, lw=lw, markersize=10,
+    plot_annotated_peak_search_MG(fm, 0, ax, lw=lw_fooof, lw_thresh=1,
+                                  markersize=10,
                                   c_flat=c_flat, c_gauss=c_osc,
                                   c_thresh=c_tresh, label_flat=None,
                                   label_SD=None, anno_SD_font=6.5)
@@ -471,7 +487,8 @@ def fooof_3(ax, ylim=None):
 
 
 def fooof_4(ax, ylim=None):
-    plot_annotated_peak_search_MG(fm, 1, ax, lw=lw, markersize=10,
+    plot_annotated_peak_search_MG(fm, 1, ax, lw=lw_fooof, lw_thresh=1,
+                                  markersize=10,
                                   c_flat=c_flat, c_gauss=c_osc,
                                   c_thresh=c_tresh, anno_SD_font=None)
     ax.set_xscale("log")
@@ -497,6 +514,49 @@ def fooof_4(ax, ylim=None):
 
 
 def aperiodic(ax):
+    plot_spectrum(fm.freqs, 10**fm._spectrum_peak_rm, log_freqs=False,
+                  label='Aperiodic PSD', color=c_ap, lw=lw_ap, ax=ax)
+    ax.set_yscale("log")
+    ax.set_xscale("log")
+    ax.grid(False)
+    ax.set_xlabel("")
+    ax.set_ylabel("")
+    ax.set(xticks=[], yticks=[], xticklabels=[], yticklabels=[])
+    ax.set_yticks([], minor=True)
+    ax.set_xticks([], minor=True)
+    ax.set_yticklabels([], minor=True)
+    ax.set_xticklabels([], minor=True)
+    leg = ax.legend(handlelength=2, handletextpad=.5, frameon=False,
+                    labelspacing=7.5)
+    leg.legendHandles[0].set_linewidth(2)
+    leg.get_frame().set_alpha(None)
+    leg.get_frame().set_facecolor((0, 0, 1, 0))
+    ax.axis("off")
+
+
+def fit(ax):
+    plot_spectrum(fm.freqs, 10**fm._ap_fit, log_freqs=False,
+                  label='Aperiodic Fit', lw=lw_fit,
+                  color=c_fit, alpha=1, ls=ls_fit, ax=ax)
+    ax.set_yscale("log")
+    ax.set_xscale("log")
+    ax.grid(False)
+    ax.set_xlabel("")
+    ax.set_ylabel("")
+    ax.set(xticks=[], yticks=[], xticklabels=[], yticklabels=[])
+    ax.set_yticks([], minor=True)
+    ax.set_xticks([], minor=True)
+    ax.set_yticklabels([], minor=True)
+    ax.set_xticklabels([], minor=True)
+    leg = ax.legend(handlelength=2, handletextpad=.5, frameon=False,
+                    labelspacing=7.5)
+    leg.legendHandles[0].set_linewidth(2)
+    leg.get_frame().set_alpha(None)
+    leg.get_frame().set_facecolor((0, 0, 1, 0))
+    ax.axis("off")
+
+
+def aperiodic_fit(ax):
     plot_spectrum(fm.freqs, 10**fm._spectrum_peak_rm, log_freqs=False,
                   label='Aperiodic PSD', color=c_ap, lw=lw_ap, ax=ax)
     plot_spectrum(fm.freqs, 10**fm._ap_fit, log_freqs=False,
@@ -553,7 +613,8 @@ def aperiodic(ax):
 
 
 def oscillatory(ax):
-    plot_spectrum(fm.freqs, fm._peak_fit, log_freqs=False, color=c_osc,
+    plot_spectrum(fm.freqs, fm._peak_fit, lw=lw_osc,
+                  log_freqs=False, color=c_osc,
                   label='Oscillatory PSD', ax=ax)
     ax.grid(False)
     # ax.set_ylim([-.05, .75])
@@ -590,59 +651,75 @@ def oscillatory(ax):
 #     ax.spines["bottom"].set_linewidth(lw_box)
 # =============================================================================
 
-def IRASA_2(ax):
-    ax.loglog(freqs_I, psd_comb_I, c_sim)
-    i = 0
-    ax.loglog(freqs_I, psds_resampled[i], c_h1, lw=lw_h, label=f"h={hset[i]}")
+def IRASA_res1(ax):
+    ax.loglog(freqs_I, psd_comb_I, c_sim, lw=lw_PSD, ls="--", label="PSD")
+    ax.loglog(freqs_I, psds_up[0], c_h1, lw=lw_IR, label=f"h={hset[i]}")
+    ax.loglog(freqs_I, psds_dw[0], c_h1, lw=lw_IR, label=f"h={hset[i]}")
     ax.axis("off")
-    ax.set_title(" IRASA resampling", loc="left", y=.8, fontsize=7)
+    # ax.set_title(" IRASA resampling", loc="left", y=.8, fontsize=7)
     # ax.legend(handlelength=1)
 
 
-def IRASA_3(ax):        
-    ax.loglog(freqs_I, psd_comb_I, c_sim)
-    i = 0
-    ax.loglog(freqs_I, psds_resampled[i], c_h1, lw=lw_h, label=f"h={hset[i]}")
-    i = 1
-    ax.loglog(freqs_I, psds_resampled[i],  c_h2, lw=lw_h, label=f"h={hset[i]}")
+def IRASA_res2(ax):
+    ax.loglog(freqs_I, psd_comb_I, c_sim, lw=lw_PSD, ls="--", label="PSD")
+    ax.loglog(freqs_I, psds_up[1], c_h2, lw=lw_IR, label=f"h={hset[i]}")
+    ax.loglog(freqs_I, psds_dw[1], c_h2, lw=lw_IR, label=f"h={hset[i]}")
+    ax.axis("off")
+    # ax.set_title(" IRASA resampling", loc="left", y=.8, fontsize=7)
+    # ax.legend(handlelength=1)
+
+
+def IRASA_mean1(ax):
+    ax.loglog(freqs_I, psd_comb_I, c_sim, lw=lw_PSD, ls="--")
+    ax.loglog(freqs_I, psds_resampled[0], c_h1, lw=lw_IR, label=f"h={hset[i]}")
+    ax.axis("off")
+    # ax.set_title(" IRASA resampling", loc="left", y=.8, fontsize=7)
+    # ax.legend(handlelength=1)
+
+
+def IRASA_mean2(ax):        
+    ax.loglog(freqs_I, psd_comb_I, c_sim, lw=lw_PSD, ls="--")
+    ax.loglog(freqs_I, psds_resampled[1],  c_h2, lw=lw_IR, label=f"h={hset[i]}")
     ax.axis("off")
     # ax.legend(handlelength=1)
+
+
 
 
 # =============================================================================
 # def IRASA_4(ax):
 #     ax.loglog(freqs_I, psd_comb_I, c_sim)
 #     i = 2
-#     ax.loglog(freqs_I, psds_resampled[i],  c_h3, lw=lw_h, label=f"h={hset[i]}")
+#     ax.loglog(freqs_I, psds_resampled[i],  c_h3, lw=lw_IR, label=f"h={hset[i]}")
 #     ax.axis("off")
 #     ax.legend(handlelength=1)
 # =============================================================================
+
     
-    
-def IRASA_5(ax):
-    ax.loglog(freqs_I, psd_comb_I, c_sim, lw=lw_h, label="h=1")
-    for i, c in enumerate([c_h1, c_h2, c_h3]):
-        ax.loglog(freqs_I, psds_resampled[i], c, lw=lw_h, label=f"h={hset[i]}")
+def IRASA_all(ax):
+    ax.loglog(freqs_I, psd_comb_I, c_sim, lw=lw_PSD, ls="--", label="h=1")
+    for i, c in enumerate([c_h1, c_h2]):
+        ax.loglog(freqs_I, psds_resampled[i], c, lw=lw_IR, label=f"h={hset[i]}")
     ymin, ymax = ax.get_ylim()
     freq = 5
     ax.annotate(f"{freq}Hz    ",
                 xy=(freq, psd_comb_I[freqs_I==freq][0]),
-                xytext=(freq, ymin*1.2), fontsize=legend_fontsize, ha="center",
+                xytext=(freq, ymin*1.7), fontsize=legend_fontsize, ha="center",
                 arrowprops=dict(arrowstyle="-", lw=1, ls=":", shrinkA=0))
     freq = 10
     ax.annotate(f"{freq}Hz",
                 xy=(freq, psd_comb_I[freqs_I==freq][0]), 
-                xytext=(freq, ymin*1.2), fontsize=legend_fontsize, ha="center",
+                xytext=(freq, ymin*1.7), fontsize=legend_fontsize, ha="center",
                 arrowprops=dict(arrowstyle="-", lw=1, ls=":", shrinkA=0))
     freq = 20
     ax.annotate(f"      {freq}Hz",
                 xy=(freq, psd_comb_I[freqs_I==freq][0]),
-                xytext=(freq, ymin*1.2), fontsize=legend_fontsize, ha="center",
+                xytext=(freq, ymin*1.7), fontsize=legend_fontsize, ha="center",
                 arrowprops=dict(arrowstyle="-", lw=1, ls=":", shrinkA=0))
     ax.axis("off")
     # ax.legend(handlelength=1)
-    ax.legend(handlelength=1, ncol=4, loc=(-1.96, -.02), frameon=False,
-              columnspacing=.7, handletextpad=.5)
+    #ax.legend(handlelength=1, ncol=4, loc=(-1.96, -.02), frameon=False,
+     #         columnspacing=.7, handletextpad=.5)
 
     
 
@@ -693,8 +770,10 @@ def IRASA_5(ax):
 # =============================================================================
 
 
-def make_frame(ax, c, **kwargs):    
+def make_frame(ax, c, title=None, **kwargs):    
     ax = fig.add_subplot(ax, **kwargs)
+    # pos = ax.get_position(fig)
+    # ax = fig.add_axes(pos)
     ax.tick_params(axis='both', which='both',bottom=0, left=0,
                    labelbottom=0, labelleft=0)
     ax.set_facecolor(c)
@@ -707,6 +786,8 @@ def make_frame(ax, c, **kwargs):
     ax.spines["left"].set_linewidth(lw_box)
     ax.spines["top"].set_linewidth(lw_box)
     ax.spines["bottom"].set_linewidth(lw_box)
+    if title:
+        ax.set_title(title)
     return ax
 
 
@@ -715,180 +796,590 @@ arr_width = 1
 arr_props = dict(facecolor='k', width=arr_width, headwidth=arr_width*4,
                  headlength=arr_width*3, shrink=0)
 
-# %% Plot new
+# %% Plot layout base
 
 """
-    - remove background color, make light grey, with tiny or no edges
-    - make different colors unique
-    - make clean, use white space, dont squeeze borders
-    - IRASA: remove original PSD, check why different heights, consider
-    different colors for up/down sampling
-    - (check peak widths)
+    - make boxes around each plot
+    - (show wrong power estimation: peak height above curve/integral under curve)
     - solve legends, arrows, annotations
 """
 
-fig = plt.figure(figsize=(fig_width, 3.5))
 
+fig = plt.figure(figsize=(fig_width, 4))
 
 gs = fig.add_gridspec(nrows=2, ncols=3,
-                      width_ratios=[1, 3, 1.2],
-                      height_ratios=[2, 3],
+                      width_ratios=[1, 3, 1],
+                      height_ratios=[1, 1],
                       hspace=.2, wspace=.3)
 
 
-gs_input = gs[:, 0].subgridspec(5, 1, height_ratios=[1, 8, 1, 8, 1])
-input_frame = make_frame(gs_input[1:-1], c_inp)
-input_frame.set_title("Input", c=c_inp_dark, y=1)
 
-inp_ser = fig.add_subplot(gs_input[1], ymargin=1, xmargin=.1)
-arr_psd = fig.add_subplot(gs_input[2], ymargin=1, xmargin=.1)
-inp_PSD = fig.add_subplot(gs_input[3], ymargin=.5, xmargin=.1)
+gs_input = gs[:, 0].subgridspec(4, 1, hspace=.2, height_ratios=[1, 5, 5, 1])
+
+#ax = fig.add_axes([0.1, 0.1, 0.8, 0.8]) # add axis
+
+input_frame = make_frame(gs_input[1:-1], c_inp, title="Input")
+
+inp_margins = dict(xmargin=.3, ymargin=.3)
+inp_ser = fig.add_subplot(gs_input[1], **inp_margins)
+dummy = fig.add_subplot(gs_input[0], **inp_margins)
+dummy.axis("off")
+#dummy = fig.add_subplot(gs_input[2], **inp_margins)
+#dummy.axis("off")
+dummy = fig.add_subplot(gs_input[-1], **inp_margins)
+dummy.axis("off")
+inp_PSD = fig.add_subplot(gs_input[2], **inp_margins)
 
 # Algorithm gs
-irasa_frame = make_frame(gs[0, 1], c_alg)
-irasa_frame.set_title("Algorithm", c=c_alg_dark, y=1)
+irasa_frame = make_frame(gs[0, 1], c_alg, title="IRASA")
+#irasa_frame.set_title("Algorithm", c=c_alg_dark, y=1)
 
-gs_IRASA = gs[0, 1].subgridspec(1, 3, wspace=0)
-gs_IR1 = fig.add_subplot(gs_IRASA[0], xmargin=.1, ymargin=.25)
-gs_IR2 = fig.add_subplot(gs_IRASA[1], xmargin=.1, ymargin=.25)
-gs_IR3 = fig.add_subplot(gs_IRASA[2], xmargin=.1, ymargin=.25)
+gs_IRASA = gs[0, 1].subgridspec(1, 2, wspace=0)
 
-gs_fooof = gs[1, 1].subgridspec(1, 2, width_ratios=[3, 2],
-                                hspace=.0, wspace=.0)
+gs_IRASA1 = gs_IRASA[0].subgridspec(2, 2, hspace=0, wspace=0)
 
-fooof_frame = make_frame(gs_fooof[:, :], c_alg)
+gs_IR11 = fig.add_subplot(gs_IRASA1[0, 0], xmargin=.3, ymargin=.3)
+gs_IR12 = fig.add_subplot(gs_IRASA1[1, 0], xmargin=.3, ymargin=.3)
+gs_IR21 = fig.add_subplot(gs_IRASA1[0, 1], xmargin=.3, ymargin=.3)
+gs_IR22 = fig.add_subplot(gs_IRASA1[1, 1], xmargin=.3, ymargin=.3)
 
-margins = dict(xmargin=.3, ymargin=.45)
+gs_IRASA2 = gs_IRASA[1].subgridspec(1, 1)
 
-gs_fooof1 = gs_fooof[0].subgridspec(1, 2,
-                                    hspace=.0, wspace=.0)
-
-fooof1 = fig.add_subplot(gs_fooof1[0], ymargin=.7)
-fooof2 = fig.add_subplot(gs_fooof1[1], ymargin=.7)
-
-gs_fooof2 = gs_fooof[1].subgridspec(4, 1, height_ratios=[1, 4, 4, 1],
-                                    hspace=.0, wspace=.0)
-
-fooof3 = fig.add_subplot(gs_fooof2[1], **margins)
-fooof4 = fig.add_subplot(gs_fooof2[2], **margins)
-
-gs_output = gs[:, 2].subgridspec(4, 1, hspace=0, height_ratios=[1, 4, 4, 1])
-
-output_frame = make_frame(gs_output[1:-1], c_out)
+gs_IR3 = fig.add_subplot(gs_IRASA2[0], xmargin=.3, ymargin=.3)
 
 
-output_frame.set_title("Output", c=c_out_dark, y=1)
-ap = fig.add_subplot(gs_output[1], ymargin=.5, xmargin=.3)
-osc = fig.add_subplot(gs_output[2], ymargin=.5, xmargin=.3)
+gs_fooof = gs[1, 1].subgridspec(1, 2, wspace=-.2)
 
+fooof_frame = make_frame(gs_fooof[:, :], c_alg, title="FOOOF")
+
+# margins = dict(xmargin=.3, ymargin=.45)
+
+gs_fooof1 = gs_fooof[0].subgridspec(2, 1, hspace=0)
+
+fooof1 = fig.add_subplot(gs_fooof1[0], xmargin=.7, ymargin=.3)
+fooof2 = fig.add_subplot(gs_fooof1[1], xmargin=.7, ymargin=.3)
+
+
+gs_fooof2 = gs_fooof[1].subgridspec(2, 1, hspace=0)
+
+fooof3 = fig.add_subplot(gs_fooof2[0], xmargin=.7, ymargin=.3)
+fooof4 = fig.add_subplot(gs_fooof2[1], xmargin=.7, ymargin=.3)
+
+gs_output = gs[:, 2].subgridspec(4, 1, hspace=.2, height_ratios=[1, 5, 5, 1])
+
+
+output_frame = make_frame(gs_output[1:-1], c_out, title="Output")
+
+out_margins = dict(xmargin=.3, ymargin=.3)
+
+ap = fig.add_subplot(gs_output[1], **out_margins)
+osc = fig.add_subplot(gs_output[2], **out_margins)
+dummy = fig.add_subplot(gs_output[0], **out_margins)
+dummy.axis("off")
+dummy = fig.add_subplot(gs_output[-1], **inp_margins)
+dummy.axis("off")
+
+# Plots
 input_series(inp_ser, duration=.5, step=24)
-con = ConnectionPatch(xyA=(.5, 0), xyB=(.5, 1), coordsA="axes fraction",
-                      coordsB="axes fraction",
-                      axesA=inp_ser, axesB=inp_PSD,
-                      arrowstyle="->", shrinkB=1, shrinkA=1)
-inp_PSD.add_artist(con)
-
-arr_psd.axis("off")
 input_psd(inp_PSD)
 
-IRASA_2(gs_IR1)
-IRASA_3(gs_IR2)
-IRASA_5(gs_IR3)
-con = ConnectionPatch(xyA=(1, .6), xyB=(0, .4), coordsA="axes fraction",
-                      coordsB="axes fraction",
-                      axesA=inp_ser, axesB=gs_IR1,
-                      arrowstyle="->", shrinkB=1, shrinkA=2)
-gs_IR1.add_artist(con)
-gs_IR1.text(s="time\nseries", x=-.43, y=.45, transform=gs_IR1.transAxes,
-            fontsize=7)
+IRASA_res1(gs_IR11)
+IRASA_res2(gs_IR12)
+IRASA_mean1(gs_IR21)
+IRASA_mean2(gs_IR22)
+IRASA_all(gs_IR3)
 
-
-con = ConnectionPatch(xyA=(1, .52), xyB=(0, .5), coordsA="axes fraction",
-                      coordsB="axes fraction",
-                      axesA=inp_PSD, axesB=fooof1,
-                      arrowstyle="->", shrinkB=5, shrinkA=5)
-gs_IR1.add_artist(con)
-gs_IR1.text(s="PSD", x=-.4, y=-.9, transform=gs_IR1.transAxes,
-            fontsize=7)
-
-fooof_1(fooof1)
-ylim = fooof_2(fooof2)
+fooof_1(fooof2)
+ylim = fooof_2(fooof1)
 fooof_3(fooof3)
 fooof_4(fooof4, ylim)
 
-# =============================================================================
-# con = ConnectionPatch(xyA=(.5, .8), xyB=(.5, .2), coordsA="axes fraction",
-#                       coordsB="axes fraction",
-#                       axesA=fooof1, axesB=fooof2,
-#                       arrowstyle="->", shrinkB=5, shrinkA=5)
-# fooof2.add_artist(con)
-# =============================================================================
-# =============================================================================
-# con = ConnectionPatch(xyA=(.8, .5), xyB=(.2, .5), coordsA="axes fraction",
-#                       coordsB="axes fraction",
-#                       axesA=fooof2, axesB=fooof3,
-#                       arrowstyle="->", shrinkB=5, shrinkA=5)
-# fooof3.add_artist(con)
-# =============================================================================
-# =============================================================================
-# con = ConnectionPatch(xyA=(.8, .5), xyB=(.2, .5), coordsA="axes fraction",
-#                       coordsB="axes fraction",
-#                       axesA=fooof2, axesB=fooof3,
-#                       arrowstyle="->", shrinkB=5, shrinkA=5)
-# fooof3.add_artist(con)
-# =============================================================================
-con = ConnectionPatch(xyA=(.85, -.1), xyB=(.85, .5), coordsA="axes fraction",
-                      coordsB="axes fraction",
-                      axesA=fooof3, axesB=fooof4,
-                      arrowstyle="->", shrinkA=1, shrinkB=2)
-fooof4.add_artist(con)
 
-fooof4.text(s="subtract\nfit", x=.97, y=.8, fontsize=7, ha="right",
-            transform=fooof4.transAxes)
-fooof4.text(s="repeat", x=.15, y=.5, fontsize=7, ha="left",
-            transform=fooof4.transAxes)
-
-
-con = ConnectionPatch(xyA=(.2, .1), xyB=(.2, .65), coordsA="axes fraction",
-                      coordsB="axes fraction",
-                      axesA=fooof3, axesB=fooof4, ls=":",
-                      arrowstyle="<-", shrinkA=2, shrinkB=1)
-fooof4.add_artist(con)
-
-con = ConnectionPatch(xyA=(1, .1), xyB=(0, .5), coordsA="axes fraction",
-                      coordsB="axes fraction",
-                      axesA=fooof3, axesB=osc,
-                      arrowstyle="->", shrinkB=1, shrinkA=2)
-osc.add_artist(con)
-con = ConnectionPatch(xyA=(1, .6), xyB=(0, .89), coordsA="axes fraction",
-                      coordsB="axes fraction",
-                      axesA=gs_IR3, axesB=ap,
-                      arrowstyle="->", shrinkB=1, shrinkA=2)
-ap.add_artist(con)
-ap.text(s="median", x=-.4, y=.95, transform=ap.transAxes, fontsize=7)
-osc.text(s="add\nGaussian\nfits", x=-.41, y=-.45, transform=ap.transAxes, fontsize=7)
-
-con = ConnectionPatch(xyA=(.9, .6), xyB=(.9, -.05), coordsA="axes fraction",
-                      coordsB="axes fraction",
-                      axesA=osc, axesB=ap,
-                      arrowstyle="<-", shrinkB=1, shrinkA=1)
-ap.add_artist(con)
-con = ConnectionPatch(xyA=(.07, .6), xyB=(.07, -.05), coordsA="axes fraction",
-                      coordsB="axes fraction",
-                      axesA=osc, axesB=ap,
-                      arrowstyle="->", shrinkB=1, shrinkA=1)
-ap.add_artist(con)
-
-osc.text(s="subtract\nof PSD", x=.55, y=-.1, transform=ap.transAxes, fontsize=7)
-osc.text(s="subtract\nof PSD", x=.1, y=-.39, transform=ap.transAxes, fontsize=7)
-
-aperiodic(ap)
+aperiodic_fit(ap)
 oscillatory(osc)
 
-plt.savefig(fig_path + "new_straight.pdf", bbox_inches="tight")
+plt.savefig(fig_path + "Layout1.pdf", bbox_inches="tight")
 plt.show()
 
 
+# =============================================================================
+# 
+# # %%
+# 
+# 
+# 
+# # %% IRASA horizontal
+# 
+# fig = plt.figure(figsize=(fig_width, 3.5))
+# 
+# 
+# gs = fig.add_gridspec(nrows=2, ncols=3,
+#                       width_ratios=[1, 3, 1],
+#                       height_ratios=[1, 1],
+#                       hspace=.2, wspace=.3)
+# 
+# 
+# gs_input = gs[:, 0].subgridspec(2, 1, hspace=.5)
+# 
+# gs_input1 = gs[0, 0].subgridspec(1, 1)
+# gs_input2 = gs[1, 0].subgridspec(1, 1)
+# 
+# # input_frame = make_frame(gs_input[1:-1], c_inp)
+# # input_frame.set_title("Input", c=c_inp_dark, y=1)
+# 
+# inp_ser = fig.add_subplot(gs_input1[0])
+# inp_PSD = fig.add_subplot(gs_input2[0])
+# 
+# # Algorithm gs
+# #irasa_frame = make_frame(gs[0, 1], c_alg)
+# #irasa_frame.set_title("Algorithm", c=c_alg_dark, y=1)
+# 
+# gs_IRASA = gs[0, 1].subgridspec(1, 3)
+# 
+# gs_IR1 = fig.add_subplot(gs_IRASA[0])
+# gs_IR2 = fig.add_subplot(gs_IRASA[1])
+# gs_IR3 = fig.add_subplot(gs_IRASA[2])
+# 
+# 
+# gs_fooof = gs[1, 1].subgridspec(1, 2)
+# 
+# # fooof_frame = make_frame(gs_fooof[:, :], c_alg)
+# 
+# # margins = dict(xmargin=.3, ymargin=.45)
+# 
+# gs_fooof1 = gs_fooof[0].subgridspec(2, 1)
+# 
+# fooof1 = fig.add_subplot(gs_fooof1[0], ymargin=.7)
+# fooof2 = fig.add_subplot(gs_fooof1[1], ymargin=.7)
+# 
+# gs_fooof2 = gs_fooof[1].subgridspec(2, 1)
+# 
+# fooof3 = fig.add_subplot(gs_fooof2[0])
+# fooof4 = fig.add_subplot(gs_fooof2[1])
+# 
+# gs_output = gs[:, 2].subgridspec(2, 1, hspace=0)
+# 
+# gs_output1 = gs_output[0].subgridspec(1, 1)
+# gs_output2 = gs_output[1].subgridspec(1, 1)
+# 
+# # output_frame = make_frame(gs_output[1:-1], c_out)
+# 
+# 
+# # output_frame.set_title("Output", c=c_out_dark, y=1)
+# ax_ap = fig.add_subplot(gs_output1[0], xmargin=.1, ymargin=.3)
+# ax_osc = fig.add_subplot(gs_output2[0], xmargin=.1, ymargin=.3)
+# 
+# 
+# 
+# # Plots
+# input_series(inp_ser, duration=.5, step=24)
+# input_psd(inp_PSD)
+# 
+# 
+# IRASA_mean1(gs_IR1)
+# IRASA_mean2(gs_IR2)
+# IRASA_all(gs_IR3)
+# 
+# fooof_1(fooof2)
+# ylim = fooof_2(fooof1)
+# fooof_3(fooof3)
+# fooof_4(fooof4, ylim)
+# 
+# 
+# aperiodic_fit(ax_ap)
+# oscillatory(ax_osc)
+# 
+# 
+# plt.savefig(fig_path + "IR_ho.pdf", bbox_inches="tight")
+# plt.show()
+# 
+# # %% Layout Fooof horizontal
+# 
+# fig = plt.figure(figsize=(fig_width, 3.5))
+# 
+# 
+# gs = fig.add_gridspec(nrows=2, ncols=3,
+#                       width_ratios=[1, 3, 1],
+#                       height_ratios=[1, 1],
+#                       hspace=.2, wspace=.3)
+# 
+# 
+# gs_input = gs[:, 0].subgridspec(2, 1, hspace=.5)
+# 
+# gs_input1 = gs[0, 0].subgridspec(1, 1)
+# gs_input2 = gs[1, 0].subgridspec(1, 1)
+# 
+# # input_frame = make_frame(gs_input[1:-1], c_inp)
+# # input_frame.set_title("Input", c=c_inp_dark, y=1)
+# 
+# inp_ser = fig.add_subplot(gs_input1[0])
+# inp_PSD = fig.add_subplot(gs_input2[0])
+# 
+# # Algorithm gs
+# #irasa_frame = make_frame(gs[0, 1], c_alg)
+# #irasa_frame.set_title("Algorithm", c=c_alg_dark, y=1)
+# 
+# gs_IRASA = gs[0, 1].subgridspec(1, 2)
+# 
+# gs_IRASA1 = gs_IRASA[0].subgridspec(2, 2)
+# 
+# gs_IR11 = fig.add_subplot(gs_IRASA1[0, 0])
+# gs_IR12 = fig.add_subplot(gs_IRASA1[1, 0])
+# gs_IR21 = fig.add_subplot(gs_IRASA1[0, 1])
+# gs_IR22 = fig.add_subplot(gs_IRASA1[1, 1])
+# 
+# gs_IRASA2 = gs_IRASA[1].subgridspec(1, 1)
+# 
+# gs_IR3 = fig.add_subplot(gs_IRASA2[0])
+# 
+# 
+# gs_fooof = gs[1, 1].subgridspec(1, 2, wspace=0)
+# 
+# # fooof_frame = make_frame(gs_fooof[:, :], c_alg)
+# 
+# # margins = dict(xmargin=.3, ymargin=.45)
+# 
+# gs_fooof1 = gs_fooof[0].subgridspec(1, 2)
+# 
+# fooof1 = fig.add_subplot(gs_fooof1[0], ymargin=0.5)
+# fooof2 = fig.add_subplot(gs_fooof1[1], ymargin=0.5)
+# 
+# gs_fooof2 = gs_fooof[1].subgridspec(2, 1)
+# 
+# fooof3 = fig.add_subplot(gs_fooof2[0], xmargin=.5)
+# fooof4 = fig.add_subplot(gs_fooof2[1], xmargin=.5)
+# 
+# gs_output = gs[:, 2].subgridspec(2, 1, hspace=0)
+# 
+# gs_output1 = gs_output[0].subgridspec(1, 1)
+# gs_output2 = gs_output[1].subgridspec(1, 1)
+# 
+# # output_frame = make_frame(gs_output[1:-1], c_out)
+# 
+# 
+# # output_frame.set_title("Output", c=c_out_dark, y=1)
+# ax_ap = fig.add_subplot(gs_output1[0], xmargin=.1, ymargin=.3)
+# ax_osc = fig.add_subplot(gs_output2[0], xmargin=.1, ymargin=.3)
+# 
+# 
+# # Plots
+# input_series(inp_ser, duration=.5, step=24)
+# input_psd(inp_PSD)
+# 
+# IRASA_res1(gs_IR11)
+# IRASA_res2(gs_IR12)
+# IRASA_mean1(gs_IR21)
+# IRASA_mean2(gs_IR22)
+# IRASA_all(gs_IR3)
+# 
+# fooof_1(fooof2)
+# ylim = fooof_2(fooof1)
+# fooof_3(fooof3)
+# fooof_4(fooof4, ylim)
+# 
+# 
+# aperiodic_fit(ax_ap)
+# oscillatory(ax_osc)
+# 
+# plt.savefig(fig_path + "fooof_ho.pdf", bbox_inches="tight")
+# plt.show()
+# 
+# # %% Output 3
+# 
+# fig = plt.figure(figsize=(fig_width, 3.5))
+# 
+# gs = fig.add_gridspec(nrows=2, ncols=3,
+#                       width_ratios=[1, 3, 1],
+#                       height_ratios=[1, 1],
+#                       hspace=.2, wspace=.3)
+# 
+# 
+# gs_input = gs[:, 0].subgridspec(2, 1, hspace=.5)
+# 
+# # input_frame = make_frame(gs_input[1:-1], c_inp)
+# # input_frame.set_title("Input", c=c_inp_dark, y=1)
+# 
+# inp_ser = fig.add_subplot(gs_input[0])
+# inp_PSD = fig.add_subplot(gs_input[1])
+# 
+# # Algorithm gs
+# #irasa_frame = make_frame(gs[0, 1], c_alg)
+# #irasa_frame.set_title("Algorithm", c=c_alg_dark, y=1)
+# 
+# gs_IRASA = gs[0, 1].subgridspec(1, 2)
+# 
+# gs_IRASA1 = gs_IRASA[0].subgridspec(2, 2, hspace=.3, wspace=.3)
+# 
+# gs_IR11 = fig.add_subplot(gs_IRASA1[0, 0])
+# gs_IR12 = fig.add_subplot(gs_IRASA1[1, 0])
+# gs_IR21 = fig.add_subplot(gs_IRASA1[0, 1])
+# gs_IR22 = fig.add_subplot(gs_IRASA1[1, 1])
+# 
+# gs_IRASA2 = gs_IRASA[1].subgridspec(1, 1)
+# 
+# gs_IR3 = fig.add_subplot(gs_IRASA2[0], xmargin=.3, ymargin=.3)
+# 
+# 
+# gs_fooof = gs[1, 1].subgridspec(1, 2, wspace=-.2)
+# 
+# # fooof_frame = make_frame(gs_fooof[:, :], c_alg)
+# 
+# # margins = dict(xmargin=.3, ymargin=.45)
+# 
+# gs_fooof1 = gs_fooof[0].subgridspec(2, 1, hspace=0)
+# 
+# fooof1 = fig.add_subplot(gs_fooof1[0], xmargin=.5, ymargin=.3)
+# fooof2 = fig.add_subplot(gs_fooof1[1], xmargin=.5, ymargin=.3)
+# 
+# 
+# gs_fooof2 = gs_fooof[1].subgridspec(2, 1, hspace=0)
+# 
+# fooof3 = fig.add_subplot(gs_fooof2[0], xmargin=.5, ymargin=.3)
+# fooof4 = fig.add_subplot(gs_fooof2[1], xmargin=.5, ymargin=.3)
+# 
+# 
+# gs_output = gs[:, 2].subgridspec(3, 1, hspace=.5)
+# # output_frame = make_frame(gs_output[1:-1], c_out)
+# # output_frame.set_title("Output", c=c_out_dark, y=1)
+# ax_ap = fig.add_subplot(gs_output[0])
+# ax_fit = fig.add_subplot(gs_output[1])
+# ax_osc = fig.add_subplot(gs_output[2])
+# 
+# # output_frame = make_frame(gs_output[1:-1], c_out)
+# 
+# # output_frame.set_title("Output", c=c_out_dark, y=1)
+# 
+# 
+# # Plots
+# input_series(inp_ser, duration=.5, step=24)
+# input_psd(inp_PSD)
+# 
+# IRASA_res1(gs_IR11)
+# IRASA_res2(gs_IR12)
+# IRASA_mean1(gs_IR21)
+# IRASA_mean2(gs_IR22)
+# IRASA_all(gs_IR3)
+# 
+# fooof_1(fooof2)
+# ylim = fooof_2(fooof1)
+# fooof_3(fooof3)
+# fooof_4(fooof4, ylim)
+# 
+# 
+# aperiodic(ax_ap)
+# fit(ax_fit)
+# oscillatory(ax_osc)
+# 
+# 
+# 
+# plt.savefig(fig_path + "output3.pdf", bbox_inches="tight")
+# plt.show()
+# 
+# 
+# 
+# =============================================================================
+
+
+
+
+# 
+
+
+
+
+
+# =============================================================================
+# # %%
+# delta_x = 2
+# mask_low = (freqs_I <= 5 + delta_x) & (freqs_I >= 5 - delta_x)
+# mask_up = (freqs_I <= 20 + delta_x) & (freqs_I >= 20 - delta_x)
+# 
+# fig, ax = plt.subplots(3, 1, figsize=[4, 5])
+# 
+# ax[0].loglog(freqs_I, psds_resampled[1], label=f"h={hset[i]}")
+# ax[1].semilogy(freqs_I[mask_low], psds_resampled[1][mask_low], label=f"h={hset[i]}")
+# ax[2].semilogy(freqs_I[mask_up], psds_resampled[1][mask_up], label=f"h={hset[i]}")
+# 
+# ax[1].vlines(4, *ax[1].get_ylim(), color="k")
+# ax[1].vlines(6, *ax[1].get_ylim(), color="k")
+# ax[2].vlines(19, *ax[2].get_ylim(), color="k")
+# ax[2].vlines(21, *ax[2].get_ylim(), color="k")
+# ax[1].set_title("Lower peak width: 2Hz")
+# ax[2].set_title("Upper peak width: 2Hz")
+# ax[0].set_title(f"Resampled PSD at h={hset[i]}")
+# ax[2].set_xlabel("Frequency [Hz]")
+# for axes in ax:
+#     axes.set_ylabel("log(PSD)")
+#     axes.set_yticks([])
+#     axes.set_yticks([], minor=True)
+#     axes.legend(fontsize=12)
+# plt.tight_layout()
+# plt.savefig(fig_path + "IRASA_const_PeakWidth.pdf")
+# =============================================================================
+
+
+# =============================================================================
+# fig = plt.figure(figsize=(fig_width, 3.5))
+# 
+# 
+# gs = fig.add_gridspec(nrows=2, ncols=3,
+#                       width_ratios=[1, 3, 1.2],
+#                       height_ratios=[2, 3],
+#                       hspace=.2, wspace=.3)
+# 
+# 
+# gs_input = gs[:, 0].subgridspec(5, 1, height_ratios=[1, 8, 1, 8, 1])
+# input_frame = make_frame(gs_input[1:-1], c_inp)
+# input_frame.set_title("Input", c=c_inp_dark, y=1)
+# 
+# inp_ser = fig.add_subplot(gs_input[1], ymargin=1, xmargin=.1)
+# arr_psd = fig.add_subplot(gs_input[2], ymargin=1, xmargin=.1)
+# inp_PSD = fig.add_subplot(gs_input[3], ymargin=.5, xmargin=.1)
+# 
+# # Algorithm gs
+# irasa_frame = make_frame(gs[0, 1], c_alg)
+# irasa_frame.set_title("Algorithm", c=c_alg_dark, y=1)
+# 
+# gs_IRASA = gs[0, 1].subgridspec(1, 3, wspace=0)
+# gs_IR1 = fig.add_subplot(gs_IRASA[0], xmargin=.1, ymargin=.25)
+# gs_IR2 = fig.add_subplot(gs_IRASA[1], xmargin=.1, ymargin=.25)
+# gs_IR3 = fig.add_subplot(gs_IRASA[2], xmargin=.1, ymargin=.25)
+# 
+# gs_fooof = gs[1, 1].subgridspec(1, 2, width_ratios=[3, 2],
+#                                 hspace=.0, wspace=.0)
+# 
+# fooof_frame = make_frame(gs_fooof[:, :], c_alg)
+# 
+# margins = dict(xmargin=.3, ymargin=.45)
+# 
+# gs_fooof1 = gs_fooof[0].subgridspec(1, 2,
+#                                     hspace=.0, wspace=.0)
+# 
+# fooof1 = fig.add_subplot(gs_fooof1[0], ymargin=.7)
+# fooof2 = fig.add_subplot(gs_fooof1[1], ymargin=.7)
+# 
+# gs_fooof2 = gs_fooof[1].subgridspec(4, 1, height_ratios=[1, 4, 4, 1],
+#                                     hspace=.0, wspace=.0)
+# 
+# fooof3 = fig.add_subplot(gs_fooof2[1], **margins)
+# fooof4 = fig.add_subplot(gs_fooof2[2], **margins)
+# 
+# gs_output = gs[:, 2].subgridspec(4, 1, hspace=0, height_ratios=[1, 4, 4, 1])
+# 
+# output_frame = make_frame(gs_output[1:-1], c_out)
+# 
+# 
+# output_frame.set_title("Output", c=c_out_dark, y=1)
+# ap = fig.add_subplot(gs_output[1], ymargin=.5, xmargin=.3)
+# osc = fig.add_subplot(gs_output[2], ymargin=.5, xmargin=.3)
+# 
+# input_series(inp_ser, duration=.5, step=24)
+# con = ConnectionPatch(xyA=(.5, 0), xyB=(.5, 1), coordsA="axes fraction",
+#                       coordsB="axes fraction",
+#                       axesA=inp_ser, axesB=inp_PSD,
+#                       arrowstyle="->", shrinkB=1, shrinkA=1)
+# inp_PSD.add_artist(con)
+# 
+# arr_psd.axis("off")
+# input_psd(inp_PSD)
+# 
+# IRASA_2(gs_IR1)
+# IRASA_3(gs_IR2)
+# IRASA_5(gs_IR3)
+# con = ConnectionPatch(xyA=(1, .6), xyB=(0, .4), coordsA="axes fraction",
+#                       coordsB="axes fraction",
+#                       axesA=inp_ser, axesB=gs_IR1,
+#                       arrowstyle="->", shrinkB=1, shrinkA=2)
+# gs_IR1.add_artist(con)
+# gs_IR1.text(s="time\nseries", x=-.43, y=.45, transform=gs_IR1.transAxes,
+#             fontsize=7)
+# 
+# 
+# con = ConnectionPatch(xyA=(1, .52), xyB=(0, .5), coordsA="axes fraction",
+#                       coordsB="axes fraction",
+#                       axesA=inp_PSD, axesB=fooof1,
+#                       arrowstyle="->", shrinkB=5, shrinkA=5)
+# gs_IR1.add_artist(con)
+# gs_IR1.text(s="PSD", x=-.4, y=-.9, transform=gs_IR1.transAxes,
+#             fontsize=7)
+# 
+# fooof_1(fooof1)
+# ylim = fooof_2(fooof2)
+# fooof_3(fooof3)
+# fooof_4(fooof4, ylim)
+# 
+# # =============================================================================
+# # con = ConnectionPatch(xyA=(.5, .8), xyB=(.5, .2), coordsA="axes fraction",
+# #                       coordsB="axes fraction",
+# #                       axesA=fooof1, axesB=fooof2,
+# #                       arrowstyle="->", shrinkB=5, shrinkA=5)
+# # fooof2.add_artist(con)
+# # =============================================================================
+# # =============================================================================
+# # con = ConnectionPatch(xyA=(.8, .5), xyB=(.2, .5), coordsA="axes fraction",
+# #                       coordsB="axes fraction",
+# #                       axesA=fooof2, axesB=fooof3,
+# #                       arrowstyle="->", shrinkB=5, shrinkA=5)
+# # fooof3.add_artist(con)
+# # =============================================================================
+# # =============================================================================
+# # con = ConnectionPatch(xyA=(.8, .5), xyB=(.2, .5), coordsA="axes fraction",
+# #                       coordsB="axes fraction",
+# #                       axesA=fooof2, axesB=fooof3,
+# #                       arrowstyle="->", shrinkB=5, shrinkA=5)
+# # fooof3.add_artist(con)
+# # =============================================================================
+# con = ConnectionPatch(xyA=(.85, -.1), xyB=(.85, .5), coordsA="axes fraction",
+#                       coordsB="axes fraction",
+#                       axesA=fooof3, axesB=fooof4,
+#                       arrowstyle="->", shrinkA=1, shrinkB=2)
+# fooof4.add_artist(con)
+# 
+# fooof4.text(s="subtract\nfit", x=.97, y=.8, fontsize=7, ha="right",
+#             transform=fooof4.transAxes)
+# fooof4.text(s="repeat", x=.15, y=.5, fontsize=7, ha="left",
+#             transform=fooof4.transAxes)
+# 
+# 
+# con = ConnectionPatch(xyA=(.2, .1), xyB=(.2, .65), coordsA="axes fraction",
+#                       coordsB="axes fraction",
+#                       axesA=fooof3, axesB=fooof4, ls=":",
+#                       arrowstyle="<-", shrinkA=2, shrinkB=1)
+# fooof4.add_artist(con)
+# 
+# con = ConnectionPatch(xyA=(1, .1), xyB=(0, .5), coordsA="axes fraction",
+#                       coordsB="axes fraction",
+#                       axesA=fooof3, axesB=osc,
+#                       arrowstyle="->", shrinkB=1, shrinkA=2)
+# osc.add_artist(con)
+# con = ConnectionPatch(xyA=(1, .6), xyB=(0, .89), coordsA="axes fraction",
+#                       coordsB="axes fraction",
+#                       axesA=gs_IR3, axesB=ap,
+#                       arrowstyle="->", shrinkB=1, shrinkA=2)
+# ap.add_artist(con)
+# ap.text(s="median", x=-.4, y=.95, transform=ap.transAxes, fontsize=7)
+# osc.text(s="add\nGaussian\nfits", x=-.41, y=-.45, transform=ap.transAxes, fontsize=7)
+# 
+# con = ConnectionPatch(xyA=(.9, .6), xyB=(.9, -.05), coordsA="axes fraction",
+#                       coordsB="axes fraction",
+#                       axesA=osc, axesB=ap,
+#                       arrowstyle="<-", shrinkB=1, shrinkA=1)
+# ap.add_artist(con)
+# con = ConnectionPatch(xyA=(.07, .6), xyB=(.07, -.05), coordsA="axes fraction",
+#                       coordsB="axes fraction",
+#                       axesA=osc, axesB=ap,
+#                       arrowstyle="->", shrinkB=1, shrinkA=1)
+# ap.add_artist(con)
+# 
+# osc.text(s="subtract\nof PSD", x=.55, y=-.1, transform=ap.transAxes, fontsize=7)
+# osc.text(s="subtract\nof PSD", x=.1, y=-.39, transform=ap.transAxes, fontsize=7)
+# 
+# aperiodic(ap)
+# oscillatory(osc)
+# 
+# plt.savefig(fig_path + "new_IRASA.pdf", bbox_inches="tight")
+# plt.show()
+# =============================================================================
 
 # =============================================================================
 # # %% Plot
