@@ -82,7 +82,7 @@ def plot_annotated_peak_search_MG(fm, ind_max, ax, c_flat="k", c_thresh="orange"
                                   label_flat="Flattened PSD",
                                   label_SD="standard deviation",
                                   label_gauss="Gaussian fit",
-                                  lw=1, lw_thresh=.5, markersize=10,
+                                  lw=1, markersize=10,
                                   anno_SD_font=None):
     """Plot a series of plots illustrating the peak search from a flattened spectrum.
 
@@ -117,9 +117,11 @@ def plot_annotated_peak_search_MG(fm, ind_max, ax, c_flat="k", c_thresh="orange"
             SD = fm.peak_threshold * np.std(flatspec)
             plot_spectrum(fm.freqs, np.array([SD]*len(fm.freqs)),
                           ax=ax, plot_style=None, label=label_SD,
-                          color=c_thresh, linewidth=lw_thresh, linestyle='dashed')
+                          color=c_thresh, linewidth=lw/1.5,
+                          linestyle='dashed')
             if anno_SD_font:
                 ax.annotate("std", xy=(fm.freqs[-1], SD), ha="left",
+                            va="center",
                             xytext=(fm.freqs[-1]*1.2, SD),
                             annotation_clip=False,
                             fontsize=anno_SD_font)
@@ -152,7 +154,7 @@ def plot_annotated_peak_search_MG(fm, ind_max, ax, c_flat="k", c_thresh="orange"
                     
                 plot_spectrum(fm.freqs, gauss, ax=ax, plot_style=None,
                               label=label_gauss, color=c_gauss,
-                              linestyle=':', linewidth=lw)
+                              linestyle=':', linewidth=1.5*lw)
                 #ax.set_yticks([])
                 #ax.set_yticklabels([])
     
