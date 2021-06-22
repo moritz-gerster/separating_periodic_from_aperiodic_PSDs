@@ -275,7 +275,6 @@ psd_median = np.median(psds_resampled, axis=0)
 
 # %% Plot Params
 
-
 fig_width = 7.25  # inches
 panel_fontsize = 7
 legend_fontsize = 5
@@ -850,6 +849,19 @@ fooof_4(ax_fooof4, ylim)
 aperiodic_fit(ap, ybottom=2)
 # oscillatory(osc, ylim)
 
+panel_dic = dict(fontweight="bold", fontsize=panel_fontsize,
+                x=.03, y=.97, va="top")
+
+ax_inp_ser.text(s="a", transform=ax_inp_ser.transAxes, **panel_dic)
+gs_IR1.text(s="b", transform=gs_IR1.transAxes, **panel_dic)
+gs_IR2.text(s="c", transform=gs_IR2.transAxes, **panel_dic)
+ap.text(s="d", transform=ap.transAxes, **panel_dic)
+ax_inp_PSD.text(s="e", transform=ax_inp_PSD.transAxes, **panel_dic)
+ax_fooof1.text(s="f", transform=ax_fooof1.transAxes, **panel_dic)
+ax_fooof2.text(s="g", transform=ax_fooof2.transAxes, **panel_dic)
+ax_fooof3.text(s="h", transform=ax_fooof3.transAxes, **panel_dic)
+# panel_dic["x"] = .8
+# ax_fooof4.text(s="i", transform=ax_fooof4.transAxes, **panel_dic)
 
 
 ax_inp_ser.annotate(text="", xy=(.5, -.2),
