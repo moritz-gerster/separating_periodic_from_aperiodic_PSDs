@@ -153,6 +153,7 @@ def detect_noise_floor(freq, psd, f_start, f_range=50, thresh=0.05,
 c_sim = "k"
 c_fits = ["limegreen", "r", "r", "r"]  # c="dodgerblue"
 c_noise = "darkgray"
+c_ground_a = "k"
 
 # b)
 c_real = "purple"
@@ -232,7 +233,7 @@ ground_truth = gen_aperiodic(freq, np.array([0, slope_a]))
 # %% Plot params a)
 plot_sim = (freq[signal_a], psd2_noise[signal_a], c_sim)
 plot_plateau = (freq[noise_a], psd2_noise[noise_a], c_noise)
-plot_ground = (freq, 10**ground_truth, c_sim)
+plot_ground = (freq, 10**ground_truth, c_ground_a)
 
 # plot limits, ticks, and labels
 xlim_a = (1, 600)
@@ -336,7 +337,7 @@ slope2 = 2
 osc_params1 = [(10.5, 4, 3),
                (16, 2, 1.5),
                (23, 15, 5),
-               (40, 10, 15),
+               (40, 10, 15),2
                (360, 25, 80)]
 
 osc_params15 = [(5, .1, 1),
@@ -504,7 +505,7 @@ panel_labels = dict(x=0, y=1.01, fontsize=panel_fontsize,
                     fontdict=dict(fontweight="bold"))
 
 line_fit = dict(lw=2, ls=":", zorder=5)
-line_ground = dict(lw=.5, ls="-", zorder=5)
+line_ground = dict(lw=.5, ls="--", zorder=5)
 psd_aperiodic_kwargs = dict(lw=0.5)
 
 
@@ -539,15 +540,16 @@ ax = ax1
 
 # Plot simulated PSD and ground truth
 ax.loglog(*plot_sim, label=f"1/f a={slope_a} + noise")
-ax.loglog(*plot_ground, **line_ground, label="Ground truth")
+ax.loglog(*plot_ground, **line_ground, label=f"Ground truth a={slope_a}")
+
+# Plot plateau in grey
+ax.loglog(*plot_plateau, label="Plateau")
 
 # Plot fits for different upper fitting borders
 for i in range(len(upper_fit_limits)):
     ax.loglog(*plot_fits[i], **dic_fits[i])
     ax.vlines(*vlines[i], **dic_line)
 
-# Plot plateau in grey
-ax.loglog(*plot_plateau, label="Plateau")
 
 # Set axes
 ax.set(**axes_a)

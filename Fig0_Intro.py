@@ -158,6 +158,7 @@ lw_IR = 1
 lw_PSD = 1
 lw_fooof = 1.5
 lw_osc = 2
+lw_median = .1
 #ls_fit = "-."
 
 
@@ -450,7 +451,7 @@ def fooof_3(ax, ylim=None):
 #    ax.set_ylim((ymin/ybottom, ymax))
     if ylim:
         ax.set_ylim(ylim)
-    leg = ax.legend(handlelength=1.5, frameon=False, loc="lower center",
+    leg = ax.legend(handlelength=1.5, frameon=False, loc=(.17, 0),
                     handletextpad=.2)
     leg.get_frame().set_alpha(None)
     leg.get_frame().set_facecolor((0, 0, 1, 0))
@@ -465,6 +466,15 @@ def fooof_4(ax, ylim=None, ybottom=1):
                                   markersize=10,
                                   c_flat=c_flat, c_gauss=c_osc,
                                   c_thresh=c_tresh, anno_SD_font=None)
+    
+    # suggestion Gabriel:
+# =============================================================================
+#     plot_annotated_peak_search_MG(fm, 0, ax, lw=lw_fooof,
+#                                   markersize=10,
+#                                   c_flat=(0, 0, 0, 0), c_gauss=c_osc,
+#                                   c_thresh=(0, 0, 0, 0), label_flat=None,
+#                                   label_SD=None, anno_SD_font=legend_fontsize)
+# =============================================================================
     ax.set_xscale("log")
     ax.grid(False)
     ax.axis("off")
@@ -602,52 +612,184 @@ def oscillatory(ax, ylim=None):
 #     ax.spines["bottom"].set_linewidth(lw_box)
 # =============================================================================
 
-def IRASA_resampled_all(ax, ybottom=10):
-    ax.loglog(freqs_I, psd_comb_I, c_sim, lw=lw_PSD, ls="--", label="h=1")
-    ax.loglog(freqs_I, psds_up[0], c_h1, lw=lw_IR, label=f"h={hset[0]}")
-    ax.loglog(freqs_I, psds_dw[0], c_h1, lw=lw_IR)
-    ax.loglog(freqs_I, psds_up[1], c_h2, lw=lw_IR, label=f"h={hset[1]}")
-    ax.loglog(freqs_I, psds_dw[1], c_h2, lw=lw_IR)
-    ax.loglog(freqs_I, psds_up[2], c_h3, lw=lw_IR, label=f"h={hset[2]}")
-    ax.loglog(freqs_I, psds_dw[2], c_h3, lw=lw_IR)
-    ax.axis("off")
+# =============================================================================
+# def IRASA_resampled_all(ax, ybottom=10):
+#     ax.loglog(freqs_I, psd_comb_I, c_sim, lw=lw_PSD, ls="--", label="h=1")
+#     ax.loglog(freqs_I, psds_up[0], c_h1, lw=lw_IR, label=f"h={hset[0]}")
+#     ax.loglog(freqs_I, psds_dw[0], c_h1, lw=lw_IR)
+#     ax.loglog(freqs_I, psds_up[1], c_h2, lw=lw_IR, label=f"h={hset[1]}")
+#     ax.loglog(freqs_I, psds_dw[1], c_h2, lw=lw_IR)
+#     ax.loglog(freqs_I, psds_up[2], c_h3, lw=lw_IR, label=f"h={hset[2]}")
+#     ax.loglog(freqs_I, psds_dw[2], c_h3, lw=lw_IR)
+#     ax.axis("off")
+#     ymin, ymax = ax.get_ylim()
+#     ax.set_ylim((ymin/ybottom, ymax))
+#     leg = ax.legend(ncol=2, loc="lower center", columnspacing=1, frameon=False)
+#     leg.get_frame().set_alpha(None)
+#     leg.get_frame().set_facecolor((0, 0, 1, 0))
+# =============================================================================
+
+
+def IRASA_res1(ax, ybottom=None, ytop=None):
+    ax.loglog(freqs_I, psds_up[0], c_h1, lw=lw_IR)
+    ax.loglog(freqs_I, psd_comb_I, c_sim, lw=lw_PSD, ls="--", label=rf"$h={hset[0]:.1f}$")
+    ax.loglog(freqs_I, psds_dw[0], c_h1, lw=lw_IR, label=fr"$h=\frac{{{1}}}{{{hset[0]:.1f}}}$")
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.spines["bottom"].set_visible(False)
+    ax.set(xticks=[], yticks=[])
+    ax.set_yticks([], minor=True)
+    ax.set_xticks([], minor=True)
+    ax.patch.set_visible(False)
+    ax.set_ylabel("Resampled\nPSD pairs", labelpad=-12, y=.4, fontsize=legend_fontsize)
+    ax.set_title(f"h={hset[0]:.1f}",
+                 y=.65, fontsize=legend_fontsize)
     ymin, ymax = ax.get_ylim()
-    ax.set_ylim((ymin/ybottom, ymax))
-    leg = ax.legend(ncol=2, loc="lower center", columnspacing=1, frameon=False)
-    leg.get_frame().set_alpha(None)
-    leg.get_frame().set_facecolor((0, 0, 1, 0))
+    if ybottom and not ytop:
+        ax.set_ylim((ymin/ybottom, ymax))
+    if ytop and not ybottom:
+        ax.set_ylim((ymin, ymax/ytop))
+    if ytop and ybottom:
+        ax.set_ylim((ymin/ybottom, ymax/ytop))
+# =============================================================================
+#     leg = ax.legend(handlelength=0, handletextpad=0, frameon=False,
+#                     labelspacing=0, loc=(.75, 0))
+#     for item in leg.legendHandles:
+#         item.set_visible(False)
+#     leg.get_frame().set_alpha(None)
+#     leg.get_frame().set_facecolor((0, 0, 1, 0))
+# =============================================================================
 
 
-def IRASA_res1(ax):
-    ax.loglog(freqs_I, psd_comb_I, c_sim, lw=lw_PSD, ls="--", label="PSD")
-    ax.loglog(freqs_I, psds_up[0], c_h1, lw=lw_IR, label=f"h={hset[i]}")
-    ax.loglog(freqs_I, psds_dw[0], c_h1, lw=lw_IR, label=f"h={hset[i]}")
-    ax.axis("off")
-    # ax.set_title(" IRASA resampling", loc="left", y=.8, fontsize=7)
-    # ax.legend(handlelength=1)
+def IRASA_res2(ax, ybottom=None, ytop=None):
+    ax.loglog(freqs_I, psd_comb_I, c_sim, lw=lw_PSD, ls="--")
+    ax.loglog(freqs_I, psds_up[1], c_h2, lw=lw_IR, label=rf"$h={hset[1]:.1f}$")
+    ax.loglog(freqs_I, psds_dw[1], c_h2, lw=lw_IR, label=fr"$h=\frac{{{1}}}{{{hset[1]:.1f}}}$")
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.spines["bottom"].set_visible(False)
+    ax.set(xticks=[], yticks=[])
+    ax.set_yticks([], minor=True)
+    ax.set_xticks([], minor=True)
+    ax.patch.set_visible(False)
+    ax.set_title(f"h={hset[1]:.1f}",
+                 y=.65, fontsize=legend_fontsize)
+    ymin, ymax = ax.get_ylim()
+    if ybottom and not ytop:
+        ax.set_ylim((ymin/ybottom, ymax))
+    if ytop and not ybottom:
+        ax.set_ylim((ymin, ymax/ytop))
+    if ytop and ybottom:
+        ax.set_ylim((ymin/ybottom, ymax/ytop))
+# =============================================================================
+#     leg = ax.legend(handlelength=0, handletextpad=0, frameon=False,
+#                     labelspacing=.3, loc=(.75, .03))
+#     for item in leg.legendHandles:
+#         item.set_visible(False)
+#     leg.get_frame().set_alpha(None)
+#     leg.get_frame().set_facecolor((0, 0, 1, 0))
+# =============================================================================
 
 
-def IRASA_res2(ax):
-    ax.loglog(freqs_I, psd_comb_I, c_sim, lw=lw_PSD, ls="--", label="PSD")
-    ax.loglog(freqs_I, psds_up[1], c_h2, lw=lw_IR, label=f"h={hset[i]}")
-    ax.loglog(freqs_I, psds_dw[1], c_h2, lw=lw_IR, label=f"h={hset[i]}")
-    ax.axis("off")
-    # ax.set_title(" IRASA resampling", loc="left", y=.8, fontsize=7)
-    # ax.legend(handlelength=1)
+def IRASA_res3(ax, ybottom=None, ytop=None):
+    ax.loglog(freqs_I, psds_up[2], c_h3, lw=lw_IR, label=rf"$h={hset[2]:.0f}$")
+    ax.loglog(freqs_I, psd_comb_I, c_sim, lw=lw_PSD, ls="--")#, label=r"$h=1$")
+    ax.loglog(freqs_I, psds_dw[2], c_h3, lw=lw_IR, label=fr"$h=\frac{{{1}}}{{{hset[2]:.0f}}}$")
+    ax.set_title(f"h={hset[2]:.0f}",
+                 y=.65, fontsize=legend_fontsize)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.spines["bottom"].set_visible(False)
+    ax.set(xticks=[], yticks=[])
+    ax.set_yticks([], minor=True)
+    ax.set_xticks([], minor=True)
+    ax.patch.set_visible(False)
+    ymin, ymax = ax.get_ylim()
+    if ybottom and not ytop:
+        ax.set_ylim((ymin/ybottom, ymax))
+    if ytop and not ybottom:
+        ax.set_ylim((ymin, ymax/ytop))
+    if ytop and ybottom:
+        ax.set_ylim((ymin/ybottom, ymax/ytop))
+# =============================================================================
+#     leg = ax.legend(handlelength=0, handletextpad=0, frameon=False,
+#                     labelspacing=.5, loc=(.75, -.05))
+#     for item in leg.legendHandles:
+#         item.set_visible(False)
+#     leg.get_frame().set_alpha(None)
+#     leg.get_frame().set_facecolor((0, 0, 1, 0))
+# =============================================================================
 
 
-def IRASA_mean1(ax):
+def IRASA_mean1(ax, ybottom=None):
     ax.loglog(freqs_I, psd_comb_I, c_sim, lw=lw_PSD, ls="--")
     ax.loglog(freqs_I, psds_resampled[0], c_h1, lw=lw_IR, label=f"h={hset[i]}")
-    ax.axis("off")
-    # ax.set_title(" IRASA resampling", loc="left", y=.8, fontsize=7)
-    # ax.legend(handlelength=1)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_linewidth(lw_median)
+    ax.spines["top"].set_linewidth(lw_median)
+    ax.spines["bottom"].set_linewidth(lw_median)
+    ax.set(xticks=[], yticks=[])
+    ax.set_yticks([], minor=True)
+    ax.set_xticks([], minor=True)
+    ax.patch.set_visible(False)
+    ax.set_ylabel("Geometric\nmean", labelpad=-12, y=.5,
+                  fontsize=legend_fontsize)
+    if ybottom:
+        ymin, ymax = ax.get_ylim()
+        ax.set_ylim((ymin/ybottom, ymax))
 
 
-def IRASA_mean2(ax):        
+def IRASA_mean2(ax, ybottom=None):        
     ax.loglog(freqs_I, psd_comb_I, c_sim, lw=lw_PSD, ls="--")
+ #   ax.loglog(freqs_I, psds_resampled[0], c_h1, lw=lw_IR, label=f"h={hset[i]}")
     ax.loglog(freqs_I, psds_resampled[1],  c_h2, lw=lw_IR, label=f"h={hset[i]}")
-    ax.axis("off")
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_visible(False)
+    ax.spines["top"].set_linewidth(lw_median)
+    ax.spines["bottom"].set_linewidth(lw_median)
+    ax.set(xticks=[], yticks=[])
+    ax.set_yticks([], minor=True)
+    ax.set_xticks([], minor=True)
+    ax.patch.set_visible(False)
+    if ybottom:
+        ymin, ymax = ax.get_ylim()
+        ax.set_ylim((ymin/ybottom, ymax))
+
+
+def IRASA_mean3(ax, ybottom=None):        
+    ax.loglog(freqs_I, psd_comb_I, c_sim, lw=lw_PSD, ls="--")
+#    ax.loglog(freqs_I, psds_resampled[0], c_h1, lw=lw_IR, label=f"h={hset[i]}")
+#    ax.loglog(freqs_I, psds_resampled[1],  c_h2, lw=lw_IR, label=f"h={hset[i]}")
+    ax.loglog(freqs_I, psds_resampled[2],  c_h3, lw=lw_IR, label=f"h={hset[i]}")
+    ax.spines["right"].set_linewidth(lw_median)
+    ax.spines["left"].set_visible(False)
+    ax.spines["top"].set_linewidth(lw_median)
+    ax.spines["bottom"].set_linewidth(lw_median)
+    ax.set(xticks=[], yticks=[])
+    ax.set_yticks([], minor=True)
+    ax.set_xticks([], minor=True)
+    ax.patch.set_visible(False)
+    ymin, ymax = ax.get_ylim()
+    if ybottom:
+        ax.set_ylim((ymin/ybottom, ymax))
+    freq = 5
+    ax.annotate(f"{freq}Hz     ",
+                xy=(freq, psd_comb_I[freqs_I==freq][0]),
+                xytext=(freq, ymin*.9), fontsize=legend_fontsize, ha="center",
+                arrowprops=dict(arrowstyle="-", lw=1, ls=":", shrinkA=0))
+    freq = 10
+    ax.annotate(f"{freq}Hz",
+                xy=(freq, psd_comb_I[freqs_I==freq][0]), 
+                xytext=(freq, ymin*.9), fontsize=legend_fontsize, ha="center",
+                arrowprops=dict(arrowstyle="-", lw=1, ls=":", shrinkA=0))
+    freq = 20
+    ax.annotate(f"       {freq}Hz",
+                xy=(freq, psd_comb_I[freqs_I==freq][0]),
+                xytext=(freq, ymin*.9), fontsize=legend_fontsize, ha="center",
+                arrowprops=dict(arrowstyle="-", lw=1, ls=":", shrinkA=0))
     # ax.legend(handlelength=1)
 
 
@@ -663,7 +805,7 @@ def IRASA_mean2(ax):
 # =============================================================================
 
     
-def IRASA_all(ax, ybottom=10):
+def IRASA_all(ax, ybottom=None):
     ax.loglog(freqs_I, psd_comb_I, c_sim, lw=lw_PSD, ls="--", label="h=1")
     for i, c in enumerate([c_h1, c_h2, c_h3]):
         ax.loglog(freqs_I, psds_resampled[i], c, lw=lw_IR, label=f"h={hset[i]}")
@@ -684,8 +826,9 @@ def IRASA_all(ax, ybottom=10):
                 xytext=(freq, ymin*1.2), fontsize=legend_fontsize, ha="center",
                 arrowprops=dict(arrowstyle="-", lw=1, ls=":", shrinkA=0))
     ax.axis("off")
-    ymin, ymax = ax.get_ylim()
-    ax.set_ylim((ymin/ybottom, ymax))
+    if ybottom:
+        ymin, ymax = ax.get_ylim()
+        ax.set_ylim((ymin/ybottom, ymax))
     # ax.legend(handlelength=1)
     #ax.legend(handlelength=1, ncol=4, loc=(-1.96, -.02), frameon=False,
      #         columnspacing=.7, handletextpad=.5)
@@ -774,11 +917,14 @@ arr_props_round2 = dict(facecolor='k', width=.00001, headwidth=1.7, headlength=1
 
 # %% Plot layout base
 
+"""
+    - add arrows in a smart way. If doesn't work, post stackoverflow.'
+"""
 
-fig = plt.figure(figsize=(fig_width, 3))
+fig = plt.figure(figsize=(fig_width, 3.5))
 
 gs = fig.add_gridspec(nrows=2, ncols=3, width_ratios=[1, 3, 1], wspace=.3,
-                      hspace=.4, height_ratios=[5, 4])
+                      hspace=.3, height_ratios=[5, 4])
 
 
 
@@ -796,32 +942,39 @@ ax_inp_PSD = fig.add_subplot(gs_input[1], **inp_margins)
 irasa_frame = make_frame(gs[0, 1], c_alg, title="IRASA")
 #irasa_frame.set_title("Algorithm", c=c_alg_dark, y=1)
 
-gs_IRASA = gs[0, 1].subgridspec(1, 2)
+gs_IRASA = gs[0, 1].subgridspec(2, 3, hspace=0, wspace=0)
 
 # gs_IRASA1 = gs_IRASA[0].subgridspec(2, 2, hspace=0, wspace=0)
 
-IR_margins = dict(xmargin=.3, ymargin=.3)
-gs_IR1 = fig.add_subplot(gs_IRASA[0], **IR_margins)
-gs_IR2 = fig.add_subplot(gs_IRASA[1], **IR_margins)
+IR_margins = dict(xmargin=.5, ymargin=.4)
+gs_IR11 = fig.add_subplot(gs_IRASA[0, 0], **IR_margins)
+gs_IR12 = fig.add_subplot(gs_IRASA[1, 0], **IR_margins)
+gs_IR21 = fig.add_subplot(gs_IRASA[0, 1], **IR_margins)
+gs_IR22 = fig.add_subplot(gs_IRASA[1, 1], **IR_margins)
+gs_IR31 = fig.add_subplot(gs_IRASA[0, 2], **IR_margins)
+gs_IR32 = fig.add_subplot(gs_IRASA[1, 2], **IR_margins)
 
 # gs_IRASA2 = gs_IRASA[1].subgridspec(1, 1)
 
 # gs_IR3 = fig.add_subplot(gs_IRASA2[0], xmargin=.3, ymargin=.3)
 
-gs_fooof = gs[1, 1].subgridspec(1, 4)
+gs_fooof = gs[1, 1].subgridspec(1, 2, width_ratios=[2, 1])
 
 fooof_frame = make_frame(gs_fooof[:, :], c_alg, title="FOOOF")
 
 # margins = dict(xmargin=.3, ymargin=.45)
 
-# gs_fooof1 = gs_fooof[0].subgridspec(2, 1, hspace=0)
+gs_fooof1 = gs_fooof[0].subgridspec(1, 2, hspace=0)
 
 fooof_margins = dict(xmargin=.4, ymargin=.6)
-ax_fooof1 = fig.add_subplot(gs_fooof[0], **fooof_margins)
-ax_fooof2 = fig.add_subplot(gs_fooof[1], **fooof_margins)
+ax_fooof1 = fig.add_subplot(gs_fooof1[0], **fooof_margins)
+ax_fooof2 = fig.add_subplot(gs_fooof1[1], **fooof_margins)
 
-ax_fooof3 = fig.add_subplot(gs_fooof[2], **fooof_margins)
-ax_fooof4 = fig.add_subplot(gs_fooof[3], **fooof_margins)
+gs_fooof2 = gs_fooof[1].subgridspec(2, 1, hspace=0)
+
+fooof_margins = dict(xmargin=.4)
+ax_fooof3 = fig.add_subplot(gs_fooof2[0], **fooof_margins)
+ax_fooof4 = fig.add_subplot(gs_fooof2[1], **fooof_margins)
 
 gs_output = gs[:, 2].subgridspec(3, 1, height_ratios=[1, 3, 1])
 
@@ -838,8 +991,13 @@ ap = fig.add_subplot(gs_output[1], **our_margins)
 input_series(ax_inp_ser, duration=.5, step=24)
 input_psd(ax_inp_PSD)
 
-IRASA_resampled_all(gs_IR1, ybottom=2.2)
-IRASA_all(gs_IR2, ybottom=1.4)
+IRASA_res1(gs_IR11, ytop=.5)
+IRASA_res2(gs_IR21, ytop=.5)
+IRASA_res3(gs_IR31, ytop=.5)
+IRASA_mean1(gs_IR12, ybottom=1.6)
+IRASA_mean2(gs_IR22, ybottom=1.6)
+IRASA_mean3(gs_IR32, ybottom=1.6)
+# IRASA_all(gs_IR12, ybottom=1.4)
 
 fooof_1(ax_fooof1, ybottom=1.5)
 ylim = fooof_2(ax_fooof2, yscale=1.0, ybottom=.9)
@@ -853,8 +1011,8 @@ panel_dic = dict(fontweight="bold", fontsize=panel_fontsize,
                 x=.03, y=.97, va="top")
 
 ax_inp_ser.text(s="a", transform=ax_inp_ser.transAxes, **panel_dic)
-gs_IR1.text(s="b", transform=gs_IR1.transAxes, **panel_dic)
-gs_IR2.text(s="c", transform=gs_IR2.transAxes, **panel_dic)
+gs_IR11.text(s="b", transform=gs_IR11.transAxes, **panel_dic)
+#gs_IR2.text(s="c", transform=gs_IR2.transAxes, **panel_dic)
 ap.text(s="d", transform=ap.transAxes, **panel_dic)
 ax_inp_PSD.text(s="e", transform=ax_inp_PSD.transAxes, **panel_dic)
 ax_fooof1.text(s="f", transform=ax_fooof1.transAxes, **panel_dic)
@@ -872,8 +1030,8 @@ ax_inp_ser.text(s="PSD", x=.6, y=-.11, transform=ax_inp_ser.transAxes,
                 fontsize=legend_fontsize)
 
 
-ax_fooof1.annotate(text="", xy=(-.25, .5),
-                    xytext=(-.55, .5),
+ax_fooof1.annotate(text="", xy=(-.1, .5),
+                    xytext=(-.5, .5),
                     xycoords='axes fraction',
                     annotation_clip=False, arrowprops=arr_props)
 
@@ -889,40 +1047,61 @@ ax_fooof2.annotate(text="", xy=(1.2, .5),
                     annotation_clip=False, arrowprops=arr_props)
 
 
-ax_fooof4.annotate(text="", xy=(.1, .7),
-                    xytext=(-.3, .7),
+ax_fooof3.annotate(text="", xy=(.85, -.4),
+                    xytext=(.85, 0),
                     xycoords='axes fraction',
                     annotation_clip=False, arrowprops=arr_props_round1)
-ax_fooof4.annotate(text="", xy=(-.3, .35),
-                    xytext=(.1, .35),
+ax_fooof4.annotate(text="", xy=(.12, 1),
+                    xytext=(.12, .6),
                     xycoords='axes fraction',
                     annotation_clip=False, arrowprops=arr_props_round2)
-ax_fooof4.text(s="Subtract\npeak", x=-.27, y=.95, transform=ax_fooof4.transAxes,
+ax_fooof3.text(s="Subtract\npeak\nfrom PSD", x=1.05, y=.5, transform=ax_fooof3.transAxes,
                 fontsize=legend_fontsize, va="top")
-ax_fooof4.text(s="repeat", x=-.27, y=.29, transform=ax_fooof4.transAxes,
+ax_fooof4.text(s="repeat", x=.15, y=.85, transform=ax_fooof4.transAxes,
                 fontsize=legend_fontsize, va="top")
 
 
+# =============================================================================
 
-gs_IR1.annotate(text="", xy=(-.1, .5),
-                    xytext=(-.25, .5),
-                    xycoords='axes fraction',
-                    annotation_clip=False, arrowprops=arr_props)
-gs_IR1.set_title("Resampling", y=.82, fontsize=legend_fontsize)
-
-gs_IR2.annotate(text="", xy=(.0, .5),
-                    xytext=(-.15, .5),
-                    xycoords='axes fraction',
-                    annotation_clip=False, arrowprops=arr_props)
-gs_IR2.set_title("Geometric mean", y=.82, fontsize=legend_fontsize)
-
-gs_IR2.annotate(text="", xy=(1.3, .2),
-                    xytext=(1.1, .3),
+gs_IR11.annotate(text="", xy=(-.1, .5),
+                    xytext=(-.4, .5),
                     xycoords='axes fraction',
                     annotation_clip=False, arrowprops=arr_props)
 
-ax_fooof4.annotate(text="", xy=(1.6, .8),
-                    xytext=(1.2, .7),
+gs_IR11.annotate(text="", xy=(.51, .1),
+                    xytext=(.51, .25),
+                    xycoords='axes fraction',
+                    annotation_clip=False, arrowprops=arr_props)
+gs_IR21.annotate(text="", xy=(.51, .1),
+                    xytext=(.51, .25),
+                    xycoords='axes fraction',
+                    annotation_clip=False, arrowprops=arr_props)
+gs_IR31.annotate(text="", xy=(.51, .1),
+                    xytext=(.51, .25),
+                    xycoords='axes fraction',
+                    annotation_clip=False, arrowprops=arr_props)
+
+gs_IR12.annotate(text="", xy=(1.05, .5),
+                    xytext=(.9, .5),
+                    xycoords='axes fraction',
+                    annotation_clip=False, arrowprops=arr_props)
+gs_IR22.annotate(text="", xy=(1.05, .5),
+                    xytext=(.9, .5),
+                    xycoords='axes fraction',
+                    annotation_clip=False, arrowprops=arr_props)
+
+
+
+gs_IR32.annotate(text="", xy=(1.45, .5),
+                    xytext=(1.05, .5),
+                    xycoords='axes fraction',
+                    annotation_clip=False, arrowprops=arr_props)
+gs_IR32.text(s="median", x=1.05, y=.7, va="top", fontsize=legend_fontsize,
+             transform=gs_IR32.transAxes)
+# =============================================================================
+
+ax_fooof3.annotate(text="", xy=(1.5, .6),
+                    xytext=(1.05, .6),
                     xycoords='axes fraction',
                     annotation_clip=False, arrowprops=arr_props)
 
@@ -951,7 +1130,7 @@ ax_fooof4.annotate(text="", xy=(1.6, .8),
 # =============================================================================
 # ax_inp_PSD.text(s="Initial fit", x=1.05, y=.47, transform=ax_inp_PSD.transAxes)
 
-plt.savefig(fig_path + "Layout1.pdf", bbox_inches="tight")
+plt.savefig(fig_path + "Fig0.pdf", bbox_inches="tight")
 plt.show()
 
 
