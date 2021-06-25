@@ -123,7 +123,7 @@ c_fit4 = "orange"
 # c)
 c_low = "deepskyblue"
 c_med = "limegreen"
-c_high = "orangered"
+c_high = "#ff7f00"
 
 c_ground = "grey"
 
@@ -219,11 +219,13 @@ fit_params = [(frange1, fooof_params1, c_fit1),
 
 # Fit for diferent ranges
 fit_ranges = []
+fooof_fits = []
 first = True
 for frange, fooof_params, plot_color in fit_params:
     # fit
     fm = FOOOF(**fooof_params)
     fm.fit(freq, spec10, frange)
+    fooof_fits.append(fm)
     ap_fit = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
     plot_args = (fm.freqs, 10**ap_fit, plot_color)
 
@@ -424,7 +426,7 @@ text_dic = dict(x=100, ha="right", fontsize=annotation_fontsize)
 xticks_a2 = [1, 10, 100]
 yticks_a2 = [0, .5, 1]
 xlabel_a2 = "Lower fitting range border [Hz]"
-ylabel_a2 = r"$|a_{truth} - a_{IRASA}|$"
+ylabel_a2 = r"$|a_{truth} - a_{fooof}|$"
 ylim_a2 = (0, 1)
 axes_a2 = dict(xticks=xticks_a2, xticklabels=xticks_a2, yticks=yticks_a2,
                xlim=xlim_a, xlabel=xlabel_a2, ylim=ylim_a2)
@@ -635,32 +637,43 @@ plt.show()
 
 # %% Plot Supp Mat b
 
-"""
-Make supp. fooof fits for b) and c) and maybe one example of a)
-"""
 
-# =============================================================================
-# fig, axes = plt.subplots(2, 4, figsize=[16, 8])
-# for i in range(4):
-#     ax = axes[0, i]
-#     kwargs = dict(add_legend=False,
-#                   aperiodic_kwargs=dict(color=fit_params[i][2], alpha=1),
-#                   data_kwargs=dict(color=c_real))
-#     title = f"{fit_params[i][0][0]}-{fit_params[i][0][1]}Hz"
-#     fits[i][0].plot(ax=ax, plt_log=True, **kwargs)
-#     ax.set_title(title, fontsize=30)
-#     ax.spines['right'].set_visible(True)
-#     ax.spines['top'].set_visible(True)
-#     if i > 0:
-#         ax.set_ylabel("")
-#
-#     ax = axes[1, i]
-#     fits[i][0].plot(ax=ax, plt_log=False, **kwargs)
-#     if i > 0:
-#         ax.set_ylabel("")
-#     ax.spines['right'].set_visible(True)
-#     ax.spines['top'].set_visible(True)
-# plt.tight_layout()
-# plt.savefig(fig_path + fig_name[:-4] + "Supp.pdf", bbox_inches="tight")
-# plt.show()
-# =============================================================================
+fig, axes = plt.subplots(2, 4, figsize=[width, 4])
+for i in range(4):
+    ax = axes[0, i]
+    kwargs = dict(add_legend=False,
+                  aperiodic_kwargs=dict(color=fit_params[i][2], alpha=1),
+                  data_kwargs=dict(color=c_real))
+    title = f"{fit_params[i][0][0]}-{fit_params[i][0][1]}Hz"
+    fooof_fits[i].plot(ax=ax, plt_log=True, **kwargs)
+    ax.set_title(title, fontsize=panel_fontsize)
+    xlabel = ax.get_xlabel()
+    ylabel = ax.get_ylabel()
+    xticks = np.round(ax.get_xticks(), 1)
+    yticks = np.round(ax.get_yticks(), 1)
+    ax.set_xticklabels(xticks, fontsize=tick_fontsize)
+    ax.set_yticklabels(yticks, fontsize=tick_fontsize)
+    ax.set_xlabel(xlabel, fontsize=tick_fontsize)
+    ax.set_ylabel(ylabel, fontsize=tick_fontsize)
+    ax.spines['right'].set_visible(True)
+    ax.spines['top'].set_visible(True)
+    if i > 0:
+        ax.set_ylabel("")
+
+    ax = axes[1, i]
+    fooof_fits[i].plot(ax=ax, plt_log=False, **kwargs)
+    if i > 0:
+        ax.set_ylabel("")
+    ax.spines['right'].set_visible(True)
+    ax.spines['top'].set_visible(True)
+    xlabel = ax.get_xlabel()
+    ylabel = ax.get_ylabel()
+    xticks = np.round(ax.get_xticks(), 1)
+    yticks = np.round(ax.get_yticks(), 1)
+    ax.set_xticklabels(xticks, fontsize=tick_fontsize)
+    ax.set_yticklabels(yticks, fontsize=tick_fontsize)
+    ax.set_xlabel(xlabel, fontsize=tick_fontsize)
+    ax.set_ylabel(ylabel, fontsize=tick_fontsize)
+plt.tight_layout()
+plt.savefig(fig_path + fig_name[:-4] + "Supp.pdf", bbox_inches="tight")
+plt.show()

@@ -127,9 +127,10 @@ c_osc = "#4daf4a"
 c_fit = "#377eb8" 
 
 # Boxes
-c_inp = "gainsboro" # orange
-c_alg = "gainsboro" # y
-c_out = "gainsboro" # pink
+grey = .9
+c_inp = (grey, grey, grey) 
+c_alg = (grey, grey, grey) 
+c_out = (grey, grey, grey) 
 
 c_inp_dark = "k"
 c_alg_dark = "k"
