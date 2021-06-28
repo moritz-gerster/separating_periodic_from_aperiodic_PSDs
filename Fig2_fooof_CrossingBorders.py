@@ -266,7 +266,7 @@ delta_freq = 2
 delta_width = 6
 low_delta = (delta_freq, 0, delta_width)
 med_delta = (delta_freq, 1.9, delta_width)
-high_delta = (delta_freq, 4.2, delta_width)
+high_delta = (delta_freq, 3.8, delta_width)
 
 osc_params_low = [low_delta, *oscillations]
 osc_params_med = [med_delta, *oscillations]

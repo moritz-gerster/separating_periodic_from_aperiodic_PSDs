@@ -216,12 +216,12 @@ freq, psd_saw_post = sig.welch(saw_post, **welch_params)
 freq_range = [1, 100]
 calc_fooof = dict(freq=freq, freq_range=freq_range, fooof_params=fooof_params)
 
-fit_pre_eeg, lab_pre_eeg = fooof_fit(psd_EEG_pre, "Pre ", **calc_fooof)
-fit_seiz_eeg, lab_seiz_eeg = fooof_fit(psd_EEG_seiz, "Seiz", **calc_fooof)
-fit_post_eeg, lab_post_eeg = fooof_fit(psd_EEG_post, "Post", **calc_fooof)
-fit_pre_sim, lab_pre_saw = fooof_fit(psd_saw_pre, "Pre ", **calc_fooof)
-fit_seiz_sim, lab_seiz_saw = fooof_fit(psd_saw_seiz, "Seiz", **calc_fooof)
-fit_post_sim, lab_post_saw = fooof_fit(psd_saw_post, "Post", **calc_fooof)
+fit_pre_eeg, lab_pre_eeg = fooof_fit(psd_EEG_pre, "pre ", **calc_fooof)
+fit_seiz_eeg, lab_seiz_eeg = fooof_fit(psd_EEG_seiz, "seiz", **calc_fooof)
+fit_post_eeg, lab_post_eeg = fooof_fit(psd_EEG_post, "post", **calc_fooof)
+fit_pre_sim, lab_pre_saw = fooof_fit(psd_saw_pre, "pre ", **calc_fooof)
+fit_seiz_sim, lab_seiz_saw = fooof_fit(psd_saw_seiz, "seiz", **calc_fooof)
+fit_post_sim, lab_post_saw = fooof_fit(psd_saw_post, "post", **calc_fooof)
 
 # %% Plot params
 
@@ -260,8 +260,8 @@ axes_a1 = dict(yticks=yticks_a1, yticklabels=yticklabels_a1, xlim=xlim_a1,
 # a2
 xticks_a2 = [1, 10, 100]
 xticklabels_a2 = []
-yticks_a2 = [1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3, 1e4]
-yticklabels_a2 = [r"$10^{-2}$", "", "", "", "", "", r"$10^4$"]
+yticks_a2 = [1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3, 1e4, 1e5]
+yticklabels_a2 = [r"$10^{-2}$", "", "", "", "", "", "", r"$10^5$"]
 ylim_a2 = (yticks_a2[0], yticks_a2[-1])
 xlim_a2 = freq_range
 ylabel_a2 = r"PSD [$\mu$$V^2$/Hz]"
@@ -284,8 +284,8 @@ axes_b = dict(yticks=yticks_b, yticklabels=yticklabels_b,
               xlim=xlim_b, ylim=ylim_b, xlabel=xlabel_b)
 
 # b2
-yticks_b2 = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1e0, 1e1]
-yticklabels_b2 = [r"$10^{-6}$", "", "", "", "", "", "", r"$10^1$"]
+yticks_b2 = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1e0, 1e1, 1e2]
+yticklabels_b2 = [r"$10^{-6}$", "", "", "", "", "", "", "", r"$10^2$"]
 ylim_b2 = (yticks_b2[0], yticks_b2[-1])
 xlabel_b2 = "Frequency [Hz]"
 ylabel_b2 = "PSD [a.u.]"
@@ -315,8 +315,8 @@ rect_EEG_post_params = dict(xy=xy_post, width=width, color=c_post, **rect)
 
 # %% Plot
 
-fig, axes = plt.subplots(2, 2, figsize=[1.3*fig_width, 5], sharex="col",
-                         gridspec_kw=dict(width_ratios=[1, .6]))
+fig, axes = plt.subplots(2, 2, figsize=[fig_width, 4.5], sharex="col",
+                         gridspec_kw=dict(width_ratios=[1, .65]))
 
 # a1
 # Plot EEG seizure
@@ -352,7 +352,7 @@ ax.loglog(freq, fit_post_eeg, "--", c=c_post, lw=2, label=lab_post_eeg)
 # Set axes
 ax.set(**axes_a2)
 # ax.legend(labelspacing=0.3)
-ax.legend(borderaxespad=0)
+ax.legend(borderaxespad=0, labelspacing=.3, borderpad=.2)
 ax.set_ylabel(ylabel_a2, labelpad=-17)
 y_minor = mpl.ticker.LogLocator(subs=np.arange(0, 1, 0.1), numticks=10)
 ax.yaxis.set_minor_locator(y_minor)
@@ -392,7 +392,7 @@ ax.loglog(freq, fit_post_sim, "--", c=c_post, lw=2, label=lab_post_saw)
 # Set axes
 ax.set(**axes_b2)
 # ax.legend(labelspacing=0.3)
-ax.legend(borderaxespad=0)
+ax.legend(borderaxespad=0, labelspacing=.3, borderpad=.2)
 ax.set_ylabel(ylabel_b2, labelpad=-13)
 ax.tick_params(**ticks_psd)
 y_minor = mpl.ticker.LogLocator(subs=np.arange(0, 1, 0.1), numticks=10)
@@ -401,3 +401,84 @@ ax.yaxis.set_minor_locator(y_minor)
 plt.tight_layout()
 plt.savefig(fig_path + fig_name, bbox_inches="tight")
 plt.show()
+
+
+# %% Supplementary
+
+
+fm_emp = FOOOF(**fooof_params)
+fm_sim = FOOOF(**fooof_params)
+
+fm_emp.fit(freq, psd_EEG_seiz, freq_range)
+fm_sim.fit(freq, psd_saw_seiz, freq_range)
+
+
+fm_emp_tuned = FOOOF(peak_width_limits=(0.5, 1))
+fm_sim_tuned = FOOOF(peak_width_limits=(0.5, 1))
+
+fm_emp.fit(freq, psd_EEG_seiz, freq_range)
+fm_sim.fit(freq, psd_saw_seiz, freq_range)
+
+fm_emp_tuned.fit(freq, psd_EEG_seiz, freq_range)
+fm_sim_tuned.fit(freq, psd_saw_seiz, freq_range)
+
+
+# %% 
+fig, axes = plt.subplots(2, 2,  figsize=[fig_width, 7], sharex=True)
+
+ax = axes[0, 0]
+
+fm_emp.plot(plt_log=True, ax=ax)
+ax.set_ylabel("Fooof default parameters", fontsize=label_fontsize)
+ax.set_title(f"Empirical seizure", fontsize=label_fontsize)
+ax.set_xlabel("")
+yticks = ax.get_yticks()
+ax.set_yticklabels(yticks, fontsize=tick_fontsize)
+handles, labels = ax.get_legend_handles_labels()
+labels[-1] += f" a={fm_emp.aperiodic_params_[1]:.2f}"
+ax.legend(handles, labels, fontsize=legend_fontsize)
+ax.text(s="a", **panel_labels, transform=ax.transAxes)
+
+ax = axes[0, 1]
+
+fm_sim.plot(plt_log=True, ax=ax)
+ax.set_title(f"Simulated seizure", fontsize=label_fontsize)
+ax.set_ylabel("")
+ax.set_xlabel("")
+yticks = ax.get_yticks()
+ax.set_yticklabels(yticks, fontsize=tick_fontsize)
+handles, labels = ax.get_legend_handles_labels()
+labels[-1] += f" a={fm_sim.aperiodic_params_[1]:.2f}"
+ax.legend(handles[-1:], labels[-1:], fontsize=legend_fontsize)
+ax.text(s="b", **panel_labels, transform=ax.transAxes)
+
+
+ax = axes[1, 0]
+
+fm_emp_tuned.plot(plt_log=True, ax=ax)
+ax.set_ylabel("Fooof tuned parameters", fontsize=label_fontsize)
+handles, labels = ax.get_legend_handles_labels()
+labels[-1] += f" a={fm_emp_tuned.aperiodic_params_[1]:.2f}"
+ax.legend(handles[-1:], labels[-1:], fontsize=legend_fontsize)
+xticks = ax.get_xticks()
+yticks = ax.get_yticks()
+ax.set_xticklabels(xticks, fontsize=tick_fontsize)
+ax.set_yticklabels(yticks, fontsize=tick_fontsize)
+ax.set_xlabel("log(Frequency)", fontsize=label_fontsize)
+ax.text(s="c", **panel_labels, transform=ax.transAxes)
+
+ax = axes[1, 1]
+
+fm_sim_tuned.plot(plt_log=True, ax=ax)
+ax.set_xlabel("log(Frequency)", fontsize=label_fontsize)
+ax.set_ylabel("")
+xticks = ax.get_xticks()
+ax.set_xticklabels(xticks, fontsize=tick_fontsize)
+yticks = ax.get_yticks()
+ax.set_yticklabels(yticks, fontsize=tick_fontsize)
+handles, labels = ax.get_legend_handles_labels()
+labels[-1] += f" a={fm_sim_tuned.aperiodic_params_[1]:.2f}"
+ax.legend(handles[-1:], labels[-1:], fontsize=legend_fontsize)
+ax.text(s="d", **panel_labels, transform=ax.transAxes)
+
+plt.savefig(fig_path + "Supp_Fig3.pdf", bbox_inches="tight")
