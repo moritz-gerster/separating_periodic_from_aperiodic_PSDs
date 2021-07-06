@@ -677,3 +677,34 @@ for i in range(4):
 plt.tight_layout()
 plt.savefig(fig_path + fig_name[:-4] + "Supp.pdf", bbox_inches="tight")
 plt.show()
+
+
+# %% Plot Supp Mat c
+from scipy.stats import pearsonr
+mpl.rcParams.update(mpl.rcParamsDefault)
+
+
+y_intercepts = [fm_low.aperiodic_params_[0],
+                fm_med.aperiodic_params_[0],
+                fm_high.aperiodic_params_[0]]
+
+delta_power = [low_delta[1], med_delta[1], high_delta[1]]
+
+
+# Pearson
+r_corr, p_val = pearsonr(delta_power, y_intercepts)
+
+# Regression
+m, b = np.polyfit(delta_power, y_intercepts, 1)
+
+# Plot
+fig, ax = plt.subplots(1, 1, figsize=[3, 3])
+ax.scatter(delta_power, y_intercepts, c=[c_low, c_med, c_high])
+ax.plot(delta_power, m*np.array(delta_power) + b,
+        label=f"r={r_corr:.2f}, p={p_val:.2f}")
+ax.set(xlabel="Simulated Delta Power [a.u.]",
+       ylabel="fooof fit y-intercept [a.u.]")
+ax.set_title("Delta power correlates with y-intercept")
+ax.legend(title="Pearson correlation")
+plt.savefig(fig_path + fig_name[:-4] + "SuppC.pdf", bbox_inches="tight")
+plt.show()
