@@ -520,7 +520,7 @@ axes_a1 = dict(xticklabels=xticklabels_a1, xlim=xlim_a, yticks=yticks_a1,
 xlabel_a2 = "Lower fitting range border [Hz]"
 xticks_a2 = [1, 10, 100]
 
-ylabel_a2 = r"$|a_{truth} - a_{IRASA}|$"
+ylabel_a2 = r"$|\beta_{truth} - \beta_{IRASA}|$"
 yticks_a2 = [0, .5, 1]
 ylim_a2 = (0, 1)
 

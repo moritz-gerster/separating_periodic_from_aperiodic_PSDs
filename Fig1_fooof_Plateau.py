@@ -256,7 +256,7 @@ for i, lim in enumerate(upper_fit_limits):
     fm.fit(freq, psd2_noise, [1, lim])
     exp = fm.get_params('aperiodic_params', 'exponent')
     fit = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
-    label = f"1-{lim}Hz a={exp:.2f}"
+    label = fr"1-{lim}Hz $\beta=${exp:.2f}"
     plot_fit = fm.freqs, 10**fit, "-"
     dic_fit = dict(c=c_fits[i], lw=2,
                    # alpha=fit_alphas[i],
@@ -433,7 +433,7 @@ fit_sub9 = fm_sub9.freqs, 10**ap_fit_sub9, c_real
 
 psd_plateau_fits = [fit1, fit15, fit2]
 
-spec9_fit_label = f"fooof LFP a={exp_sub9:.2f}"
+spec9_fit_label = fr"fooof LFP $\beta=${exp_sub9:.2f}"
 
 # % Plot params c)
 
@@ -467,14 +467,16 @@ high_kwargs = dict(c=c_high, ls="-", lw=2, alpha=1)
 
 # Summarize
 plateau_kwargs = [low_kwargs, med_kwargs, high_kwargs]
-plateau_labels = [r"$a_{fit}$="f"{exp1:.2f}",
-                  r"$a_{fit}$="f"{exp15:.2f}", r"$a_{fit}$="f"{exp2:.2f}"]
-plateau_labels = [f"fooof flat a={exp1:.2f}",
-                  f"fooof med a={exp15:.2f}", f"fooof steep a={exp2:.2f}"]
+plateau_labels = [r"$\beta_{fit}$="f"{exp1:.2f}",
+                  r"$\beta_{fit}$="f"{exp15:.2f}",
+                  r"$\beta_{fit}$="f"{exp2:.2f}"]
+plateau_labels = [fr"fooof flat $\beta=${exp1:.2f}",
+                  fr"fooof med $\beta=${exp15:.2f}",
+                  fr"fooof steep $\beta=${exp2:.2f}"]
 psd_aperiodic_vary = [plot_noise1, plot_noise15, plot_noise2]
 
 labelpad = 5
-leg_c = dict(ncol=3, loc=10, bbox_to_anchor=(.54, -.5), borderpad=0.35)
+leg_c = dict(ncol=3, loc=10, bbox_to_anchor=(.54, -.3), borderpad=0.35)
 axes_c = dict(xticks=xticks_b, xticklabels=xticks_b, xlim=xlim_c)
 
 noise_power = (freq > 1) & (freq <= freq_range[1])
@@ -543,8 +545,8 @@ c_axes = [ax3, ax4, ax5]
 ax = ax1
 
 # Plot simulated PSD and ground truth
-ax.loglog(*plot_sim, label=f"1/f a={slope_a} + noise")
-ax.loglog(*plot_ground, **line_ground, label=f"Ground truth a={slope_a}")
+ax.loglog(*plot_sim, label=fr"1/f $\beta=${slope_a} + noise")
+ax.loglog(*plot_ground, **line_ground, label=fr"Ground truth $\beta=${slope_a}")
 
 # Plot plateau in grey
 ax.loglog(*plot_plateau, label="Plateau")

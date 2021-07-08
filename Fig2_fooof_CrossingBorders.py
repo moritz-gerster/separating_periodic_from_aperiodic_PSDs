@@ -235,7 +235,7 @@ for frange, fooof_params, plot_color in fit_params:
     if freq_low == 1:  # add extra spaces if freq_low=1 for aligned legend
         freq_str = "  " + freq_str
     exp = fm.get_params("aperiodic", "exponent")
-    plot_label = freq_str + f" a={exp:.2f}"
+    plot_label = freq_str + rf" $\beta$={exp:.2f}"
     if first:
         ls = ":"
         first = False
@@ -352,7 +352,7 @@ exp_high = fm_high.get_params('aperiodic_params', 'exponent')
 
 # Summarize
 exponents = [("low", exp_low), ("med", exp_med), ("high", exp_high)]
-delta_labels = [f"fooof {pwr} delta a={exp:.2f}" for pwr, exp in exponents]
+delta_labels = [fr"fooof {pwr} delta $\beta$={exp:.2f}" for pwr, exp in exponents]
 
 
 ap_fit_LFP = gen_aperiodic(fm_LFP.freqs, fm_LFP.aperiodic_params_)
@@ -426,7 +426,7 @@ text_dic = dict(x=100, ha="right", fontsize=annotation_fontsize)
 xticks_a2 = [1, 10, 100]
 yticks_a2 = [0, .5, 1]
 xlabel_a2 = "Lower fitting range border [Hz]"
-ylabel_a2 = r"$|a_{truth} - a_{fooof}|$"
+ylabel_a2 = r"$|\beta_{truth} - \beta_{fooof}|$"
 ylim_a2 = (0, 1)
 axes_a2 = dict(xticks=xticks_a2, xticklabels=xticks_a2, yticks=yticks_a2,
                xlim=xlim_a, xlabel=xlabel_a2, ylim=ylim_a2)
@@ -447,7 +447,7 @@ ylabel_c = "PSD [a.u.]"
 axes_c = dict(xticks=xticks_b, xticklabels=xticks_b,
               yticks=[])
 x_label_c2 = f"Fitting range: {frange1[0]}-{frange1[1]} Hz"
-leg_c = dict(ncol=3, loc=10, bbox_to_anchor=(.5, -.7))
+leg_c = dict(ncol=3, loc=10, bbox_to_anchor=(.5, -.5))
 delta_fill_dic = dict(alpha=0.4)
 
 # Annotate increased/decreased delta power with arrows
@@ -583,7 +583,7 @@ ax.text(s="b", **abc, transform=ax.transAxes)
 
 # Make sure we have just one label for each repetitive plot
 spec10_label = ["STN-LFP", None, None]
-spec10_fit_label = [f"fooof LFP a={exp_LFP:.2f}", None, None]
+spec10_fit_label = [rf"fooof LFP $\beta$={exp_LFP:.2f}", None, None]
 aperiodic_label = [None, None, "1/f + noise"]
 
 arrows = [arr_pos_low, None, arr_pos_high]
@@ -675,7 +675,7 @@ for i in range(4):
     ax.set_xlabel(xlabel, fontsize=tick_fontsize)
     ax.set_ylabel(ylabel, fontsize=tick_fontsize)
 plt.tight_layout()
-plt.savefig(fig_path + fig_name[:-4] + "Supp.pdf", bbox_inches="tight")
+plt.savefig(fig_path + fig_name[:-4] + "SuppB.pdf", bbox_inches="tight")
 plt.show()
 
 

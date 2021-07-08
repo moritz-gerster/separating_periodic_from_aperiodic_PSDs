@@ -200,8 +200,8 @@ c_real = "purple"
 
 # c)
 c_fooof = "deepskyblue"
-c_IRASA1 = "C1"
-c_IRASA2 = "C2"
+c_IRASA1 = "g"
+c_IRASA2 = "C1"
 c_IRASA3 = "orangered"
 # c_IRASA3 = "C4"
 
@@ -274,7 +274,7 @@ freq_range = irasa_params["band"]
 fm = FOOOF(verbose=False)
 fm.fit(freq_b, psd2_noise_b, freq_range)
 fit = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
-label = f"a(fooof)={fm.aperiodic_params_[1]:.2f}"
+label = rf"$\beta(fooof)$={fm.aperiodic_params_[1]:.2f}"
 fooof_kwargs = dict(label=label)
 plot_fooof_b = (fm.freqs, 10**fit, c_fooof)
 
@@ -297,7 +297,7 @@ for h_max, color in zip(h_maxima, h_colors):
     IR_offset = IR_fit["Intercept"][0]
 
     IR_fit = gen_aperiodic(freq_IR, (IR_offset, IR_slope))
-    label = fr"a(h$\leq${h_max})={IR_slope:.2f}"
+    label = fr"$\beta$(h$\leq${h_max})={IR_slope:.2f}"
     IR_kwargs = dict(label=label)
     plot_IRASA = (freq_IR, 10**IR_fit, color)
     IR_fit_plot_args_b.append(plot_IRASA)
@@ -310,7 +310,7 @@ for h_max, color in zip(h_maxima, h_colors):
     IR_fit_eff = gen_aperiodic(freq_IR_eff, (IR_offset, IR_slope))
     plot_IRASA_eff = (freq_IR_eff, 10**IR_fit_eff, color)
 
-    IR_eff_kwargs = dict(alpha=.5, lw=2)
+    IR_eff_kwargs = dict(alpha=.3, lw=2)
     IR_plot_eff_args_b.append(plot_IRASA_eff)
     IR_plot_eff_kwargs_b.append(IR_eff_kwargs)
 
@@ -332,7 +332,7 @@ noise_c = (freq_c >= floor_c)
 fm = FOOOF(verbose=False)
 fm.fit(freq_c, psd2_noise_c, freq_range)
 fit = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
-label = f"a(fooof)={fm.aperiodic_params_[1]:.2f}"
+label = rf"$\beta(fooof)$={fm.aperiodic_params_[1]:.2f}"
 fooof_kwargs = dict(label=label, zorder=5, ls="--", lw=2)
 plot_fooof_c = (fm.freqs, 10**fit, c_fooof)
 
@@ -363,7 +363,7 @@ for h_max, color in zip(h_maxima, h_colors):
     IR_fit = gen_aperiodic(freq_IR, (IR_offset, IR_slope))
 
     # Pack for plotting
-    label = fr"a(h$\leq${h_max})={IR_slope:.2f}"
+    label = fr"$\beta$(h$\leq${h_max})={IR_slope:.2f}"
     IR_kwargs = dict(label=label, lw=2)
     plot_IRASA = (freq_IR, 10**IR_fit, color)
     IR_fit_plot_args_c.append(plot_IRASA)
@@ -376,7 +376,6 @@ for h_max, color in zip(h_maxima, h_colors):
     freq_IR_eff = np.arange(f_min, f_max, f_step)
     IR_fit_eff = gen_aperiodic(freq_IR_eff, (IR_offset, IR_slope))
     plot_IRASA_eff = (freq_IR_eff, 10**IR_fit_eff, color)
-    IR_eff_kwargs = dict(alpha=.5)
     IR_plot_eff_args_c.append(plot_IRASA_eff)
     IR_plot_eff_kwargs_c.append(IR_eff_kwargs)
 
@@ -420,12 +419,10 @@ psd_sub = psd_sub[filt]
 
 # %% D Calc IRASA
 
-"""Load different PSD where fooof != IRASA for low freq range!"""
-
 band_low = (1, 30)
 band_high = (30, 45)
 
-h_max = 2.9  # default
+h_max = 3  # default
 win_sec = 4  # default
 f_min_low = band_low[0] / h_max
 f_max_low = band_low[1] * h_max
@@ -458,9 +455,9 @@ IR_slope_low = -fit_res_low["Slope"][0]
 IR_slope_high = -fit_res_high["Slope"][0]
 IR_slope_low_eff = -fit_res_low_eff["Slope"][0]
 
-label_low = fr"a(h$\leq${h_max})={IR_slope_low:.2f}"
-label_high = fr"a(h$\leq${h_max})={IR_slope_high:.2f}"
-label_low_eff = fr"a(h$\leq${h_max})={IR_slope_low_eff:.2f}"
+label_low = fr"$\beta$(h$\leq${h_max})={IR_slope_low:.2f}"
+label_high = fr"$\beta$(h$\leq${h_max})={IR_slope_high:.2f}"
+label_low_eff = fr"$\beta$(h$\leq${h_max})={IR_slope_low_eff:.2f}"
 
 IR_offset_low = fit_res_low["Intercept"][0]
 IR_offset_high = fit_res_high["Intercept"][0]
@@ -504,13 +501,13 @@ plot_IRASA_eff_low_eff = (freq_IR_eff_low_eff,
 
 fm.fit(freq, psd_sub, band_low)
 fit = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
-label = f"a(fooof)={fm.aperiodic_params_[1]:.2f}"
+label = rf"$\beta(fooof)$={fm.aperiodic_params_[1]:.2f}"
 fooof_kwargs_low = dict(label=label, lw=2, ls="--")
 plot_fooof_low = (fm.freqs, 10**fit, c_fooof)
 
 fm.fit(freq, psd_sub, band_high)
 fit = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
-label = f"a(fooof)={fm.aperiodic_params_[1]:.2f}"
+label = rf"$\beta(fooof)$={fm.aperiodic_params_[1]:.2f}"
 fooof_kwargs_high = dict(label=label)
 plot_fooof_high = (fm.freqs, 10**fit, c_fooof)
 
@@ -558,7 +555,7 @@ text_dic = dict(x=100, ha="right", fontsize=annotation_fontsize)
 xticks_a2 = [1, 10, 100]
 yticks_a2 = [0, 0.5, 1]
 xlabel_a2 = "Lower fitting range border [Hz]"
-ylabel_a2 = r"$|a_{truth} - a_{IRASA}|$"
+ylabel_a2 = r"$|\beta_{truth} - \beta_{IRASA}|$"
 ylim_a2 = (0, 1)
 axes_a2 = dict(xticks=xticks_a2, xticklabels=xticks_a2, yticks=yticks_a2,
                xlim=xlim_a, xlabel=xlabel_a2, ylim=ylim_a2, ylabel=ylabel_a2)
@@ -792,10 +789,10 @@ annotate_fit_range(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
 ax = ax6
 ax.loglog(freq, psd_sub, c_real)
 
-ax.loglog(*plot_IRASA_eff_low_eff, lw=lw, label=label_low_eff)
-ax.loglog(*plot_IRASA_low, lw=lw, ls="--", label=label_low)
-ax.loglog(*plot_IRASA_eff_low1, alpha=.5, lw=lw)
-ax.loglog(*plot_IRASA_eff_low2, alpha=.5, lw=lw)
+ax.loglog(*plot_IRASA_eff_low_eff, lw=lw, label=label_low_eff) # bold green
+ax.loglog(*plot_IRASA_low, lw=lw, ls="--", label=label_low) # dashed green
+ax.loglog(*plot_IRASA_eff_low1, alpha=.5, lw=lw) # transparent low
+ax.loglog(*plot_IRASA_eff_low2, alpha=.5, lw=lw) # transparent high
 
 ylow = plot_IRASA_eff_low_eff[1][0]
 yhigh = plot_IRASA_eff_low_eff[1][-1]

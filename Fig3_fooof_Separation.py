@@ -114,7 +114,7 @@ def fooof_fit(psd: np.array, cond: str, freq: np.array,
     fm = FOOOF(**fooof_params)
     fm.fit(freq, psd, freq_range)
     exp = fm.get_params("aperiodic", "exponent")
-    label = fr"$a_{{{cond}}}$={exp:.2f}"
+    label = fr"$\beta_{{{cond}}}$={exp:.2f}"
     ap_fit = gen_aperiodic(freq, fm.aperiodic_params_)
     return 10**ap_fit, label
 
@@ -435,7 +435,7 @@ ax.set_xlabel("")
 yticks = ax.get_yticks()
 ax.set_yticklabels(yticks, fontsize=tick_fontsize)
 handles, labels = ax.get_legend_handles_labels()
-labels[-1] += f" a={fm_emp.aperiodic_params_[1]:.2f}"
+labels[-1] += fr" $\beta=${fm_emp.aperiodic_params_[1]:.2f}"
 ax.legend(handles, labels, fontsize=legend_fontsize)
 ax.text(s="a", **panel_labels, transform=ax.transAxes)
 
@@ -448,7 +448,7 @@ ax.set_xlabel("")
 yticks = ax.get_yticks()
 ax.set_yticklabels(yticks, fontsize=tick_fontsize)
 handles, labels = ax.get_legend_handles_labels()
-labels[-1] += f" a={fm_sim.aperiodic_params_[1]:.2f}"
+labels[-1] += fr" $\beta=${fm_sim.aperiodic_params_[1]:.2f}"
 ax.legend(handles[-1:], labels[-1:], fontsize=legend_fontsize)
 ax.text(s="b", **panel_labels, transform=ax.transAxes)
 
@@ -458,7 +458,7 @@ ax = axes[1, 0]
 fm_emp_tuned.plot(plt_log=True, ax=ax)
 ax.set_ylabel("Fooof tuned parameters", fontsize=label_fontsize)
 handles, labels = ax.get_legend_handles_labels()
-labels[-1] += f" a={fm_emp_tuned.aperiodic_params_[1]:.2f}"
+labels[-1] += fr" $\beta=${fm_emp_tuned.aperiodic_params_[1]:.2f}"
 ax.legend(handles[-1:], labels[-1:], fontsize=legend_fontsize)
 xticks = ax.get_xticks()
 yticks = ax.get_yticks()
@@ -477,7 +477,7 @@ ax.set_xticklabels(xticks, fontsize=tick_fontsize)
 yticks = ax.get_yticks()
 ax.set_yticklabels(yticks, fontsize=tick_fontsize)
 handles, labels = ax.get_legend_handles_labels()
-labels[-1] += f" a={fm_sim_tuned.aperiodic_params_[1]:.2f}"
+labels[-1] += fr" $\beta=$={fm_sim_tuned.aperiodic_params_[1]:.2f}"
 ax.legend(handles[-1:], labels[-1:], fontsize=legend_fontsize)
 ax.text(s="d", **panel_labels, transform=ax.transAxes)
 
