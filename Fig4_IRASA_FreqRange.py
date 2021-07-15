@@ -774,7 +774,7 @@ ax.legend(**tiny_leg)
 ax.tick_params(**ticks_psd)
 ax.text(s="d", **abc, transform=ax.transAxes)
 ax.set(**axes_d)
-ax.set_ylabel(r"PSD [$\mu$$V^2$/Hz]", labelpad=-10)
+ax.set_ylabel("A.U.", labelpad=-10)
 
 xmin = band_low[0]
 xmax = band_low[1]

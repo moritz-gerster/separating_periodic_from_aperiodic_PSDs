@@ -702,6 +702,7 @@ def annotate_fit_range(ax, xmin, xmax, height, ylow=None, yhigh=None,
     elif annotation == "log-diff":
         range_str = (f"{xmax-xmin:.0f}Hz"
                      f"\n{(np.log10(xmax)-np.log10(xmin)):.2f}")
+        # replace by np.log10(xmax/xmin)
     else:
         range_str = f"{xmin:.1f}-{xmax:.1f}Hz"
     ax.text(text_pos, text_height, s=range_str, **anno_dic)

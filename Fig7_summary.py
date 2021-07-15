@@ -41,7 +41,7 @@ c_low = "g--"
 # Paths
 data_path = "../data/Fig3/"
 fig_path = "../paper_figures/"
-fig_name = "Fig6_general.pdf"
+fig_name = "Fig7_summary.pdf"
 
 fooof_params = dict(verbose=False)  # standard params
 
@@ -159,26 +159,26 @@ spec9_I = freq_I, 10**fm9_I, c_low
 
 fig, ax = plt.subplots(2, 2, figsize=(8, 5))
 
-ax[0, 0].set_title('"Easy" spectrum')
-ax[0, 1].set_title('"Hard" spectrum')
+ax[0, 1].set_title('"Easy" spectrum')
+ax[1, 1].set_title('"Hard" spectrum')
 # lin
 ax[0, 0].semilogy(*spec5_real, label="Sub 5 MEG")  # + ch5)
-ax[0, 1].semilogy(*spec9_real, label="Sub 9 LFP")  # + ch9)
+ax[1, 0].semilogy(*spec9_real, label="Sub 9 LFP")  # + ch9)
 
 # log
-ax[1, 0].loglog(*spec5_real)
+ax[0, 1].loglog(*spec5_real)
 ax[1, 1].loglog(*spec9_real)
 
 # Fooof fit
-ax[1, 0].loglog(*spec5_fooof, label=f"fooof     a={a5_fooof:.2f}")
+ax[0, 1].loglog(*spec5_fooof, label=f"fooof     a={a5_fooof:.2f}")
 ax[1, 1].loglog(*spec9_fooof, label=f"fooof     a={a9_fooof:.2f}")
 
 # Straight fit
-ax[1, 0].loglog(*spec5_straight, label=f"straight a={a5_straight:.2f}")
+ax[0, 1].loglog(*spec5_straight, label=f"straight a={a5_straight:.2f}")
 ax[1, 1].loglog(*spec9_straight, label=f"straight a={a9_straight:.2f}")
 
 # Low fit
-ax[1, 0].loglog(*spec5_I, label=f"IRASA    a={a5_I:.2f}")
+ax[0, 1].loglog(*spec5_I, label=f"IRASA    a={a5_I:.2f}")
 ax[1, 1].loglog(*spec9_I, label=f"IRASA    a={a9_I:.2f}")
 
 for axes in ax.flatten():
@@ -186,8 +186,8 @@ for axes in ax.flatten():
     axes.spines["right"].set_visible(False)
     axes.legend()
 
-ax[0, 0].set(xlabel=None, ylabel=r"PSD [$\mu$$V^2/Hz$]")
-ax[0, 1].set(xlabel=None, ylabel=None)
+ax[0, 0].set(xlabel=None, ylabel="A.U. Voxel Data")
+ax[1, 0].set(xlabel=None, ylabel=None)
 ax[1, 0].set(xlabel="Frequency [Hz]", ylabel=r"PSD [$\mu$$V^2/Hz$]")
 ax[1, 1].set(xlabel="Frequency [Hz]", ylabel=None)
 plt.tight_layout()
