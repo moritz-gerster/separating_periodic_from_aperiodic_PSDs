@@ -80,10 +80,10 @@ def plot_annotated_peak_search(fm, plot_style=style_spectrum_plot):
 def plot_annotated_peak_search_MG(fm, ind_max, ax, c_flat="k", c_thresh="orange", c_gauss="g",
                                   plot_style=style_spectrum_plot,
                                   label_flat="Flattened PSD",
-                                  label_SD="standard deviation",
+                                  label_rthresh="standard deviation",
                                   label_gauss="Gaussian fit",
                                   lw=1, markersize=10,
-                                  anno_SD_font=None):
+                                  anno_rthresh_font=None):
     """Plot a series of plots illustrating the peak search from a flattened spectrum.
 
     Parameters
@@ -114,17 +114,18 @@ def plot_annotated_peak_search_MG(fm, ind_max, ax, c_flat="k", c_thresh="orange"
         
             plot_spectrum(fm.freqs, flatspec, ax=ax, plot_style=None,
                           color=c_flat, linewidth=lw, label=label_flat)
-            SD = fm.peak_threshold * np.std(flatspec)
-            plot_spectrum(fm.freqs, np.array([SD]*len(fm.freqs)),
-                          ax=ax, plot_style=None, label=label_SD,
+            rthresh = fm.peak_threshold * np.std(flatspec)
+            plot_spectrum(fm.freqs, np.array([rthresh]*len(fm.freqs)),
+                          ax=ax, plot_style=None, label=label_rthresh,
                           color=c_thresh, linewidth=lw/1.5,
                           linestyle='dashed')
-            if anno_SD_font:
-                ax.annotate("std", xy=(fm.freqs[-1], SD), ha="left",
+            if anno_rthresh_font:
+                ax.annotate(f"{fm.peak_threshold:.0f}"r"$\cdot$SD",
+                            xy=(fm.freqs[-1], rthresh), ha="left",
                             va="center",
-                            xytext=(fm.freqs[-1]*1.2, SD),
+                            xytext=(fm.freqs[-1], rthresh),
                             annotation_clip=False,
-                            fontsize=anno_SD_font)
+                            fontsize=anno_rthresh_font)
 # =============================================================================
 #             plot_spectrum(fm.freqs, [fm.min_peak_height]*len(fm.freqs),
 #                           ax=ax, plot_style=None, label='Absolute Threshold',

@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Jul  8 16:47:54 2021
+
+@author: moritzgerster
+"""
 """Fooof needs clearly separable (and ideally Gaussian) peaks."""
 import numpy as np
 from numpy.fft import irfft, rfftfreq
@@ -182,26 +189,14 @@ saw_full = np.r_[np.zeros(seiz_len_samples),
                  saw,
                  np.zeros(seiz_len_samples)]
 
-# add too broad overlapping oscillations
-periodic_params = [(10, .5e5, 3.5), (25, .5e5, 15)]
-seed = 2
-_, osc = osc_signals(0, periodic_params=periodic_params,
-                         srate=srate, duration=time_seiz[-1], seed=seed)
-osc /= 1e4  # decrease white noise
-osc_full = np.r_[np.zeros(seiz_len_samples),
-                        osc,
-                        np.zeros(seiz_len_samples)]
-
 # Create 1/f noise and add
 slope = 1.8
+seed = 2
 noise, _ = osc_signals(slope, srate=srate, duration=time_full[-1], seed=seed)
 noise_saw = noise + saw_full
-noise_saw_osc = noise + saw_full + osc_full
 
 # normalize
-norm = lambda x: (x - x.mean()) / x.std()
-noise_saw = norm(noise_saw)
-noise_saw_osc = norm(noise_saw_osc)
+noise_saw = (noise_saw - noise_saw.mean()) / noise_saw.std()
 
 # Calc PSDs saw
 saw_pre = noise_saw[:seiz_len_samples]
@@ -212,32 +207,18 @@ freq, psd_saw_pre = sig.welch(saw_pre, **welch_params)
 freq, psd_saw_seiz = sig.welch(saw_seiz, **welch_params)
 freq, psd_saw_post = sig.welch(saw_post, **welch_params)
 
-# Calc PSDs saw_osc
-saw_osc_pre = noise_saw_osc[:seiz_len_samples]
-saw_osc_seiz = noise_saw_osc[seiz_len_samples:2*seiz_len_samples]
-saw_osc_post = noise_saw_osc[2*seiz_len_samples:]
 
-freq, psd_saw_osc_pre = sig.welch(saw_osc_pre, **welch_params)
-freq, psd_saw_osc_seiz = sig.welch(saw_osc_seiz, **welch_params)
-freq, psd_saw_osc_post = sig.welch(saw_osc_post, **welch_params)
+# %% Fit fooof
 
-
-# %% Fit IRASA
-
-# Calc IRASA pre-, post-, and during seizure
+# Calc fooof pre-, post-, and during seizure
 freq_range = [1, 100]
 
 fit_pre_eeg, lab_pre_eeg = IRASA_fit(data_pre, freq_range, "pre ")
 fit_seiz_eeg, lab_seiz_eeg = IRASA_fit(data_seiz, freq_range, "seiz")
 fit_post_eeg, lab_post_eeg = IRASA_fit(data_post, freq_range, "post")
-
 fit_pre_sim, lab_pre_saw = IRASA_fit(saw_pre, freq_range, "pre ")
 fit_seiz_sim, lab_seiz_saw = IRASA_fit(saw_seiz, freq_range, "seiz")
 fit_post_sim, lab_post_saw = IRASA_fit(saw_post, freq_range, "post")
-
-fit_pre_sim_osc, lab_pre_saw_osc = IRASA_fit(saw_pre,freq_range, "pre ")
-fit_seiz_sim_osc, lab_seiz_saw_osc = IRASA_fit(saw_osc_seiz, freq_range, "seiz")
-fit_post_sim_osc, lab_post_saw_osc = IRASA_fit(saw_post, freq_range, "post")
 
 # %% Plot params
 
@@ -329,26 +310,23 @@ rect_EEG_seiz_params = dict(xy=xy_seiz, width=width, color=c_seiz, **rect)
 rect_EEG_post_params = dict(xy=xy_post, width=width, color=c_post, **rect)
 
 
-def add_rectangles(ax):
-    """Plot three colored rectangles in the time series to distinguish
-    pre-, seiz- and post activity."""
-    rect_EEG_pre = plt.Rectangle(**rect_EEG_pre_params)
-    rect_EEG_seiz = plt.Rectangle(**rect_EEG_seiz_params)
-    rect_EEG_post = plt.Rectangle(**rect_EEG_post_params)
-    ax.add_patch(rect_EEG_pre)
-    ax.add_patch(rect_EEG_seiz)
-    ax.add_patch(rect_EEG_post)
-
 # %% Plot
 
-fig, axes = plt.subplots(3, 2, figsize=[fig_width, 7], sharex="col",
+fig, axes = plt.subplots(2, 2, figsize=[fig_width, 4.5], sharex="col",
                          gridspec_kw=dict(width_ratios=[1, .65]))
 
 # a1
 # Plot EEG seizure
 ax = axes[0, 0]
 ax.plot(time_full, data_full, c=c_empirical, lw=1)
-add_rectangles(ax)
+
+# Set rectangles
+rect_EEG_pre = plt.Rectangle(**rect_EEG_pre_params)
+rect_EEG_seiz = plt.Rectangle(**rect_EEG_seiz_params)
+rect_EEG_post = plt.Rectangle(**rect_EEG_post_params)
+ax.add_patch(rect_EEG_pre)
+ax.add_patch(rect_EEG_seiz)
+ax.add_patch(rect_EEG_post)
 
 # Set axes
 ax.set(**axes_a1)
@@ -381,7 +359,14 @@ ax.tick_params(**ticks_psd)
 # Sawtooth Time Series
 ax = axes[1, 0]
 ax.plot(time_full, noise_saw, c=c_sim, lw=1)
-add_rectangles(ax)
+
+# Set rectangles
+rect_saw_pre = plt.Rectangle(**rect_EEG_pre_params)
+rect_saw_seiz = plt.Rectangle(**rect_EEG_seiz_params)
+rect_saw_post = plt.Rectangle(**rect_EEG_post_params)
+ax.add_patch(rect_saw_pre)
+ax.add_patch(rect_saw_seiz)
+ax.add_patch(rect_saw_post)
 
 # Set axes
 ax.set(**axes_b)
@@ -410,39 +395,6 @@ ax.tick_params(**ticks_psd)
 y_minor = mpl.ticker.LogLocator(subs=np.arange(0, 1, 0.1), numticks=10)
 ax.yaxis.set_minor_locator(y_minor)
 
-# c1
-# Sawtooth Time Series + Alpha Beta
-ax = axes[2, 0]
-ax.plot(time_full, noise_saw_osc, c=c_sim, lw=1)
-add_rectangles(ax)
-
-# Set axes
-ax.set(**axes_b)
-ax.set_ylabel(ylabel_b, labelpad=-10)
-ax.tick_params(**ticks_time)
-ax.text(s="c", **panel_labels, transform=ax.transAxes)
-
-# c2
-# Plot saw PSD
-ax = axes[2, 1]
-ax.loglog(freq, psd_saw_osc_pre, c_pre, lw=2)
-ax.loglog(freq, psd_saw_osc_seiz, c_seiz, lw=2)
-ax.loglog(freq, psd_saw_osc_post, c_post, lw=2)
-
-# Plot Saw fooof fit
-ax.loglog(freq, fit_pre_sim_osc, "--", c=c_pre, lw=2, label=lab_pre_saw_osc)
-ax.loglog(freq, fit_seiz_sim_osc, "--", c=c_seiz, lw=2, label=lab_seiz_saw_osc)
-ax.loglog(freq, fit_post_sim_osc, "--", c=c_post, lw=2, label=lab_post_saw_osc)
-
-# Set axes
-ax.set(**axes_b2)
-# ax.legend(labelspacing=0.3)
-ax.legend(borderaxespad=0, labelspacing=.3, borderpad=.2)
-ax.set_ylabel(ylabel_b2, labelpad=-13)
-ax.tick_params(**ticks_psd)
-y_minor = mpl.ticker.LogLocator(subs=np.arange(0, 1, 0.1), numticks=10)
-ax.yaxis.set_minor_locator(y_minor)
-
 plt.tight_layout()
 plt.savefig(fig_path + fig_name, bbox_inches="tight")
 plt.show()
@@ -451,29 +403,24 @@ plt.show()
 # %% Supp IRASA Result
 
 freqs, ap_pre, osc_pre, params_pre = irasa(data_pre,
-                                           sf=srate,
-                                           band=freq_range)
+                                               sf=srate,
+                                               band=freq_range)
 _, ap_seiz, osc_seiz, params_seiz = irasa(data_seiz,
-                                          sf=srate,
-                                          band=freq_range)
-_, ap_post, osc_post, params_post = irasa(data_post,
-                                          sf=srate,
-                                          band=freq_range)
-
-_, ap_saw_pre, osc_saw_pre, params_saw_pre = irasa(saw_pre,
                                                    sf=srate,
                                                    band=freq_range)
+_, ap_post, osc_post, params_post = irasa(data_post,
+                                                   sf=srate,
+                                                   band=freq_range)
+
+_, ap_saw_pre, osc_saw_pre, params_saw_pre = irasa(saw_pre,
+                                                               sf=srate,
+                                                               band=freq_range)
 _, ap_saw_seiz, osc_saw_seiz, params_saw_seiz = irasa(saw_seiz,
-                                                      sf=srate,
-                                                      band=freq_range)
+                                                                   sf=srate,
+                                                                   band=freq_range)
 _, ap_saw_post, osc_saw_post, params_saw_post = irasa(saw_post,
-                                                      sf=srate,
-                                                      band=freq_range)
-
-
-_, ap_saw_osc_seiz, osc_saw_osc_seiz, params_saw_osc_seiz = irasa(saw_osc_seiz,
-                                                                  sf=srate,
-                                                                  band=freq_range)
+                                                                   sf=srate,
+                                                                   band=freq_range)
 
 exp_pre = -params_pre["Slope"][0]
 intercept_pre = params_pre["Intercept"][0]
@@ -489,8 +436,6 @@ intercept_saw_seiz = params_saw_seiz["Intercept"][0]
 exp_saw_post = -params_saw_post["Slope"][0]
 intercept_saw_post = params_saw_post["Intercept"][0]
 
-exp_saw_osc_seiz = -params_saw_osc_seiz["Slope"][0]
-intercept_saw_osc_seiz = params_saw_osc_seiz["Intercept"][0]
 
 ap_fit_pre = gen_aperiodic(freqs, [intercept_pre, exp_pre])
 ap_fit_seiz = gen_aperiodic(freqs, [intercept_seiz, exp_seiz])
@@ -499,12 +444,9 @@ ap_fit_post = gen_aperiodic(freqs, [intercept_post, exp_post])
 ap_fit_saw_pre = gen_aperiodic(freqs, [intercept_saw_pre, exp_saw_pre])
 ap_fit_saw_seiz = gen_aperiodic(freqs, [intercept_saw_seiz, exp_saw_seiz])
 ap_fit_saw_post = gen_aperiodic(freqs, [intercept_saw_post, exp_saw_post])
-
-ap_fit_saw_osc_seiz = gen_aperiodic(freqs,
-                                    [intercept_saw_osc_seiz, exp_saw_osc_seiz])
 # %% Plot loglog
 
-fig, ax = plt.subplots(3, 3, figsize=[fig_width, 7], sharex=True,
+fig, ax = plt.subplots(2, 3, figsize=[fig_width, 4.5], sharex=True,
                        sharey="row")
 
 ax[0, 0].set_ylabel(r"EEG PSD [$\mu$$V^2$/Hz]")
@@ -514,15 +456,12 @@ ax[0, 0].loglog(freqs, ap_pre[0], label="aperiodic")
 ax[0, 0].loglog(freqs, osc_pre[0], label="periodic")
 ax[0, 0].loglog(freqs, 10**ap_fit_pre, label=fr"$\beta=${exp_pre:.2f}")
 ax[0, 0].legend()
-ax[0, 0].text(s="a", **panel_labels, transform=ax[0, 0].transAxes)
-
 
 ax[0, 1].set_title("Seiz")
 ax[0, 1].loglog(freqs, ap_seiz[0])
 ax[0, 1].loglog(freqs, osc_seiz[0])
 ax[0, 1].loglog(freqs, 10**ap_fit_seiz, label=fr"$\beta=${exp_seiz:.2f}")
 ax[0, 1].legend()
-
 
 ax[0, 2].set_title("Post")
 ax[0, 2].loglog(freqs, ap_post[0])
@@ -538,7 +477,6 @@ ax[1, 0].loglog(freqs, 10**ap_fit_saw_pre,
                 label=fr"$\beta=${exp_saw_pre:.2f}")
 ax[1, 0].legend()
 ax[1, 0].set_xlabel("Frequency [Hz]")
-ax[1, 0].text(s="b", **panel_labels, transform=ax[1, 0].transAxes)
 
 ax[1, 1].loglog(freqs, ap_saw_seiz[0])
 ax[1, 1].loglog(freqs, osc_saw_seiz[0])
@@ -552,61 +490,27 @@ ax[1, 2].loglog(freqs, osc_saw_post[0])
 ax[1, 2].loglog(freqs, 10**ap_fit_saw_post,
                 label=fr"$\beta=${exp_saw_post:.2f}")
 ax[1, 2].legend()
-
-ax[2, 0].set_ylabel("Simulated PSD [a.u.]")
-
-ax[2, 0].loglog(freqs, ap_saw_pre[0])
-ax[2, 0].loglog(freqs, osc_saw_pre[0])
-ax[2, 0].loglog(freqs, 10**ap_fit_saw_pre,
-                label=fr"$\beta=${exp_saw_pre:.2f}")
-ax[2, 0].legend()
-ax[2, 0].set_xlabel("Frequency [Hz]")
-ax[2, 0].text(s="c", **panel_labels, transform=ax[2, 0].transAxes)
-
-ax[2, 1].loglog(freqs, ap_saw_osc_seiz[0])
-ax[2, 1].loglog(freqs, osc_saw_osc_seiz[0])
-ax[2, 1].loglog(freqs, 10**ap_fit_saw_osc_seiz,
-                label=fr"$\beta=${exp_saw_osc_seiz:.2f}")
-ax[2, 1].legend()
-ax[2, 1].set_xlabel("Frequency [Hz]")
-
-ax[2, 2].loglog(freqs, ap_saw_post[0])
-ax[2, 2].loglog(freqs, osc_saw_post[0])
-ax[2, 2].loglog(freqs, 10**ap_fit_saw_post,
-                label=fr"$\beta=${exp_saw_post:.2f}")
-ax[2, 2].legend()
-ax[2, 2].set_xlabel("Frequency [Hz]")
+ax[1, 2].set_xlabel("Frequency [Hz]")
 
 # Add colored rectangles
 ax[0, 0].patch.set_facecolor(c_pre)
 ax[0, 0].patch.set_alpha(rect["alpha"])
 ax[1, 0].patch.set_facecolor(c_pre)
 ax[1, 0].patch.set_alpha(rect["alpha"])
-ax[2, 0].patch.set_facecolor(c_pre)
-ax[2, 0].patch.set_alpha(rect["alpha"])
 
 ax[0, 1].patch.set_facecolor(c_seiz)
 ax[0, 1].patch.set_alpha(rect["alpha"])
 ax[1, 1].patch.set_facecolor(c_seiz)
 ax[1, 1].patch.set_alpha(rect["alpha"])
-ax[2, 1].patch.set_facecolor(c_seiz)
-ax[2, 1].patch.set_alpha(rect["alpha"])
 
 ax[0, 2].patch.set_facecolor(c_post)
 ax[0, 2].patch.set_alpha(rect["alpha"])
 ax[1, 2].patch.set_facecolor(c_post)
 ax[1, 2].patch.set_alpha(rect["alpha"])
-ax[2, 2].patch.set_facecolor(c_post)
-ax[2, 2].patch.set_alpha(rect["alpha"])
 
 plt.tight_layout()
 plt.savefig(fig_path + fig_name[:-4] + "Supp_loglog.pdf", bbox_inches="tight")
 plt.show()
-
-
-
-
-
 
 
 # =============================================================================

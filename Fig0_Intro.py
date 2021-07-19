@@ -443,7 +443,8 @@ def fooof_3(ax, ylim=None):
                                   markersize=10,
                                   c_flat=c_flat, c_gauss=c_osc,
                                   c_thresh=c_tresh, label_flat=None,
-                                  label_SD=None, anno_SD_font=legend_fontsize)
+                                  label_rthresh=None,
+                                  anno_rthresh_font=legend_fontsize)
     ax.set_xscale("log")
     ax.grid(False)
 
@@ -466,7 +467,7 @@ def fooof_4(ax, ylim=None, ybottom=1):
     plot_annotated_peak_search_MG(fm, 1, ax, lw=lw_fooof,
                                   markersize=10,
                                   c_flat=c_flat, c_gauss=c_osc,
-                                  c_thresh=c_tresh, anno_SD_font=None)
+                                  c_thresh=c_tresh, anno_rthresh_font=None)
     
     # suggestion Gabriel:
 # =============================================================================
@@ -1013,7 +1014,7 @@ panel_dic = dict(fontweight="bold", fontsize=panel_fontsize,
 
 ax_inp_ser.text(s="a", transform=ax_inp_ser.transAxes, **panel_dic)
 gs_IR11.text(s="b", transform=gs_IR11.transAxes, **panel_dic)
-#gs_IR2.text(s="c", transform=gs_IR2.transAxes, **panel_dic)
+gs_IR12.text(s="c", transform=gs_IR12.transAxes, **panel_dic)
 ap.text(s="d", transform=ap.transAxes, **panel_dic)
 ax_inp_PSD.text(s="e", transform=ax_inp_PSD.transAxes, **panel_dic)
 ax_fooof1.text(s="f", transform=ax_fooof1.transAxes, **panel_dic)

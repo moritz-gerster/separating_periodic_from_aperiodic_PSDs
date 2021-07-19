@@ -638,10 +638,10 @@ def draw_fitrange(ax1, ax2, toy_psd, freqs, colors):
         ax2.vlines(*v_coords, color=color, **vline_dic)
 
 
-def annotate_fit_range(ax, xmin, xmax, height, ylow=None, yhigh=None,
+def annotate_range(ax, xmin, xmax, height, ylow=None, yhigh=None,
                        annotate_pos=True, annotation="log-diff"):
     """
-    Annotate fitting range.
+    Annotate fitting range or peak width.
 
     Parameters
     ----------
@@ -651,20 +651,21 @@ def annotate_fit_range(ax, xmin, xmax, height, ylow=None, yhigh=None,
         X-range minimum.
     xmax : float
         X-range maximum.
+    height : float
+        Position on y-axis of range.
     ylow : float, optional
         Position on y-axis to connect the vertical lines. If None, no vertical
         lines are drawn. The default is None.
     yhigh : float, optional
         Position on y-axis to connect the vertical lines. If None, no vertical
         lines are drawn. The default is None.
-    height : float
-        Position on y-axis of range.
-    annotate_middle : bool, optional
-        Whether to annotate the frequency in the middle of the range (prettier)
-        or if it is too small next to the range. The default is True.
-    annotate_range : bool, optional
-        Whether to annotate the range as min-max or the difference as max-min.
-        By default, the range min-max is annotated.
+    annotate_pos : bool, optional
+        Where to annotate.
+    annotate : bool, optional
+        The kind of annotation.
+        "diff": Print range.
+        "log-diff": Print range and logrange.
+        else: Print range1-range2
 
     Returns
     -------
@@ -700,9 +701,11 @@ def annotate_fit_range(ax, xmin, xmax, height, ylow=None, yhigh=None,
     if annotation == "diff":
         range_str = f"{xmax-xmin:.0f}Hz"
     elif annotation == "log-diff":
-        range_str = (f"{xmax-xmin:.0f}Hz"
-                     f"\n{(np.log10(xmax)-np.log10(xmin)):.2f}")
-        # replace by np.log10(xmax/xmin)
+        xdiff = xmax - xmin
+        if xdiff > 50:  # round large intervals
+            xdiff = np.round(xdiff, -1)
+        range_str = (f"{xdiff:.0f}Hz"
+                     f"\n{(np.log10(xmax/xmin)):.1f}")
     else:
         range_str = f"{xmin:.1f}-{xmax:.1f}Hz"
     ax.text(text_pos, text_height, s=range_str, **anno_dic)
@@ -738,9 +741,9 @@ ax.loglog(freq_a, toy_psd_a, c_sim)
 ax.loglog(freq0, psd_aperiodic_a, c_ap, zorder=0)
 draw_fitrange(ax_a11, ax_a12, toy_psd_a, freqs123, colors123)
 
-annotate_fit_range(ax, **fit_range_a11)
-annotate_fit_range(ax, **fit_range_a12)
-annotate_fit_range(ax, **fit_range_a13)
+annotate_range(ax, **fit_range_a11)
+annotate_range(ax, **fit_range_a12)
+annotate_range(ax, **fit_range_a13)
 
 # Set axes
 ax.text(s="a", **panel_labels, transform=ax.transAxes)
@@ -765,9 +768,9 @@ ax.loglog(freq_a, toy_psd_b, c_sim)
 ax.loglog(freq0, psd_aperiodic_b, c_ap, zorder=0)
 draw_fitrange(ax_a21, ax_a22, toy_psd_b, freqs123, colors123)
 
-annotate_fit_range(ax, **fit_range_a21)
-annotate_fit_range(ax, **fit_range_a22)
-annotate_fit_range(ax, **fit_range_a23)
+annotate_range(ax, **fit_range_a21)
+annotate_range(ax, **fit_range_a22)
+annotate_range(ax, **fit_range_a23)
 
 # Set axes
 y_minor = mpl.ticker.LogLocator(subs=np.arange(0, 1, 0.1), numticks=10)
@@ -790,9 +793,9 @@ ax.loglog(freq_a, toy_psd_c, c_sim)
 ax.loglog(freq0, psd_aperiodic_c, c_ap, zorder=0)
 draw_fitrange(ax_a31, ax_a32, toy_psd_c, freqs123, colors123)
 
-annotate_fit_range(ax, **fit_range_a31)
-annotate_fit_range(ax, **fit_range_a32)
-annotate_fit_range(ax, **fit_range_a33)
+annotate_range(ax, **fit_range_a31)
+annotate_range(ax, **fit_range_a32)
+annotate_range(ax, **fit_range_a33)
 
 # Set axes
 y_minor = mpl.ticker.LogLocator(subs=np.arange(0, 1, 0.1), numticks=10)
@@ -815,8 +818,8 @@ ax.loglog(freqs_sim_s, ap_sim_small_h1, c_IRASA1,
           label=r"$h_{max}$="f"{h_max_s}")
 
 # annotate freq bandwidth
-annotate_fit_range(ax, **anno_small1)
-annotate_fit_range(ax, **anno_small2)
+annotate_range(ax, **anno_small1)
+annotate_range(ax, **anno_small2)
 
 # Set axes
 y_minor = mpl.ticker.LogLocator(subs=np.arange(0, 1, 0.1), numticks=20)
@@ -839,8 +842,8 @@ ax.loglog(freqs_sim_m, ap_sim_med_h2, c_IRASA2,
           label=r"$h_{max}$="f"{h_max_m}")
 
 # annotate freq bandwidth
-annotate_fit_range(ax, **anno_med1)
-annotate_fit_range(ax, **anno_med2)
+annotate_range(ax, **anno_med1)
+annotate_range(ax, **anno_med2)
 
 # Set axes
 ax.set(**axes_b2)
@@ -863,8 +866,8 @@ ax.loglog(freqs_sim_l, ap_sim_large_h3, c_IRASA3,
           label=r"$h_{max}$="f"{h_max_l}")
 
 # annotate freq bandwidth
-annotate_fit_range(ax, **anno_large1)
-annotate_fit_range(ax, **anno_large2)
+annotate_range(ax, **anno_large1)
+annotate_range(ax, **anno_large2)
 
 # Set axes
 ax.set(**axes_b2)
