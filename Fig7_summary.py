@@ -39,7 +39,7 @@ c_low = "g--"
 
 
 # Paths
-data_path = "../data/Fig3/"
+data_path = "../data/Fig7/"
 fig_path = "../paper_figures/"
 fig_name = "Fig7_summary.pdf"
 
