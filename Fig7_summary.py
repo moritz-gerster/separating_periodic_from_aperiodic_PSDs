@@ -155,9 +155,16 @@ spec9_I = freq_I, 10**fm9_I, c_low
 # spec5_low = fm5.freqs, 10**fm5_low, c_low
 # spec9_low = fm9.freqs, 10**fm9_low, c_low
 # =============================================================================
-# %% Plot b)
 
-fig, ax = plt.subplots(2, 2, figsize=(8, 5))
+
+fig_width = 7.25  # inches
+panel_fontsize = 12
+panel_labels = dict(x=0, y=1.02, fontsize=panel_fontsize,
+                    fontdict=dict(fontweight="bold"))
+
+# %% Plot
+
+fig, ax = plt.subplots(2, 2, figsize=(fig_width, 5))
 
 ax[0, 1].set_title('"Easy" spectrum')
 ax[1, 1].set_title('"Hard" spectrum')
@@ -190,6 +197,9 @@ ax[0, 0].set(xlabel=None, ylabel="A.U. Voxel Data")
 ax[1, 0].set(xlabel=None, ylabel=None)
 ax[1, 0].set(xlabel="Frequency [Hz]", ylabel=r"PSD [$\mu$$V^2/Hz$]")
 ax[1, 1].set(xlabel="Frequency [Hz]", ylabel=None)
+ax[0, 0].text(s="a", **panel_labels, transform=ax[0, 0].transAxes)
+ax[1, 0].text(s="b", **panel_labels, transform=ax[1, 0].transAxes)
+
 plt.tight_layout()
 plt.savefig(fig_path + fig_name, bbox_inches="tight")
 plt.show()
