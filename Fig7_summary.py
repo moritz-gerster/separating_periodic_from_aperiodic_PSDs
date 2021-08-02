@@ -203,3 +203,4 @@ ax[1, 0].text(s="b", **panel_labels, transform=ax[1, 0].transAxes)
 plt.tight_layout()
 plt.savefig(fig_path + fig_name, bbox_inches="tight")
 plt.show()
+
