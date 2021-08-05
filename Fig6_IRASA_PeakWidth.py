@@ -6,7 +6,7 @@ from numpy.fft import irfft, rfftfreq
 import scipy as sp
 import scipy.signal as sig
 from pathlib import Path
-from noise_helper import irasa
+from helper import irasa
 try:
     from tqdm import trange
 except ImportError:
@@ -153,7 +153,7 @@ welch_params = dict(fs=srate, nperseg=nperseg)
 
 # Save Path
 fig_path = "../paper_figures/"
-fig_name = "Fig5_IRASA_PeakWidth.pdf"
+fig_name = "Fig6_PeakWidth.pdf"
 Path(fig_path).mkdir(parents=True, exist_ok=True)
 
 # File names

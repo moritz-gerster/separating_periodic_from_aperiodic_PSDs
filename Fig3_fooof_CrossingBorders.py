@@ -99,7 +99,7 @@ welch_params = dict(fs=srate, nperseg=nperseg)
 
 # Save Path
 fig_path = "../paper_figures/"
-fig_name = "Fig2_f_crossing.pdf"
+fig_name = "Fig3_Crossing.pdf"
 Path(fig_path).mkdir(parents=True, exist_ok=True)
 
 # Colors

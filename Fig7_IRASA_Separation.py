@@ -6,7 +6,7 @@ import scipy.signal as sig
 from scipy.signal import sawtooth
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from noise_helper import irasa
+from helper import irasa
 from fooof.sim.gen import gen_aperiodic
 
 
@@ -119,7 +119,7 @@ def IRASA_fit(data, freq_range, cond):
 # Paths
 data_path = "../data/Fig3/"
 fig_path = "../paper_figures/"
-fig_name = "Fig6_I_Separation.pdf"
+fig_name = "Fig7_Separation.pdf"
 
 # Colors
 c_empirical = "purple"

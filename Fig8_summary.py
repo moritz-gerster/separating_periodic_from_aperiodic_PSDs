@@ -23,7 +23,7 @@ from fooof import FOOOF
 import mne
 from mne.time_frequency import psd_welch
 from fooof.sim.gen import gen_aperiodic
-from noise_helper import irasa
+from helper import irasa
 supp = False
 
 
@@ -41,7 +41,7 @@ c_low = "g--"
 # Paths
 data_path = "../data/Fig7/"
 fig_path = "../paper_figures/"
-fig_name = "Fig7_summary.pdf"
+fig_name = "Fig8_Summary.pdf"
 
 fooof_params = dict(verbose=False)  # standard params
 
@@ -161,13 +161,16 @@ fig_width = 7.25  # inches
 panel_fontsize = 12
 panel_labels = dict(x=0, y=1.02, fontsize=panel_fontsize,
                     fontdict=dict(fontweight="bold"))
+panel_description = dict(x=0, y=1.02, fontsize=panel_fontsize)
 
 # %% Plot
 
-fig, ax = plt.subplots(2, 2, figsize=(fig_width, 5))
+fig, ax = plt.subplots(2, 2, figsize=(fig_width, 5), sharey="row")
 
-ax[0, 1].set_title('"Easy" spectrum')
-ax[1, 1].set_title('"Hard" spectrum')
+ax[0, 0].text(s='    "Easy" spectrum', **panel_description,
+              transform=ax[0, 0].transAxes)
+ax[1, 0].text(s='    "Hard" spectrum', **panel_description,
+              transform=ax[1, 0].transAxes)
 # lin
 ax[0, 0].semilogy(*spec5_real, label="Sub 5 MEG")  # + ch5)
 ax[1, 0].semilogy(*spec9_real, label="Sub 9 LFP")  # + ch9)

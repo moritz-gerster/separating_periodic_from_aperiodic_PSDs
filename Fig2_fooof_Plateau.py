@@ -169,7 +169,7 @@ c_ground = "grey"
 
 # Save Path
 fig_path = "../paper_figures/"
-fig_name = "Fig1_f_NoiseFloor.pdf"
+fig_name = "Fig2_Plateau.pdf"
 Path(fig_path).mkdir(parents=True, exist_ok=True)
 
 # %% Load data

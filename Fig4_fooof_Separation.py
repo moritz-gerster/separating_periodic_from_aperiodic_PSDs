@@ -124,8 +124,7 @@ def fooof_fit(psd: np.array, cond: str, freq: np.array,
 # Paths
 data_path = "../data/Fig3/"
 fig_path = "../paper_figures/"
-fig_name = "Fig3_f_Separation.pdf"
-fig_name_supp = "Fig3_f_Separation_SuppMat.pdf"
+fig_name = "Fig4_Separation.pdf"
 
 # Colors
 c_empirical = "purple"
@@ -481,4 +480,4 @@ labels[-1] += fr" $\beta=$={fm_sim_tuned.aperiodic_params_[1]:.2f}"
 ax.legend(handles[-1:], labels[-1:], fontsize=legend_fontsize)
 ax.text(s="d", **panel_labels, transform=ax.transAxes)
 
-plt.savefig(fig_path + "Supp_Fig3.pdf", bbox_inches="tight")
+plt.savefig(fig_path + fig_name[:-4] + "SuppMat.pdf", bbox_inches="tight")
