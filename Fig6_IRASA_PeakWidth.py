@@ -153,7 +153,7 @@ welch_params = dict(fs=srate, nperseg=nperseg)
 
 # Save Path
 fig_path = "../paper_figures/"
-fig_name = "Fig6_PeakWidth.pdf"
+fig_name = "Fig6_PeakWidth"
 Path(fig_path).mkdir(parents=True, exist_ok=True)
 
 # File names
@@ -483,7 +483,7 @@ yhigh_large2 = peak_psd_large_lower[np.argmin(np.abs(freq_large
 
 # %% Plot Params
 
-width = 7.25  # inches
+fig_width = 6.85  # inches
 panel_fontsize = 12
 legend_fontsize = 9
 label_fontsize = 9
@@ -586,24 +586,30 @@ axes_b2 = dict(xticks=xticks_b, xticklabels=xticks_b, yticks=yticks_b,
 height_b = ylim_b[0] * 4
 anno_small1 = dict(xmin=xmin_small_min1, xmax=xmin_small_max1,
                    ylow=ylow_small1, yhigh=yhigh_small1,
-                   height=height_b, annotate_pos="left", annotation="log-diff")
+                   height=height_b*10, annotate_pos="left",
+                   annotation="log-diff")
 anno_small2 = dict(xmin=xmin_small_min2, xmax=xmin_small_max2,
                    ylow=ylow_small2, yhigh=yhigh_small2,
-                   height=height_b, annotate_pos="left", annotation="log-diff")
+                   height=height_b*10, annotate_pos="below",
+                   annotation="log-diff_short")
 
 anno_med1 = dict(xmin=xmin_med_min1, xmax=xmin_med_max1,
                  ylow=ylow_med1, yhigh=yhigh_med1,
-                 height=height_b, annotate_pos="left", annotation="log-diff")
+                 height=height_b, annotate_pos="left",
+                 annotation="log-diff_short")
 anno_med2 = dict(xmin=xmin_med_min2, xmax=xmin_med_max2,
                  ylow=ylow_med2, yhigh=yhigh_med2,
-                 height=height_b, annotate_pos="left", annotation="log-diff")
+                 height=height_b, annotate_pos="left",
+                 annotation="log-diff_veryshort")
 
 anno_large1 = dict(xmin=xmin_large_min1, xmax=xmin_large_max1,
                    ylow=ylow_large1, yhigh=yhigh_large1,
-                   height=height_b, annotate_pos="left", annotation="log-diff")
+                   height=height_b, annotate_pos="left",
+                   annotation="log-diff_short")
 anno_large2 = dict(xmin=xmin_large_min2, xmax=xmin_large_max2,
                    ylow=ylow_large2, yhigh=yhigh_large2,
-                   height=height_b, annotate_pos="left", annotation="log-diff")
+                   height=height_b, annotate_pos="left",
+                   annotation="log-diff_veryshort")
 
 leg = dict(labelspacing=.1, loc=1, borderaxespad=0, borderpad=.1,
            handletextpad=.2, handlelength=2)
@@ -638,8 +644,88 @@ def draw_fitrange(ax1, ax2, toy_psd, freqs, colors):
         ax2.vlines(*v_coords, color=color, **vline_dic)
 
 
+# =============================================================================
+# def annotate_range(ax, xmin, xmax, height, ylow=None, yhigh=None,
+#                        annotate_pos=True, annotation="log-diff"):
+#     """
+#     Annotate fitting range or peak width.
+# 
+#     Parameters
+#     ----------
+#     ax : matplotlib.axes._subplots.AxesSubplot
+#         Ax to draw the lines.
+#     xmin : float
+#         X-range minimum.
+#     xmax : float
+#         X-range maximum.
+#     height : float
+#         Position on y-axis of range.
+#     ylow : float, optional
+#         Position on y-axis to connect the vertical lines. If None, no vertical
+#         lines are drawn. The default is None.
+#     yhigh : float, optional
+#         Position on y-axis to connect the vertical lines. If None, no vertical
+#         lines are drawn. The default is None.
+#     annotate_pos : bool, optional
+#         Where to annotate.
+#     annotate : bool, optional
+#         The kind of annotation.
+#         "diff": Print range.
+#         "log-diff": Print range and logrange.
+#         else: Print range1-range2
+# 
+#     Returns
+#     -------
+#     None.
+# 
+#     """
+#     text_pos = 10**((np.log10(xmin) + np.log10(xmax)) / 2)
+#     box_alpha = 1
+#     ha = "center"
+#     text_height = height
+#     if annotate_pos == "below":
+#         text_height = 1.5e-1 * height
+#         box_alpha = 0
+#     elif isinstance(annotate_pos, (int, float)):
+#         text_height *= annotate_pos
+#         box_alpha = 0
+#     elif annotate_pos == "left":
+#         box_alpha = 0
+#         ha = "right"
+#         text_pos = xmin * .9
+# 
+#     # Plot Values
+#     arrow_dic = dict(text="", xy=(xmin, height), xytext=(xmax, height),
+#                      arrowprops=dict(arrowstyle="|-|, widthA=.3, widthB=.3",
+#                                      shrinkA=0, shrinkB=0))
+#     anno_dic = dict(ha=ha, va="center", bbox=dict(fc="white", ec="none",
+#                     boxstyle="square,pad=0.2", alpha=box_alpha),
+#                     fontsize=annotation_fontsize)
+#     vline_dic = dict(color="k", lw=.5, ls=":")
+# 
+#     ax.annotate(**arrow_dic)
+# 
+#     if annotation == "diff":
+#         range_str = f"{xmax-xmin:.0f}Hz"
+#     elif annotation == "log-diff":
+#         xdiff = xmax - xmin
+#         if xdiff > 50:  # round large intervals
+#             xdiff = np.round(xdiff, -1)
+#         range_str = (f"{xdiff:.0f}Hz"
+#                      f"\n{(np.log10(xmax/xmin)):.1f}")
+#     else:
+#         range_str = f"{xmin:.1f}-{xmax:.1f}Hz"
+#     ax.text(text_pos, text_height, s=range_str, **anno_dic)
+# 
+#     if ylow and yhigh:
+#         ax.vlines(xmin, height, ylow, **vline_dic)
+#         ax.vlines(xmax, height, yhigh, **vline_dic)
+# =============================================================================
+
+
 def annotate_range(ax, xmin, xmax, height, ylow=None, yhigh=None,
-                       annotate_pos=True, annotation="log-diff"):
+                   annotate_pos=True, annotation="log-diff",
+                   annotation_fontsize=7):
     """
     Annotate fitting range or peak width.
 
@@ -704,8 +790,20 @@ def annotate_range(ax, xmin, xmax, height, ylow=None, yhigh=None,
         xdiff = xmax - xmin
         if xdiff > 50:  # round large intervals
             xdiff = np.round(xdiff, -1)
-        range_str = (f"{xdiff:.0f}Hz"
-                     f"\n{(np.log10(xmax/xmin)):.1f}")
+        range_str = (r"$\Delta f=$"f"{xdiff:.0f}Hz\n"
+                     r"$\Delta f_{log}=$"f"{(np.log10(xmax/xmin)):.1f} log(Hz)")
+    elif annotation == "log-diff_short":
+        xdiff = xmax - xmin
+        if xdiff > 50:  # round large intervals
+            xdiff = np.round(xdiff, -1)
+        range_str = (f"{xdiff:.0f}Hz\n"
+                     f"{(np.log10(xmax/xmin)):.1f} log(Hz)")
+    elif annotation == "log-diff_veryshort":
+        xdiff = xmax - xmin
+        if xdiff > 50:  # round large intervals
+            xdiff = np.round(xdiff, -1)
+        range_str = (f"{xdiff:.0f}\n"
+                     f"{(np.log10(xmax/xmin)):.1f}")
     else:
         range_str = f"{xmin:.1f}-{xmax:.1f}Hz"
     ax.text(text_pos, text_height, s=range_str, **anno_dic)
@@ -715,9 +813,10 @@ def annotate_range(ax, xmin, xmax, height, ylow=None, yhigh=None,
         ax.vlines(xmax, height, yhigh, **vline_dic)
 
 
+
 # %% Plot
 
-fig, ax = plt.subplots(3, 3, figsize=[width, 5.5],
+fig, ax = plt.subplots(3, 3, figsize=[fig_width, 5.5],
                        constrained_layout=True,
                        gridspec_kw=dict(height_ratios=[5, 4, 10]))
 
@@ -877,5 +976,6 @@ ax.set_yticklabels([], minor=True)
 ax.legend(**leg)
 
 
-plt.savefig(fig_path + fig_name, bbox_inches="tight")
+plt.savefig(fig_path + fig_name + ".pdf", bbox_inches="tight")
+plt.savefig(fig_path + fig_name + ".png", dpi=1000, bbox_inches="tight")
 plt.show()

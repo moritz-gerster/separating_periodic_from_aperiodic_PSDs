@@ -119,7 +119,7 @@ def IRASA_fit(data, freq_range, cond):
 # Paths
 data_path = "../data/Fig3/"
 fig_path = "../paper_figures/"
-fig_name = "Fig7_Separation.pdf"
+fig_name = "Fig7_Separation"
 
 # Colors
 c_empirical = "purple"
@@ -241,7 +241,7 @@ fit_post_sim_osc, lab_post_saw_osc = IRASA_fit(saw_post, freq_range, "post")
 
 # %% Plot params
 
-fig_width = 7.25  # inches
+fig_width = 6.85  # inches
 panel_fontsize = 12
 legend_fontsize = 9
 label_fontsize = 9
@@ -444,7 +444,8 @@ y_minor = mpl.ticker.LogLocator(subs=np.arange(0, 1, 0.1), numticks=10)
 ax.yaxis.set_minor_locator(y_minor)
 
 plt.tight_layout()
-plt.savefig(fig_path + fig_name, bbox_inches="tight")
+plt.savefig(fig_path + fig_name + ".pdf", bbox_inches="tight")
+plt.savefig(fig_path + fig_name + ".png", dpi=1000, bbox_inches="tight")
 plt.show()
 
 
@@ -600,155 +601,8 @@ ax[2, 2].patch.set_facecolor(c_post)
 ax[2, 2].patch.set_alpha(rect["alpha"])
 
 plt.tight_layout()
-plt.savefig(fig_path + fig_name[:-4] + "Supp_loglog.pdf", bbox_inches="tight")
+plt.savefig(fig_path + fig_name + "Supp_loglog.pdf",
+            bbox_inches="tight")
+plt.savefig(fig_path + fig_name + "Supp_loglog.png",
+            dpi=1000, bbox_inches="tight")
 plt.show()
-
-
-
-
-
-
-
-# =============================================================================
-# # %% Plot Semilog
-# 
-# fig, ax = plt.subplots(2, 3, figsize=[fig_width, 4.5], sharex=True,
-#                        sharey="row")
-# 
-# ax[0, 0].set_ylabel(r"EEG PSD [$\mu$$V^2$/Hz]")
-# 
-# ax[0, 0].set_title("Pre")
-# ax[0, 0].semilogy(freqs, ap_pre[0], label="aperiodic")
-# ax[0, 0].semilogy(freqs, osc_pre[0], label="periodic")
-# ax[0, 0].semilogy(freqs, 10**ap_fit_pre, label=fr"$\beta=${exp_pre:.2f}")
-# ax[0, 0].legend()
-# 
-# ax[0, 1].set_title("Seiz")
-# ax[0, 1].semilogy(freqs, ap_seiz[0])
-# ax[0, 1].semilogy(freqs, osc_seiz[0])
-# ax[0, 1].semilogy(freqs, 10**ap_fit_seiz, label=fr"$\beta=${exp_seiz:.2f}")
-# ax[0, 1].legend()
-# 
-# ax[0, 2].set_title("Post")
-# ax[0, 2].semilogy(freqs, ap_post[0])
-# ax[0, 2].semilogy(freqs, osc_post[0])
-# ax[0, 2].semilogy(freqs, 10**ap_fit_post, label=fr"$\beta=${exp_post:.2f}")
-# ax[0, 2].legend()
-# 
-# ax[1, 0].set_ylabel("Simulated PSD [a.u.]")
-# 
-# ax[1, 0].semilogy(freqs, ap_saw_pre[0])
-# ax[1, 0].semilogy(freqs, osc_saw_pre[0])
-# ax[1, 0].semilogy(freqs, 10**ap_fit_saw_pre,
-#                 label=fr"$\beta=${exp_saw_pre:.2f}")
-# ax[1, 0].legend()
-# ax[1, 0].set_xlabel("Frequency [Hz]")
-# 
-# ax[1, 1].semilogy(freqs, ap_saw_seiz[0])
-# ax[1, 1].semilogy(freqs, osc_saw_seiz[0])
-# ax[1, 1].semilogy(freqs, 10**ap_fit_saw_seiz,
-#                 label=fr"$\beta=${exp_saw_seiz:.2f}")
-# ax[1, 1].legend()
-# ax[1, 1].set_xlabel("Frequency [Hz]")
-# 
-# ax[1, 2].semilogy(freqs, ap_saw_post[0])
-# ax[1, 2].semilogy(freqs, osc_saw_post[0])
-# ax[1, 2].semilogy(freqs, 10**ap_fit_saw_post,
-#                 label=fr"$\beta=${exp_saw_post:.2f}")
-# ax[1, 2].legend()
-# ax[1, 2].set_xlabel("Frequency [Hz]")
-# 
-# # Add colored rectangles
-# ax[0, 0].patch.set_facecolor(c_pre)
-# ax[0, 0].patch.set_alpha(rect["alpha"])
-# ax[1, 0].patch.set_facecolor(c_pre)
-# ax[1, 0].patch.set_alpha(rect["alpha"])
-# 
-# ax[0, 1].patch.set_facecolor(c_seiz)
-# ax[0, 1].patch.set_alpha(rect["alpha"])
-# ax[1, 1].patch.set_facecolor(c_seiz)
-# ax[1, 1].patch.set_alpha(rect["alpha"])
-# 
-# ax[0, 2].patch.set_facecolor(c_post)
-# ax[0, 2].patch.set_alpha(rect["alpha"])
-# ax[1, 2].patch.set_facecolor(c_post)
-# ax[1, 2].patch.set_alpha(rect["alpha"])
-# 
-# plt.tight_layout()
-# plt.savefig(fig_path + fig_name[:-4] + "Supp_semilog.pdf", bbox_inches="tight")
-# plt.show()
-# 
-# 
-# # %% Plot Linear
-# 
-# mask = (freqs >= 2) & (freqs <=15)
-# 
-# fig, ax = plt.subplots(2, 3, figsize=[fig_width, 4.5], sharex=True,
-#                        sharey="row")
-# 
-# ax[0, 0].set_ylabel(r"EEG PSD [$\mu$$V^2$/Hz]")
-# 
-# ax[0, 0].set_title("Pre")
-# ax[0, 0].plot(freqs[mask], ap_pre[0][mask], label="aperiodic")
-# ax[0, 0].plot(freqs[mask], osc_pre[0][mask], label="periodic")
-# ax[0, 0].plot(freqs[mask], 10**ap_fit_pre[mask], label=fr"$\beta=${exp_pre:.2f}")
-# ax[0, 0].legend()
-# 
-# 
-# 
-# ax[0, 1].set_title("Seiz")
-# ax[0, 1].plot(freqs[mask], ap_seiz[0][mask])
-# ax[0, 1].plot(freqs[mask], osc_seiz[0][mask])
-# ax[0, 1].plot(freqs[mask], 10**ap_fit_seiz[mask], label=fr"$\beta=${exp_seiz:.2f}")
-# ax[0, 1].legend()
-# 
-# ax[0, 2].set_title("Post")
-# ax[0, 2].plot(freqs[mask], ap_post[0][mask])
-# ax[0, 2].plot(freqs[mask], osc_post[0][mask])
-# ax[0, 2].plot(freqs[mask], 10**ap_fit_post[mask], label=fr"$\beta=${exp_post:.2f}")
-# ax[0, 2].legend()
-# 
-# ax[1, 0].set_ylabel("Simulated PSD [a.u.]")
-# 
-# ax[1, 0].plot(freqs[mask], ap_saw_pre[0][mask])
-# ax[1, 0].plot(freqs[mask], osc_saw_pre[0][mask])
-# ax[1, 0].plot(freqs[mask], 10**ap_fit_saw_pre[mask],
-#                 label=fr"$\beta=${exp_saw_pre:.2f}")
-# ax[1, 0].legend()
-# ax[1, 0].set_xlabel("Frequency [Hz]")
-# 
-# ax[1, 1].plot(freqs[mask], ap_saw_seiz[0][mask])
-# ax[1, 1].plot(freqs[mask], osc_saw_seiz[0][mask])
-# ax[1, 1].plot(freqs[mask], 10**ap_fit_saw_seiz[mask],
-#                 label=fr"$\beta=${exp_saw_seiz:.2f}")
-# ax[1, 1].legend()
-# ax[1, 1].set_xlabel("Frequency [Hz]")
-# 
-# ax[1, 2].plot(freqs[mask], ap_saw_post[0][mask])
-# ax[1, 2].plot(freqs[mask], osc_saw_post[0][mask])
-# ax[1, 2].plot(freqs[mask], 10**ap_fit_saw_post[mask],
-#                 label=fr"$\beta=${exp_saw_post:.2f}")
-# ax[1, 2].legend()
-# ax[1, 2].set_xlabel("Frequency [Hz]")
-# 
-# # Add colored rectangles
-# ax[0, 0].patch.set_facecolor(c_pre)
-# ax[0, 0].patch.set_alpha(rect["alpha"])
-# ax[1, 0].patch.set_facecolor(c_pre)
-# ax[1, 0].patch.set_alpha(rect["alpha"])
-# 
-# ax[0, 1].patch.set_facecolor(c_seiz)
-# ax[0, 1].patch.set_alpha(rect["alpha"])
-# ax[1, 1].patch.set_facecolor(c_seiz)
-# ax[1, 1].patch.set_alpha(rect["alpha"])
-# 
-# ax[0, 2].patch.set_facecolor(c_post)
-# ax[0, 2].patch.set_alpha(rect["alpha"])
-# ax[1, 2].patch.set_facecolor(c_post)
-# ax[1, 2].patch.set_alpha(rect["alpha"])
-# 
-# plt.tight_layout()
-# plt.savefig(fig_path + fig_name[:-4] + "Supp_linear.pdf", bbox_inches="tight")
-# plt.show()
-# 
-# =============================================================================

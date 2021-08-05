@@ -12,7 +12,7 @@ from fooof.plts.spectra import plot_spectrum
 from fooof_modified_MG import FOOOF, plot_annotated_peak_search_MG
 # from fooof_fm_MG import plot_fm_lin_MG
 # import matplotlib.gridspec as gridspec
-from matplotlib.patches import ConnectionPatch
+# from matplotlib.patches import ConnectionPatch
 from helper import irasa
 import fractions
 try:
@@ -110,7 +110,7 @@ welch_params_I = dict(fs=srate, nperseg=win_sec*srate)
 
 # Save Path
 fig_path = "../paper_figures/"
-fig_name = "Fig0_Intro.pdf"
+fig_name = "Fig1_Intro"
 Path(fig_path).mkdir(parents=True, exist_ok=True)
 
 
@@ -276,7 +276,7 @@ psd_median = np.median(psds_resampled, axis=0)
 
 # %% Plot Params
 
-fig_width = 7.25  # inches
+fig_width = 6.85  # inches
 panel_fontsize = 7
 legend_fontsize = 5
 # label_fontsize = 1
@@ -1131,6 +1131,6 @@ ax_fooof3.annotate(text="", xy=(1.5, .6),
 # =============================================================================
 # ax_inp_PSD.text(s="Initial fit", x=1.05, y=.47, transform=ax_inp_PSD.transAxes)
 
-plt.savefig(fig_path + "Fig1_Intro.pdf", bbox_inches="tight")
+plt.savefig(fig_path + fig_name + ".pdf", bbox_inches="tight")
+plt.savefig(fig_path + fig_name + ".png", dpi=1000, bbox_inches="tight")
 plt.show()
-

@@ -173,7 +173,7 @@ welch_params = dict(fs=srate, nperseg=nperseg)
 
 # Save Path
 fig_path = "../paper_figures/"
-fig_name = "Fig5_FreqRange.pdf"
+fig_name = "Fig5_FreqRange"
 Path(fig_path).mkdir(parents=True, exist_ok=True)
 
 # Litvak file names
@@ -514,7 +514,7 @@ plot_fooof_high = (fm.freqs, 10**fit, c_fooof)
 
 # %% Plot Params
 
-width = 7.25  # inches
+fig_width = 6.85  # inches
 panel_fontsize = 12
 legend_fontsize = 9
 label_fontsize = 9
@@ -639,7 +639,7 @@ def annotate_fit_range(ax, xmin, xmax, ylow, yhigh, height,
 
 
 # %% Plot
-fig = plt.figure(figsize=[width, 5.5], constrained_layout=True)
+fig = plt.figure(figsize=[fig_width, 5.5], constrained_layout=True)
 
 gs0 = gridspec.GridSpec(2, 1, figure=fig, height_ratios=[1, 1])
 
@@ -829,5 +829,6 @@ yhigh = plot_IRASA_high[1][-1]
 annotate_fit_range(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
                    height=height, annotate_middle=False)
 
-plt.savefig(fig_path + fig_name, bbox_inches="tight")
+plt.savefig(fig_path + fig_name + ".pdf", bbox_inches="tight")
+plt.savefig(fig_path + fig_name + ".png", dpi=1000, bbox_inches="tight")
 plt.show()

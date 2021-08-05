@@ -41,7 +41,7 @@ c_low = "g--"
 # Paths
 data_path = "../data/Fig7/"
 fig_path = "../paper_figures/"
-fig_name = "Fig8_Summary.pdf"
+fig_name = "Fig8_Summary"
 
 fooof_params = dict(verbose=False)  # standard params
 
@@ -157,7 +157,7 @@ spec9_I = freq_I, 10**fm9_I, c_low
 # =============================================================================
 
 
-fig_width = 7.25  # inches
+fig_width = 6.85  # inches
 panel_fontsize = 12
 panel_labels = dict(x=0, y=1.02, fontsize=panel_fontsize,
                     fontdict=dict(fontweight="bold"))
@@ -204,6 +204,7 @@ ax[0, 0].text(s="a", **panel_labels, transform=ax[0, 0].transAxes)
 ax[1, 0].text(s="b", **panel_labels, transform=ax[1, 0].transAxes)
 
 plt.tight_layout()
-plt.savefig(fig_path + fig_name, bbox_inches="tight")
+plt.savefig(fig_path + fig_name + ".pdf", bbox_inches="tight")
+plt.savefig(fig_path + fig_name + ".png", dpi=1000, bbox_inches="tight")
 plt.show()
 

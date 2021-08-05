@@ -169,7 +169,7 @@ c_ground = "grey"
 
 # Save Path
 fig_path = "../paper_figures/"
-fig_name = "Fig2_Plateau.pdf"
+fig_name = "Fig2_Plateau"
 Path(fig_path).mkdir(parents=True, exist_ok=True)
 
 # %% Load data
@@ -493,7 +493,7 @@ delta_power = [plot_delta_low, plot_delta_med, plot_delta_high]
 colors_c = [c_low, c_med, c_high]
 # % Plot Params
 
-width = 7.25  # inches
+fig_width = 6.85  # inches
 panel_fontsize = 12
 legend_fontsize = 9
 label_fontsize = 9
@@ -518,7 +518,7 @@ psd_aperiodic_kwargs = dict(lw=0.5)
 # %% Plot
 
 # Prepare Gridspec
-fig = plt.figure(figsize=[width, 6.5], constrained_layout=True)
+fig = plt.figure(figsize=[fig_width, 6.5], constrained_layout=True)
 
 gs0 = gridspec.GridSpec(3, 1, figure=fig, height_ratios=[10, 1, 10])
 
@@ -647,5 +647,6 @@ for i, ax in enumerate(c_axes):
 leg = ax_leg.legend(handles, labels, **leg_c)
 leg.set_in_layout(False)
 
-plt.savefig(fig_path + fig_name, bbox_inches="tight")
+plt.savefig(fig_path + fig_name + ".pdf", bbox_inches="tight")
+plt.savefig(fig_path + fig_name + ".png", dpi=1000, bbox_inches="tight")
 plt.show()

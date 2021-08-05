@@ -124,7 +124,7 @@ def fooof_fit(psd: np.array, cond: str, freq: np.array,
 # Paths
 data_path = "../data/Fig3/"
 fig_path = "../paper_figures/"
-fig_name = "Fig4_Separation.pdf"
+fig_name = "Fig4_Separation"
 
 # Colors
 c_empirical = "purple"
@@ -222,9 +222,19 @@ fit_pre_sim, lab_pre_saw = fooof_fit(psd_saw_pre, "pre ", **calc_fooof)
 fit_seiz_sim, lab_seiz_saw = fooof_fit(psd_saw_seiz, "seiz", **calc_fooof)
 fit_post_sim, lab_post_saw = fooof_fit(psd_saw_post, "post", **calc_fooof)
 
+# %% Add ground truth
+
+# =============================================================================
+# ground_truth = gen_aperiodic(range(1, 130), np.array([saw_pre[1], slope]))
+# c_ground_a = "k"
+# ground = "ground"
+# line_ground = dict(lw=.5, ls="--", zorder=5)
+# plot_ground = (freq, 10**ground_truth, c_ground_a)
+# =============================================================================
+
 # %% Plot params
 
-fig_width = 7.25  # inches
+fig_width = 6.85  # inches
 panel_fontsize = 12
 legend_fontsize = 9
 label_fontsize = 9
@@ -388,6 +398,12 @@ ax.loglog(freq, fit_pre_sim, "--", c=c_pre, lw=2, label=lab_pre_saw)
 ax.loglog(freq, fit_seiz_sim, "--", c=c_seiz, lw=2, label=lab_seiz_saw)
 ax.loglog(freq, fit_post_sim, "--", c=c_post, lw=2, label=lab_post_saw)
 
+# =============================================================================
+# # Plot ground truth
+# ax.loglog(*plot_ground, **line_ground,
+#           label=fr"$\beta_{{{ground}}}$={slope:.2f}")
+# =============================================================================
+
 # Set axes
 ax.set(**axes_b2)
 # ax.legend(labelspacing=0.3)
@@ -398,7 +414,8 @@ y_minor = mpl.ticker.LogLocator(subs=np.arange(0, 1, 0.1), numticks=10)
 ax.yaxis.set_minor_locator(y_minor)
 
 plt.tight_layout()
-plt.savefig(fig_path + fig_name, bbox_inches="tight")
+plt.savefig(fig_path + fig_name + ".pdf", bbox_inches="tight")
+plt.savefig(fig_path + fig_name + ".png", dpi=1000, bbox_inches="tight")
 plt.show()
 
 
@@ -480,4 +497,5 @@ labels[-1] += fr" $\beta=$={fm_sim_tuned.aperiodic_params_[1]:.2f}"
 ax.legend(handles[-1:], labels[-1:], fontsize=legend_fontsize)
 ax.text(s="d", **panel_labels, transform=ax.transAxes)
 
-plt.savefig(fig_path + fig_name[:-4] + "SuppMat.pdf", bbox_inches="tight")
+plt.savefig(fig_path + fig_name + "_SuppMat.pdf", bbox_inches="tight")
+plt.savefig(fig_path + fig_name + "_SuppMat.png", dpi=1000, bbox_inches="tight")

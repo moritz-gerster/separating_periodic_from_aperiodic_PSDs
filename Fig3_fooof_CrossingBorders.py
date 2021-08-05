@@ -99,7 +99,7 @@ welch_params = dict(fs=srate, nperseg=nperseg)
 
 # Save Path
 fig_path = "../paper_figures/"
-fig_name = "Fig3_Crossing.pdf"
+fig_name = "Fig3_Crossing"
 Path(fig_path).mkdir(parents=True, exist_ok=True)
 
 # Colors
@@ -384,7 +384,7 @@ colors_c = [c_low, c_med, c_high]
 
 # %% Plot params
 
-width = 7.25  # inches
+fig_width = 6.85  # inches
 panel_fontsize = 12
 legend_fontsize = 9
 label_fontsize = 9
@@ -477,7 +477,7 @@ arr_pos_high = dict(text="", xy=arr_head_high, xytext=arr_tail_high,
 # %% Plot
 
 # Prepare Gridspec
-fig = plt.figure(figsize=[width, 6.5], constrained_layout=True)
+fig = plt.figure(figsize=[fig_width, 6.5], constrained_layout=True)
 
 gs0 = gridspec.GridSpec(3, 1, figure=fig, height_ratios=[10, 1, 10])
 
@@ -632,13 +632,14 @@ leg.set_in_layout(False)
 # for lh in leg.legendHandles:
 #    lh.set_alpha(1)
 
-plt.savefig(fig_path + fig_name, bbox_inches="tight")
+plt.savefig(fig_path + fig_name + ".pdf", bbox_inches="tight")
+plt.savefig(fig_path + fig_name + ".png", dpi=1000, bbox_inches="tight")
 plt.show()
 
 # %% Plot Supp Mat b
 
 
-fig, axes = plt.subplots(2, 4, figsize=[width, 4])
+fig, axes = plt.subplots(2, 4, figsize=[fig_width, 4])
 for i in range(4):
     ax = axes[0, i]
     kwargs = dict(add_legend=False,
@@ -675,7 +676,8 @@ for i in range(4):
     ax.set_xlabel(xlabel, fontsize=tick_fontsize)
     ax.set_ylabel(ylabel, fontsize=tick_fontsize)
 plt.tight_layout()
-plt.savefig(fig_path + fig_name[:-4] + "SuppB.pdf", bbox_inches="tight")
+plt.savefig(fig_path + fig_name + "_SuppB.png", dpi=1000, bbox_inches="tight")
+plt.savefig(fig_path + fig_name + "_SuppB.pdf", bbox_inches="tight")
 plt.show()
 
 
@@ -706,5 +708,6 @@ ax.set(xlabel="Simulated Delta Power [a.u.]",
        ylabel="fooof fit y-intercept [a.u.]")
 ax.set_title("Delta power correlates with y-intercept")
 ax.legend(title="Pearson correlation")
-plt.savefig(fig_path + fig_name[:-4] + "SuppC.pdf", bbox_inches="tight")
+plt.savefig(fig_path + fig_name + "_SuppC.png", dpi=1000, bbox_inches="tight")
+plt.savefig(fig_path + fig_name + "_SuppC.pdf", bbox_inches="tight")
 plt.show()
