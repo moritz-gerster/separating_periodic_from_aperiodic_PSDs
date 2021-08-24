@@ -1,23 +1,4 @@
-#%%
-"""
-Fooof needs clearly separable (and ideally Gaussian) peaks.
-
-a)
-1) show pure 1/f
-2) show clearly separable Gaussians oscillations
-3) show sum and successful fooof fit
-
-2) show strongly overlappy oscillations by adding intermediate oscillations
-    in the middle (dashed)
-3) fooof underestimates 1/f because 1/f is hidden below oscillations
-
-b)
-1) show easy spectrum with fooof fit and 2 other possibilites - CHECK
-2) show "hard" spectrum with fooof fit and 2 other possibilites - CHECK
-
-c)
-use epilepsy plot but make nice - CHECK
-"""
+# %%
 import numpy as np
 import matplotlib.pyplot as plt
 from fooof import FOOOF
@@ -26,6 +7,7 @@ from mne.time_frequency import psd_welch
 from fooof.sim.gen import gen_aperiodic
 from helper import irasa
 supp = False
+
 
 def annotate_range(ax, xmin, xmax, height, ylow=None, yhigh=None,
                    annotate_pos=True, annotation="log-diff",
@@ -104,6 +86,7 @@ def annotate_range(ax, xmin, xmax, height, ylow=None, yhigh=None,
         ax.vlines(xmin, height, ylow, **vline_dic)
         ax.vlines(xmax, height, yhigh, **vline_dic)
 
+
 def detect_noise_floor(freq, psd, f_start, f_range=50, thresh=0.05,
                        step=1, reverse=False,
                        ff_kwargs=dict(verbose=False, max_n_peaks=1)):
@@ -155,6 +138,7 @@ def detect_noise_floor(freq, psd, f_start, f_range=50, thresh=0.05,
         fm.fit(freq, psd, freq_range)
         exp = fm.get_params('aperiodic_params', 'exponent')
     return f_start + f_range // 2
+
 
 # %% Parameters b)
 
@@ -245,7 +229,8 @@ fm5_straight = gen_aperiodic(fm5.freqs, np.array([offset5, a5_straight]))
 fm9_straight = gen_aperiodic(fm9.freqs, np.array([offset9, a9_straight]))
 
 # IRASA fit
-get_data = dict(start=srate_pd//2, stop=srate_pd*180, reject_by_annotation="NaN")
+get_data = dict(start=srate_pd//2, stop=srate_pd*180,
+                reject_by_annotation="NaN")
 sub5_I = sub5.get_data(**get_data)
 sub9_I = sub9.get_data(**get_data)
 
@@ -265,13 +250,13 @@ fm9_I = gen_aperiodic(freq_I, np.array([off9_I, a9_I]))
 # =============================================================================
 # offset5_low = np.log10(spec5[freq == freq_range[0]][0] * 0.5)
 # DeltaY5_low = offset5_low - endpoint5
-# 
+#
 # offset9_low = np.log10(spec9[freq == freq_range[0]][0] * 0.5)
 # DeltaY9_low = offset9_low - endpoint9
-# 
+#
 # a5_low = DeltaY5_low / DeltaX
 # a9_low = DeltaY9_low / DeltaX
-# 
+#
 # fm5_low = gen_aperiodic(fm5.freqs, np.array([offset5_low, a5_low]))
 # fm9_low = gen_aperiodic(fm9.freqs, np.array([offset9_low, a9_low]))
 # =============================================================================
@@ -353,16 +338,16 @@ rect_c = dict(xy=rec_xy, width=rec_width, height=rec_height,
 ax[1, 1].add_patch(plt.Rectangle(**rect_c))
 
 # Add Plateau annotation
-# ax[1, 0].hlines(spec9[noise_start], noise_start, freq[-1], color="k", 
+# ax[1, 0].hlines(spec9[noise_start], noise_start, freq[-1], color="k",
 #                linewidth=1)
-ax[1, 1].hlines(spec9[noise_start], noise_start, freq[-1], color="k", 
+ax[1, 1].hlines(spec9[noise_start], noise_start, freq[-1], color="k",
                 linewidth=1)
 ax[1, 1].annotate(s="Early\nPlateau\nonset",
                   xy=(noise_start, spec9[noise_start]),
                   xytext=(noise_start, spec9[noise_start]*20),
                   arrowprops=dict(arrowstyle="->", shrinkB=5),
                   color="k", fontsize=8,
-                  ha="left", 
+                  ha="left",
                   verticalalignment="center")
 
 # Add Peak width annotation
@@ -392,24 +377,19 @@ annotate_range(ax[1, 1], xmin2, xmax2, height2, annotate_pos=.93)
 # Add overlaps
 # 2. Peak stimmt nicht
 # def gauss(fm: FOOOF, n_peak: int) -> np.ndarray:
-    
 #     """Plot Gaussian peaks fitted with fooof.
-
 #     Args:
 #         mean (float): center frequency
 #         height (float): height
 #         std (float): standard deviation
 #         freq (nd.array): Freq array
-
 #     Returns:
 #         nd.array: Gaussian function for plotting.
 #     """
 #     mean, height, std = fm9.gaussian_params_[n_peak]
 #     gauss_fit = height * np.exp(-(fm.freqs-mean)**2 / (2 * std**2))
 #     aperiodic = 10**gen_aperiodic(fm.freqs, fm.aperiodic_params_)
-
 #     return aperiodic + gauss_fit
-
 # gauss_fit1 = gauss(fm9, 0)
 # gauss_fit2 = gauss(fm9, 1)
 # ax[1, 1].plot(fm9.freqs, gauss_fit1)
@@ -436,20 +416,21 @@ x_line = -25
 ax[0, 0].annotate(s="",
                   xy=(x_line, spec5[0]),
                   xytext=(x_line, spec5[-1]),
-                  arrowprops=dict(arrowstyle="|-|,widthA=.5,widthB=.5", lw=1.3),
+                  arrowprops=dict(arrowstyle="|-|,widthA=.5,widthB=.5",
+                                  lw=1.3),
                   ha="center")
 ax[0, 0].text(s=rf"$\Delta PSD\approx 10^{{{ord_magn5}}}$", x=30,
-              y=np.sqrt(spec5[0]*spec5[-1]), va="center", fontsize=8) 
+              y=np.sqrt(spec5[0]*spec5[-1]), va="center", fontsize=8)
 
 ord_magn9 = int(np.round(np.log10(spec9[0]/spec9[-1])))
 x_line = -25
 ax[1, 0].annotate(s="",
                   xy=(x_line, spec9[0]),
                   xytext=(x_line, spec9[-1]),
-                  arrowprops=dict(arrowstyle="|-|,widthA=.5,widthB=.5", lw=1.3),
-                  ha="center")
+                  arrowprops=dict(arrowstyle="|-|,widthA=.5,widthB=.5",
+                                  lw=1.3), ha="center")
 ax[1, 0].text(s=rf"$\Delta PSD\approx 10^{{{ord_magn9}}}$", x=55,
-              y=np.sqrt(spec9[0]*spec9[-1]), va="center", fontsize=8) 
+              y=np.sqrt(spec9[0]*spec9[-1]), va="center", fontsize=8)
 
 xlim5 = ax[0, 0].get_xlim()
 xlim9 = ax[1, 0].get_xlim()
@@ -464,7 +445,3 @@ plt.tight_layout()
 plt.savefig(fig_path + fig_name + ".pdf", bbox_inches="tight")
 plt.savefig(fig_path + fig_name + ".png", dpi=1000, bbox_inches="tight")
 plt.show()
-
-
-
-# %%

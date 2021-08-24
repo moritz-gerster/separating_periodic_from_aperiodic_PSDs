@@ -22,7 +22,7 @@ from pathlib import Path
 import mne
 from fooof import FOOOF
 # from fooof.sim.gen import gen_aperiodic
-import matplotlib.gridspec as gridspec
+# import matplotlib.gridspec as gridspec
 from helper import irasa
 try:
     from tqdm import trange
@@ -119,7 +119,7 @@ def osc_signals(slope, periodic_params=None, nlv=None, highpass=True,
 #         error = np.abs(toy_slope - exp)
 #         fit_errors.append(error)
 #     return fit_errors
-# 
+#
 # =============================================================================
 
 # %% PARAMETERS
@@ -251,9 +251,12 @@ band_h2 = (highpass * h_max2, lowpass / h_max2)
 N_h = 16
 # N_h = 5  # increase in the end
 
-irasa_params1 = dict(sf=srate, band=band_h1, hset=np.linspace(1.1, h_max1, N_h))
-irasa_params2 = dict(sf=srate, band=band_h2, hset=np.linspace(1.1, h_max2, N_h))
-# irasa_params3 = dict(sf=srate, band=band_h3, hset=np.linspace(1.1, h_max3, N_h))
+irasa_params1 = dict(sf=srate, band=band_h1,
+                     hset=np.linspace(1.1, h_max1, N_h))
+irasa_params2 = dict(sf=srate, band=band_h2,
+                     hset=np.linspace(1.1, h_max2, N_h))
+# irasa_params3 = dict(sf=srate, band=band_h3,
+# hset=np.linspace(1.1, h_max3, N_h))
 
 IRASA_small_h1 = irasa(MEG_raw[0], **irasa_params1)
 IRASA_med_h1 = irasa(MEG_raw[1], **irasa_params1)
@@ -289,11 +292,15 @@ IRASA_m_h2_long = irasa(MEG_raw[1], **irasa_params2)
 IRASA_l_h2_long = irasa(LFP_raw, **irasa_params2)
 # IRASA_l_h3_long = irasa(LFP_raw, **irasa_params3)
 
-freq_I_long, ap_med_h1_long, per_med_h1_long, params_med_h1_long = IRASA_med_h1_long
-_, ap_large_h1_long, per_large_h1_long, params_large_h1_long = IRASA_large_h1_long
+(freq_I_long, ap_med_h1_long,
+ per_med_h1_long, params_med_h1_long) = IRASA_med_h1_long
+(_, ap_large_h1_long,
+ per_large_h1_long, params_large_h1_long) = IRASA_large_h1_long
 _, ap_med_h2_long, per_med_h2_long, params_med_h2_long = IRASA_m_h2_long
-_, ap_large_h2_long, per_large_h2_long, params_large_h2_long = IRASA_l_h2_long
-# _, ap_large_h3_long, per_large_h3_long, params_large_h3_long = IRASA_l_h3_long
+(_, ap_large_h2_long,
+ per_large_h2_long, params_large_h2_long) = IRASA_l_h2_long
+# (_, ap_large_h3_long,
+# per_large_h3_long, params_large_h3_long) = IRASA_l_h3_long
 
 plot_ap_med_h1_long = (freq_I_long, ap_med_h1_long[0], c_IRASA1)
 plot_ap_large_h1_long = (freq_I_long, ap_large_h1_long[0], c_IRASA1)
@@ -417,6 +424,7 @@ def annotate_range(ax, xmin, xmax, height, ylow=None, yhigh=None,
         ax.vlines(xmin, height, ylow, **vline_dic)
         ax.vlines(xmax, height, yhigh, **vline_dic)
 
+
 # %% Plot
 fig, axes = plt.subplots(1, 3, figsize=[width, 2.7])
 
@@ -451,7 +459,7 @@ ax.legend(loc=1, borderaxespad=0)
 # c2
 ax = axes[1]
 ax.loglog(*plot_med, label="Mag")
-ax.loglog(*plot_ap_med_h1)#, label=r"$h_{max}$ = "f"{h_max1}")
+ax.loglog(*plot_ap_med_h1)  # label=r"$h_{max}$ = "f"{h_max1}")
 ax.loglog(*plot_ap_med_h1_long, ls="--", alpha=alpha_long)
 # ax.loglog(*plot_ap_fit_med_h1, label=f"a={med_h1_slope:.2f}")
 
@@ -483,18 +491,18 @@ ax.set_xticklabels(xticks_b)
 # c3
 ax = axes[2]
 ax.loglog(*plot_large, label="LFP")
-ax.loglog(*plot_ap_large_h1)#, label=r"$h_{max}$ = "f"{h_max1}")
+ax.loglog(*plot_ap_large_h1)  # label=r"$h_{max}$ = "f"{h_max1}")
 ax.loglog(*plot_ap_large_h1_long, ls="--", alpha=alpha_long)
 # ax.loglog(*plot_ap_fit_large_h1, label=f"a={large_h1_slope:.2f}")
 
 ax.loglog(*plot_large_low, alpha=.5)
-ax.loglog(*plot_ap_large_h2)#, label=r"$h_{max}$ = "f"{h_max2}")
+ax.loglog(*plot_ap_large_h2)  # label=r"$h_{max}$ = "f"{h_max2}")
 ax.loglog(*plot_ap_large_h2_long, ls="--", alpha=alpha_long)
 # ax.loglog(*plot_ap_fit_large_h2, label=f"a={large_h2_slope:.2f}")
 
-#ax.loglog(*plot_large_lower, alpha=.5)
-#ax.loglog(*plot_ap_large_h3, label=r"$h_{max}$ = "f"{h_max3}")
-#ax.loglog(*plot_ap_large_h3_long, ls="--", alpha=alpha_long)
+# ax.loglog(*plot_large_lower, alpha=.5)
+# ax.loglog(*plot_ap_large_h3, label=r"$h_{max}$ = "f"{h_max3}")
+# ax.loglog(*plot_ap_large_h3_long, ls="--", alpha=alpha_long)
 # ax.loglog(*plot_ap_fit_large_h3, label=f"a={large_h3_slope:.2f}")
 ax.set_ylabel(ylabel_f)
 ax.set_xlabel(xlabel)
