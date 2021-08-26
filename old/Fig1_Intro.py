@@ -1,3 +1,4 @@
+# %%
 """Explain fooof and IRASA."""
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -1134,3 +1135,5 @@ ax_fooof3.annotate(text="", xy=(1.5, .6),
 plt.savefig(fig_path + fig_name + ".pdf", bbox_inches="tight")
 plt.savefig(fig_path + fig_name + ".png", dpi=1000, bbox_inches="tight")
 plt.show()
+
+# %%

@@ -1,123 +1,16 @@
-"""Fooof needs clearly separable (and ideally Gaussian) peaks."""
+# %%
+# """Fooof needs clearly separable (and ideally Gaussian) peaks."""
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 import numpy as np
-from numpy.fft import irfft, rfftfreq
 import scipy as sp
 import scipy.signal as sig
-from scipy.signal import sawtooth
-import matplotlib.pyplot as plt
-import matplotlib as mpl
 from fooof import FOOOF
 from fooof.sim.gen import gen_aperiodic
+from numpy.fft import irfft, rfftfreq
+from scipy.signal import sawtooth
 
-
-def osc_signals(slope, periodic_params=None, nlv=None, highpass=True,
-                srate=2400, duration=180, seed=1):
-    """
-    Generate colored noise with optionally added oscillations.
-
-    Parameters
-    ----------
-    slope : float, optional
-        Aperiodic 1/f exponent. The default is 1.
-    periodic_params : list of tuples, optional
-        Oscillations parameters as list of tuples in form
-        [(frequency, amplitude, width), (frequency, amplitude, width)] for
-        two oscillations.
-        The default is None.
-    nlv : float, optional
-        Level of white noise. The default is None.
-    highpass : int, optional
-        The order of the butterworth highpass filter. The default is 4. If
-        None, no filter will be applied.
-    srate : float, optional
-        Sample rate of the signal. The default is 2400.
-    duration : float, optional
-        Duration of the signal in seconds. The default is 180.
-    seed : int, optional
-        Seed for reproducability. The default is 1.
-
-    Returns
-    -------
-    noise : ndarray
-        Colored noise without oscillations.
-    noise_osc : ndarray
-        Colored noise with oscillations.
-    """
-    if seed:
-        np.random.seed(seed)
-    # Initialize
-    n_samples = int(duration * srate)
-    amps = np.ones(n_samples//2 + 1, complex)
-    freqs = rfftfreq(n_samples, d=1/srate)
-    freqs[0] = 1  # avoid divison by 0
-
-    # Create random phases
-    rand_dist = np.random.uniform(0, 2*np.pi, size=amps.shape)
-    rand_phases = np.exp(1j * rand_dist)
-
-    # Multiply phases to amplitudes and create power law
-    amps *= rand_phases
-    amps /= freqs ** (slope / 2)
-
-    # Add oscillations
-    amps_osc = amps.copy()
-    if periodic_params:
-        for osc_params in periodic_params:
-            freq_osc, amp_osc, width = osc_params
-            amp_dist = sp.stats.norm(freq_osc, width).pdf(freqs)
-            # add same random phases
-            amp_dist = amp_dist * rand_phases
-            amps_osc += amp_osc * amp_dist
-
-    # Create colored noise time series from amplitudes
-    noise = irfft(amps)
-    noise_osc = irfft(amps_osc)
-
-    # Add white noise
-    if nlv:
-        w_noise = np.random.normal(scale=nlv, size=n_samples-2)
-        noise += w_noise
-        noise_osc += w_noise
-
-    # Highpass filter
-    if highpass:
-        sos = sig.butter(4, 1, btype="hp", fs=srate, output='sos')
-        noise = sig.sosfilt(sos, noise)
-        noise_osc = sig.sosfilt(sos, noise_osc)
-
-    return noise, noise_osc
-
-
-def fooof_fit(psd: np.array, cond: str, freq: np.array,
-              freq_range: tuple, fooof_params: dict) -> tuple:
-    """
-    Return aperiodic fit and corresponding label.
-
-    Parameters
-    ----------
-    psd : np.array
-        PSD.
-    cond : str
-        Condition.
-    freq : np.array
-        Freq array for PSD.
-    freq_range : tuple of int
-        Fitting range.
-    fooof_params : dict
-        Fooof params.
-
-    Returns
-    -------
-    tuple(ndarray, str)
-        (aperiodic fit, plot label).
-    """
-    fm = FOOOF(**fooof_params)
-    fm.fit(freq, psd, freq_range)
-    exp = fm.get_params("aperiodic", "exponent")
-    label = fr"$\beta_{{{cond}}}$={exp:.2f}"
-    ap_fit = gen_aperiodic(freq, fm.aperiodic_params_)
-    return 10**ap_fit, label
-
+from functions import osc_signals4, fooof_fit4
 
 # %% Parameters
 
@@ -193,7 +86,7 @@ saw_full = np.r_[np.zeros(seiz_len_samples),
 # Create 1/f noise and add
 slope = 1.8
 seed = 2
-noise, _ = osc_signals(slope, srate=srate, duration=time_full[-1], seed=seed)
+noise, _ = osc_signals4(slope, srate=srate, duration=time_full[-1], seed=seed)
 noise_saw = noise + saw_full
 
 # normalize
@@ -215,12 +108,12 @@ freq, psd_saw_post = sig.welch(saw_post, **welch_params)
 freq_range = [1, 100]
 calc_fooof = dict(freq=freq, freq_range=freq_range, fooof_params=fooof_params)
 
-fit_pre_eeg, lab_pre_eeg = fooof_fit(psd_EEG_pre, "pre ", **calc_fooof)
-fit_seiz_eeg, lab_seiz_eeg = fooof_fit(psd_EEG_seiz, "seiz", **calc_fooof)
-fit_post_eeg, lab_post_eeg = fooof_fit(psd_EEG_post, "post", **calc_fooof)
-fit_pre_sim, lab_pre_saw = fooof_fit(psd_saw_pre, "pre ", **calc_fooof)
-fit_seiz_sim, lab_seiz_saw = fooof_fit(psd_saw_seiz, "seiz", **calc_fooof)
-fit_post_sim, lab_post_saw = fooof_fit(psd_saw_post, "post", **calc_fooof)
+fit_pre_eeg, lab_pre_eeg = fooof_fit4(psd_EEG_pre, "pre ", **calc_fooof)
+fit_seiz_eeg, lab_seiz_eeg = fooof_fit4(psd_EEG_seiz, "seiz", **calc_fooof)
+fit_post_eeg, lab_post_eeg = fooof_fit4(psd_EEG_post, "post", **calc_fooof)
+fit_pre_sim, lab_pre_saw = fooof_fit4(psd_saw_pre, "pre ", **calc_fooof)
+fit_seiz_sim, lab_seiz_saw = fooof_fit4(psd_saw_seiz, "seiz", **calc_fooof)
+fit_post_sim, lab_post_saw = fooof_fit4(psd_saw_post, "post", **calc_fooof)
 
 # %% Add ground truth
 
@@ -499,3 +392,7 @@ ax.text(s="d", **panel_labels, transform=ax.transAxes)
 
 plt.savefig(fig_path + fig_name + "_SuppMat.pdf", bbox_inches="tight")
 plt.savefig(fig_path + fig_name + "_SuppMat.png", dpi=1000, bbox_inches="tight")
+
+# %%
+
+# %%

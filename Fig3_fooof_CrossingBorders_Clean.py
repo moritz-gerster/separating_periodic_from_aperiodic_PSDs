@@ -1,94 +1,20 @@
-"""Figure 2 with updated osc function."""
-import matplotlib.pyplot as plt
-import matplotlib as mpl
-import numpy as np
-from numpy.fft import irfft, rfftfreq
-import scipy as sp
-import scipy.signal as sig
-import mne
+# %%
+# """Figure 2 with updated osc function."""
 from pathlib import Path
+
+import matplotlib as mpl
+import matplotlib.gridspec as gridspec
+import matplotlib.pyplot as plt
+import mne
+import numpy as np
+# import scipy as sp
+import scipy.signal as sig
 from fooof import FOOOF
 from fooof.sim.gen import gen_aperiodic
-import matplotlib.gridspec as gridspec
+# from numpy.fft import irfft, rfftfreq
+from scipy.stats import pearsonr
 
-
-def osc_signals(slope, periodic_params=None, nlv=None, highpass=True,
-                srate=2400, duration=180, seed=1):
-    """
-    Generate colored noise with optionally added oscillations.
-
-    Parameters
-    ----------
-    slope : float, optional
-        Aperiodic 1/f exponent. The default is 1.
-    periodic_params : list of tuples, optional
-        Oscillations parameters as list of tuples in form
-        [(frequency, amplitude, width), (frequency, amplitude, width)] for
-        two oscillations.
-        The default is None.
-    nlv : float, optional
-        Level of white noise. The default is None.
-    highpass : int, optional
-        The order of the butterworth highpass filter. The default is 4. If None
-        no filter will be applied.
-    srate : float, optional
-        Sample rate of the signal. The default is 2400.
-    duration : float, optional
-        Duration of the signal in seconds. The default is 180.
-    seed : int, optional
-        Seed for reproducability. The default is 1.
-
-    Returns
-    -------
-    noise : ndarray
-        Colored noise without oscillations.
-    noise_osc : ndarray
-        Colored noise with oscillations.
-    """
-    if seed:
-        np.random.seed(seed)
-    # Initialize
-    n_samples = int(duration * srate)
-    amps = np.ones(n_samples//2, complex)
-    freqs = rfftfreq(n_samples, d=1/srate)
-    freqs = freqs[1:]  # avoid divison by 0
-
-    # Create random phases
-    rand_dist = np.random.uniform(0, 2*np.pi, size=amps.shape)
-    rand_phases = np.exp(1j * rand_dist)
-
-    # Multiply phases to amplitudes and create power law
-    amps *= rand_phases
-    amps /= freqs ** (slope / 2)
-
-    # Add oscillations
-    amps_osc = amps.copy()
-    if periodic_params:
-        for osc_params in periodic_params:
-            freq_osc, amp_osc, width = osc_params
-            amp_dist = sp.stats.norm(freq_osc, width).pdf(freqs)
-            # add same random phases
-            amp_dist = amp_dist * rand_phases
-            amps_osc += amp_osc * amp_dist
-
-    # Create colored noise time series from amplitudes
-    noise = irfft(amps)
-    noise_osc = irfft(amps_osc)
-
-    # Add white noise
-    if nlv:
-        w_noise = np.random.normal(scale=nlv, size=n_samples-2)
-        noise += w_noise
-        noise_osc += w_noise
-
-    # Highpass filter
-    if highpass:
-        sos = sig.butter(4, 1, btype="hp", fs=srate, output='sos')
-        noise = sig.sosfilt(sos, noise)
-        noise_osc = sig.sosfilt(sos, noise_osc)
-
-    return noise, noise_osc
-
+from functions import osc_signals3
 
 # %% PARAMETERS
 
@@ -146,8 +72,8 @@ periodic_params = [(freq1, amp1, width),
                    (freq3, amp3, width)]
 
 # Sim Toy Signal
-_, toy_signal = osc_signals(toy_slope, periodic_params=periodic_params,
-                            highpass=False)
+_, toy_signal = osc_signals3(toy_slope, periodic_params=periodic_params,
+                             highpass=False)
 freq_a, toy_psd = sig.welch(toy_signal, **welch_params)
 
 # Filter 1-100Hz
@@ -273,13 +199,13 @@ osc_params_med = [med_delta, *oscillations]
 osc_params_high = [high_delta, *oscillations]
 
 # Make signals
-aperiodic, osc_low = osc_signals(slope,
+aperiodic, osc_low = osc_signals3(slope,
                                  periodic_params=osc_params_low,
                                  nlv=nlv)
-aperiodic, osc_med = osc_signals(slope,
+aperiodic, osc_med = osc_signals3(slope,
                                  periodic_params=osc_params_med,
                                  nlv=nlv)
-aperiodic, osc_high = osc_signals(slope,
+aperiodic, osc_high = osc_signals3(slope,
                                   periodic_params=osc_params_high,
                                   nlv=nlv)
 
@@ -331,7 +257,7 @@ plot_delta_med = (freq_delta, psd_med_delta, psd_aperiodic_delta)
 plot_delta_high = (freq_delta, psd_high_delta, psd_aperiodic_delta)
 
 # Summarize
-delta_power = [plot_delta_low, plot_delta_med, plot_delta_high]
+delta_power2 = [plot_delta_low, plot_delta_med, plot_delta_high]
 
 
 # Fit real and simulated spectra
@@ -352,7 +278,8 @@ exp_high = fm_high.get_params('aperiodic_params', 'exponent')
 
 # Summarize
 exponents = [("low", exp_low), ("med", exp_med), ("high", exp_high)]
-delta_labels = [fr"fooof {pwr} delta $\beta$={exp:.2f}" for pwr, exp in exponents]
+delta_labels = [fr"fooof {pwr} delta $\beta$={exp:.2f}"
+                for pwr, exp in exponents]
 
 
 ap_fit_LFP = gen_aperiodic(fm_LFP.freqs, fm_LFP.aperiodic_params_)
@@ -447,7 +374,7 @@ ylabel_c = "PSD [a.u.]"
 axes_c = dict(xticks=xticks_b, xticklabels=xticks_b,
               yticks=[])
 x_label_c2 = f"Fitting range: {frange1[0]}-{frange1[1]} Hz"
-leg_c = dict(ncol=3, loc=10, bbox_to_anchor=(.5, -.5))
+leg_c = dict(ncol=3, loc=10, bbox_to_anchor=(.5, 0))
 delta_fill_dic = dict(alpha=0.4)
 
 # Annotate increased/decreased delta power with arrows
@@ -605,7 +532,7 @@ for i, ax in enumerate(c_axes):
 
     # Indicate delta power as fill between aperiodic component
     # and full spectrum
-    ax.fill_between(*delta_power[i], color=colors_c[i], **delta_fill_dic)
+    ax.fill_between(*delta_power2[i], color=colors_c[i], **delta_fill_dic)
 
     # Draw arrow
     if i != 1:
@@ -682,7 +609,8 @@ plt.show()
 
 
 # %% Plot Supp Mat c
-from scipy.stats import pearsonr
+
+
 mpl.rcParams.update(mpl.rcParamsDefault)
 
 
@@ -690,19 +618,19 @@ y_intercepts = [fm_low.aperiodic_params_[0],
                 fm_med.aperiodic_params_[0],
                 fm_high.aperiodic_params_[0]]
 
-delta_power = [low_delta[1], med_delta[1], high_delta[1]]
+delta_power2 = [low_delta[1], med_delta[1], high_delta[1]]
 
 
 # Pearson
-r_corr, p_val = pearsonr(delta_power, y_intercepts)
+r_corr, p_val = pearsonr(delta_power2, y_intercepts)
 
 # Regression
-m, b = np.polyfit(delta_power, y_intercepts, 1)
+m, b = np.polyfit(delta_power2, y_intercepts, 1)
 
 # Plot
 fig, ax = plt.subplots(1, 1, figsize=[3, 3])
-ax.scatter(delta_power, y_intercepts, c=[c_low, c_med, c_high])
-ax.plot(delta_power, m*np.array(delta_power) + b,
+ax.scatter(delta_power2, y_intercepts, c=[c_low, c_med, c_high])
+ax.plot(delta_power2, m*np.array(delta_power2) + b,
         label=f"r={r_corr:.2f}, p={p_val:.2f}")
 ax.set(xlabel="Simulated Delta Power [a.u.]",
        ylabel="fooof fit y-intercept [a.u.]")
@@ -711,3 +639,6 @@ ax.legend(title="Pearson correlation")
 plt.savefig(fig_path + fig_name + "_SuppC.png", dpi=1000, bbox_inches="tight")
 plt.savefig(fig_path + fig_name + "_SuppC.pdf", bbox_inches="tight")
 plt.show()
+# %%
+
+# %%

@@ -1,4 +1,5 @@
-"""Figure 1."""
+# %%
+# """Figure 1."""
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
@@ -476,7 +477,7 @@ plateau_labels = [fr"fooof flat $\beta=${exp1:.2f}",
 psd_aperiodic_vary = [plot_noise1, plot_noise15, plot_noise2]
 
 labelpad = 5
-leg_c = dict(ncol=3, loc=10, bbox_to_anchor=(.54, -.3), borderpad=0.35)
+leg_c = dict(ncol=3, loc=10, bbox_to_anchor=(.54, .1), borderpad=0.35)
 axes_c = dict(xticks=xticks_b, xticklabels=xticks_b, xlim=xlim_c)
 
 noise_power = (freq > 1) & (freq <= freq_range[1])
@@ -650,3 +651,5 @@ leg.set_in_layout(False)
 plt.savefig(fig_path + fig_name + ".pdf", bbox_inches="tight")
 plt.savefig(fig_path + fig_name + ".png", dpi=1000, bbox_inches="tight")
 plt.show()
+
+# %%

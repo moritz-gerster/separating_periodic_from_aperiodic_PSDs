@@ -3,18 +3,21 @@ The evaluated frequency range is larger than the fitting range.
 
 Rule: Avoid noise floor + highpass range!
 """
-import matplotlib.pyplot as plt
+from pathlib import Path
+
 import matplotlib as mpl
+import matplotlib.gridspec as gridspec
+import matplotlib.pyplot as plt
+import mne
 import numpy as np
-from numpy.fft import irfft, rfftfreq
 import scipy as sp
 import scipy.signal as sig
-from pathlib import Path
-import mne
 from fooof import FOOOF
 from fooof.sim.gen import gen_aperiodic
-import matplotlib.gridspec as gridspec
+from numpy.fft import irfft, rfftfreq
+
 from helper import irasa
+
 try:
     from tqdm import trange
 except ImportError:
