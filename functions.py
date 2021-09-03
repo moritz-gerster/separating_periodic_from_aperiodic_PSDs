@@ -15,7 +15,7 @@ def osc_signals1(exponent: float,
                  periodic_params: List[Tuple[float, float, float]] = None,
                  nlv: float = None,
                  highpass: bool = True,  # in Fig1 highpass=False
-                 srate: float = 2400,
+                 sample_rate: float = 2400,
                  duration: float = 180,
                  seed: int = 1):
     """
@@ -36,7 +36,7 @@ def osc_signals1(exponent: float,
     highpass : int, optional
         The order of the butterworth highpass filter. The default is 4. If None
         no filter will be applied.
-    srate : float, optional
+    sample_rate : float, optional
         Sample rate of the signal. The default is 2400.
     duration : float, optional
         Duration of the signal in seconds. The default is 180.
@@ -53,9 +53,9 @@ def osc_signals1(exponent: float,
     if seed:
         np.random.seed(seed)
     # Initialize
-    n_samples = int(duration * srate)
+    n_samples = int(duration * sample_rate)
     amps = np.ones(n_samples//2, complex)
-    freqs = rfftfreq(n_samples, d=1/srate)
+    freqs = rfftfreq(n_samples, d=1/sample_rate)
     freqs = freqs[1:]  # avoid divison by 0
 
     # Create random phases
@@ -88,7 +88,7 @@ def osc_signals1(exponent: float,
 
     # Highpass filter
     if highpass:
-        sos = sig.butter(4, 1, btype="hp", fs=srate, output='sos')
+        sos = sig.butter(4, 1, btype="hp", fs=sample_rate, output='sos')
         noise = sig.sosfilt(sos, noise)
         noise_osc = sig.sosfilt(sos, noise_osc)
 
@@ -99,7 +99,7 @@ def osc_signals2(exponent,
                  periodic_params=None,
                  nlv=None,
                  highpass=4,  # False
-                 srate=2400,
+                 sample_rate=2400,
                  duration=180,
                  seed=1):
     """
@@ -121,7 +121,7 @@ def osc_signals2(exponent,
     highpass : int, optional
         The order of the butterworth highpass filter. The default is 4. If
         None, no filter will be applied.
-    srate : float, optional
+    sample_rate : float, optional
         Sample rate of the signal. The default is 2400.
     duration : float, optional
         Duration of the signal in seconds. The default is 180.
@@ -138,9 +138,9 @@ def osc_signals2(exponent,
     if seed:
         np.random.seed(seed)
     # Initialize
-    n_samples = int(duration * srate)
+    n_samples = int(duration * sample_rate)
     amps = np.ones(n_samples//2, complex)
-    freqs = rfftfreq(n_samples, d=1/srate)
+    freqs = rfftfreq(n_samples, d=1/sample_rate)
     freqs = freqs[1:]  # avoid divison by 0
 
     # Create random phases
@@ -173,7 +173,7 @@ def osc_signals2(exponent,
 
     # Highpass filter
     if highpass:
-        sos = sig.butter(highpass, 1, btype="hp", fs=srate, output='sos')
+        sos = sig.butter(highpass, 1, btype="hp", fs=sample_rate, output='sos')
         noise = sig.sosfilt(sos, noise)
         noise_osc = sig.sosfilt(sos, noise_osc)
 
@@ -181,7 +181,7 @@ def osc_signals2(exponent,
 
 
 def osc_signals3(exponent, periodic_params=None, nlv=None, highpass=True,
-                 srate=2400, duration=180, seed=1):
+                 sample_rate=2400, duration=180, seed=1):
     """
     Generate colored noise with optionally added oscillations.
 
@@ -199,7 +199,7 @@ def osc_signals3(exponent, periodic_params=None, nlv=None, highpass=True,
     highpass : int, optional
         The order of the butterworth highpass filter. The default is 4. If None
         no filter will be applied.
-    srate : float, optional
+    sample_rate : float, optional
         Sample rate of the signal. The default is 2400.
     duration : float, optional
         Duration of the signal in seconds. The default is 180.
@@ -216,9 +216,9 @@ def osc_signals3(exponent, periodic_params=None, nlv=None, highpass=True,
     if seed:
         np.random.seed(seed)
     # Initialize
-    n_samples = int(duration * srate)
+    n_samples = int(duration * sample_rate)
     amps = np.ones(n_samples//2, complex)
-    freqs = rfftfreq(n_samples, d=1/srate)
+    freqs = rfftfreq(n_samples, d=1/sample_rate)
     freqs = freqs[1:]  # avoid divison by 0
 
     # Create random phases
@@ -251,7 +251,7 @@ def osc_signals3(exponent, periodic_params=None, nlv=None, highpass=True,
 
     # Highpass filter
     if highpass:
-        sos = sig.butter(4, 1, btype="hp", fs=srate, output='sos')
+        sos = sig.butter(4, 1, btype="hp", fs=sample_rate, output='sos')
         noise = sig.sosfilt(sos, noise)
         noise_osc = sig.sosfilt(sos, noise_osc)
 
@@ -259,7 +259,7 @@ def osc_signals3(exponent, periodic_params=None, nlv=None, highpass=True,
 
 
 def osc_signals4(exponent, periodic_params=None, nlv=None, highpass=True,
-                 srate=2400, duration=180, seed=1):
+                 sample_rate=2400, duration=180, seed=1):
     """
     Generate colored noise with optionally added oscillations.
 
@@ -277,7 +277,7 @@ def osc_signals4(exponent, periodic_params=None, nlv=None, highpass=True,
     highpass : int, optional
         The order of the butterworth highpass filter. The default is 4. If
         None, no filter will be applied.
-    srate : float, optional
+    sample_rate : float, optional
         Sample rate of the signal. The default is 2400.
     duration : float, optional
         Duration of the signal in seconds. The default is 180.
@@ -294,9 +294,9 @@ def osc_signals4(exponent, periodic_params=None, nlv=None, highpass=True,
     if seed:
         np.random.seed(seed)
     # Initialize
-    n_samples = int(duration * srate)
+    n_samples = int(duration * sample_rate)
     amps = np.ones(n_samples//2 + 1, complex)
-    freqs = rfftfreq(n_samples, d=1/srate)
+    freqs = rfftfreq(n_samples, d=1/sample_rate)
     freqs[0] = 1  # avoid divison by 0
 
     # Create random phases
@@ -329,7 +329,7 @@ def osc_signals4(exponent, periodic_params=None, nlv=None, highpass=True,
 
     # Highpass filter
     if highpass:
-        sos = sig.butter(4, 1, btype="hp", fs=srate, output='sos')
+        sos = sig.butter(4, 1, btype="hp", fs=sample_rate, output='sos')
         noise = sig.sosfilt(sos, noise)
         noise_osc = sig.sosfilt(sos, noise_osc)
 
@@ -337,7 +337,7 @@ def osc_signals4(exponent, periodic_params=None, nlv=None, highpass=True,
 
 
 def osc_signals5(exponent, periodic_params=None, nlv=None, highpass=True,
-                 srate=2400, duration=180, seed=1):
+                 sample_rate=2400, duration=180, seed=1):
     """
     Generate colored noise with optionally added oscillations.
 
@@ -355,7 +355,7 @@ def osc_signals5(exponent, periodic_params=None, nlv=None, highpass=True,
     highpass : int, optional
         The order of the butterworth highpass filter. The default is 4. If None
         no filter will be applied.
-    srate : float, optional
+    sample_rate : float, optional
         Sample rate of the signal. The default is 2400.
     duration : float, optional
         Duration of the signal in seconds. The default is 180.
@@ -372,9 +372,9 @@ def osc_signals5(exponent, periodic_params=None, nlv=None, highpass=True,
     if seed:
         np.random.seed(seed)
     # Initialize
-    n_samples = int(duration * srate)
+    n_samples = int(duration * sample_rate)
     amps = np.ones(n_samples//2, complex)
-    freqs = rfftfreq(n_samples, d=1/srate)
+    freqs = rfftfreq(n_samples, d=1/sample_rate)
     freqs = freqs[1:]  # avoid divison by 0
 
     # Create random phases
@@ -407,7 +407,7 @@ def osc_signals5(exponent, periodic_params=None, nlv=None, highpass=True,
 
     # Highpass filter
     if highpass:
-        sos = sig.butter(4, 1, btype="hp", fs=srate, output='sos')
+        sos = sig.butter(4, 1, btype="hp", fs=sample_rate, output='sos')
         noise = sig.sosfilt(sos, noise)
         noise_osc = sig.sosfilt(sos, noise_osc)
 
@@ -415,7 +415,7 @@ def osc_signals5(exponent, periodic_params=None, nlv=None, highpass=True,
 
 
 def osc_signals6(exponent, periodic_params=None, nlv=None, highpass=True,
-                 srate=2400, duration=180, seed=1):
+                 sample_rate=2400, duration=180, seed=1):
     """
     Generate colored noise with optionally added oscillations.
 
@@ -433,7 +433,7 @@ def osc_signals6(exponent, periodic_params=None, nlv=None, highpass=True,
     highpass : int, optional
         The order of the butterworth highpass filter. The default is 4. If None
         no filter will be applied.
-    srate : float, optional
+    sample_rate : float, optional
         Sample rate of the signal. The default is 2400.
     duration : float, optional
         Duration of the signal in seconds. The default is 180.
@@ -450,9 +450,9 @@ def osc_signals6(exponent, periodic_params=None, nlv=None, highpass=True,
     if seed:
         np.random.seed(seed)
     # Initialize
-    n_samples = int(duration * srate)
+    n_samples = int(duration * sample_rate)
     amps = np.ones(n_samples//2, complex)
-    freqs = rfftfreq(n_samples, d=1/srate)
+    freqs = rfftfreq(n_samples, d=1/sample_rate)
     freqs = freqs[1:]  # avoid divison by 0
 
     # Create random phases
@@ -485,7 +485,7 @@ def osc_signals6(exponent, periodic_params=None, nlv=None, highpass=True,
 
     # Highpass filter
     if highpass:
-        sos = sig.butter(4, 1, btype="hp", fs=srate, output='sos')
+        sos = sig.butter(4, 1, btype="hp", fs=sample_rate, output='sos')
         noise = sig.sosfilt(sos, noise)
         noise_osc = sig.sosfilt(sos, noise_osc)
 
@@ -493,7 +493,7 @@ def osc_signals6(exponent, periodic_params=None, nlv=None, highpass=True,
 
 
 def osc_signals7(exponent, periodic_params=None, nlv=None, highpass=True,
-                 srate=2400, duration=180, seed=1):
+                 sample_rate=2400, duration=180, seed=1):
     """
     Generate colored noise with optionally added oscillations.
 
@@ -511,7 +511,7 @@ def osc_signals7(exponent, periodic_params=None, nlv=None, highpass=True,
     highpass : int, optional
         The order of the butterworth highpass filter. The default is 4. If
         None, no filter will be applied.
-    srate : float, optional
+    sample_rate : float, optional
         Sample rate of the signal. The default is 2400.
     duration : float, optional
         Duration of the signal in seconds. The default is 180.
@@ -528,9 +528,9 @@ def osc_signals7(exponent, periodic_params=None, nlv=None, highpass=True,
     if seed:
         np.random.seed(seed)
     # Initialize
-    n_samples = int(duration * srate)
+    n_samples = int(duration * sample_rate)
     amps = np.ones(n_samples//2 + 1, complex)
-    freqs = rfftfreq(n_samples, d=1/srate)
+    freqs = rfftfreq(n_samples, d=1/sample_rate)
     freqs[0] = 1  # avoid divison by 0
 
     # Create random phases
@@ -563,7 +563,7 @@ def osc_signals7(exponent, periodic_params=None, nlv=None, highpass=True,
 
     # Highpass filter
     if highpass:
-        sos = sig.butter(4, 1, btype="hp", fs=srate, output='sos')
+        sos = sig.butter(4, 1, btype="hp", fs=sample_rate, output='sos')
         noise = sig.sosfilt(sos, noise)
         noise_osc = sig.sosfilt(sos, noise_osc)
 
@@ -944,13 +944,13 @@ def detect_noise_floor8(freq, psd, f_start, f_range=50, thresh=0.05,
 
 
 def calc_error6(signal, lower_fitting_borders, upper_fitting_border,
-                toy_slope, srate):
-    from helper import irasa
+                toy_slope, sample_rate):
+    from helper_Clean import irasa
     """Fit IRASA and subtract ground truth to obtain fitting error."""
     fit_errors = []
     for i in trange(len(lower_fitting_borders)):
         freq_range = (lower_fitting_borders[i], upper_fitting_border)
-        _, _, _, params = irasa(data=signal, band=freq_range, sf=srate)
+        _, _, _, params = irasa(data=signal, band=freq_range, sf=sample_rate)
         exp = -params["Slope"][0]
         error = np.abs(toy_slope - exp)
         fit_errors.append(error)
@@ -958,13 +958,13 @@ def calc_error6(signal, lower_fitting_borders, upper_fitting_border,
 
 
 def calc_error5(signal, lower_fitting_borders, upper_fitting_border,
-                toy_slope, srate):
-    from helper import irasa
+                toy_slope, sample_rate):
+    from helper_Clean import irasa
     """Fit IRASA and subtract ground truth to obtain fitting error."""
     fit_errors = []
     for i in trange(len(lower_fitting_borders)):
         freq_range = (lower_fitting_borders[i], upper_fitting_border)
-        _, _, _, params = irasa(data=signal, band=freq_range, sf=srate)
+        _, _, _, params = irasa(data=signal, band=freq_range, sf=sample_rate)
         exp = -params["Slope"][0]
         error = np.abs(toy_slope - exp)
         fit_errors.append(error)

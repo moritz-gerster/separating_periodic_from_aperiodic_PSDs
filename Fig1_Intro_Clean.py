@@ -1,5 +1,4 @@
 # %%
-"""Explain fooof and IRASA."""
 import fractions
 from pathlib import Path
 
@@ -10,9 +9,9 @@ import scipy.signal as sig
 from fooof.plts.spectra import plot_spectrum
 from fooof.sim.gen import gen_aperiodic
 
-from fooof_modified_MG import FOOOF, plot_annotated_peak_search_MG
+from fooof_modified_MG_Clean import FOOOF, plot_annotated_peak_search_MG
 from functions import osc_signals1
-from helper import irasa
+from helper_Clean import irasa
 
 try:
     from tqdm import trange

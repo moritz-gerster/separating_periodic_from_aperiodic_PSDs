@@ -1,12 +1,13 @@
+# %%
 import numpy as np
 import scipy.signal as sig
 import mne
 from fooof import FOOOFGroup
-from noise_helper import irasa
+from helper_Clean import irasa
 
 
 # Litvak file names
-path = "../data/Fig4/"
+path = "../data/Fig5/"
 fname = "subj6_off_R1_raw.fif"
 
 sub = mne.io.read_raw_fif(path + fname, preload=True)
@@ -58,24 +59,15 @@ _, _, _, params = IRASA
 IRASA = irasa(data=sub, sf=srate, band=band, hset=np.arange(1.1, 1.9, 0.01))
 _, _, _, params = IRASA
 
-
 # %% IRASA slows down if values of hset is increased
 %%timeit
 # =============================================================================
-# IRASA time = 1min 6s ± 2.02 s per loop (mean ± std. dev. of 7 runs, 1 loop each)
+# IRASA time = 1min 6s ± 2.02 s per loop (mean ± std. dev. of 7 runs,
+# 1 loop each)
 # =============================================================================
 
 IRASA = irasa(data=sub, sf=srate, band=band, hset=np.arange(10.1, 10.9, 0.05))
 _, _, _, params = IRASA
-
-
-
-
-
-
-
-
-
 
 # %% Fooof fast even if psd calc included
 %%timeit

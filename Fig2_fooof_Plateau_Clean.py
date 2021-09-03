@@ -40,7 +40,7 @@ c_ground = "grey"
 # %% Real data
 
 # Load data
-path = "../data/Fig1/"
+path = "../data/Fig2/"
 fname9 = "subj9_off_R1_raw.fif"
 sub9 = mne.io.read_raw_fif(path + fname9, preload=True)
 sub9.pick_channels(['STN_R01'])  # select channel
@@ -294,7 +294,6 @@ psd_plateau_fits = [fit1, fit15, fit2]
 spec9_fit_label = fr"fooof LFP $\beta=${exp_sub9:.2f}"
 
 # % Plot params c)
-
 plot_sub9 = (freq, psd_sub9, c_real)
 plot_peak1 = (freq, psd_signal1, c_low)
 plot_peak15 = (freq, psd_signal15, c_med)
@@ -305,7 +304,6 @@ psd_plateau_vary = [plot_peak1, plot_peak15, plot_peak2]
 plot_plateau1 = (freq, psd_aperiodic1, c_ground)
 plot_plateau15 = (freq, psd_aperiodic15, c_ground)
 plot_plateau2 = (freq, psd_aperiodic2, c_ground)
-
 
 xlim_c = (1, 825)
 xlabel_c = "Frequency in Hz"
@@ -341,7 +339,8 @@ plot_delta_high = (freqs_fill, psd_aperiodic2[freq_mask_fill_area],
 # Summarize
 delta_power = [plot_delta_low, plot_delta_med, plot_delta_high]
 colors_c = [c_low, c_med, c_high]
-# % Plot Params
+
+# %% Plot Params
 
 fig_width = 6.85  # inches
 panel_fontsize = 12
@@ -369,10 +368,9 @@ psd_aperiodic_kwargs = dict(lw=0.5)
 
 # Prepare Gridspec
 fig = plt.figure(figsize=[fig_width, 6.5], constrained_layout=True)
-
 gs0 = gridspec.GridSpec(3, 1, figure=fig, height_ratios=[10, 1, 10])
 
-# a) and b)
+# a) and b) gridspec
 gs00 = gridspec.GridSpecFromSubplotSpec(1, 2, subplot_spec=gs0[0])
 ax1 = fig.add_subplot(gs00[0])
 ax2 = fig.add_subplot(gs00[1])
@@ -382,7 +380,7 @@ gs01 = gs0[1]
 ax_leg = fig.add_subplot(gs01)
 ax_leg.axis("off")
 
-# c)
+# c) gridspec
 gs02 = gs0[2].subgridspec(1, 3)
 ax3 = fig.add_subplot(gs02[0])
 ax4 = fig.add_subplot(gs02[1])
@@ -391,15 +389,13 @@ ax5 = fig.add_subplot(gs02[2])
 c_axes = [ax3, ax4, ax5]
 
 
-# a) =========================================================================
+# a)
 ax = ax1
 
 # Plot simulated PSD and ground truth
 ax.loglog(*plot_sim, label=fr"1/f $\beta=${sim_exponent} + noise")
 ax.loglog(*plot_ground, **line_ground,
           label=fr"Ground truth $\beta=${sim_exponent}")
-
-# Plot plateau in grey
 ax.loglog(*plot_plateau, label="Plateau")
 
 # Plot fits for different upper fitting borders
@@ -407,22 +403,17 @@ for i in range(len(upper_fit_limits)):
     ax.loglog(*plot_fits[i], **dic_fits[i])
     ax.vlines(*vlines[i], **dic_line)
 
-
 # Set axes
 ax.set(**axes_a)
 ax.legend()
 ax.text(s="a", **panel_labels, transform=ax.transAxes)
-# =============================================================================
 
 
-# b)  =========================================================================
+# b)
 ax = ax2
 
 # Plot Sub 9
 ax.loglog(*plot_sub9_signal, label="LFP")
-
-#   ax.loglog(*fit_sub9, **line_fit, label=spec9_fit_label)
-
 ax.loglog(*plot_sub9_plateau, label="Plateau")
 
 # Plot Peak lines
@@ -433,10 +424,8 @@ ax.vlines(**line_peak2)
 ax.annotate(**arrow1)
 ax.annotate(**arrow2)
 
-# Annotate noise floor start as line
+# Annotate plateau start
 ax.annotate(**plateau_line9)
-
-# Annotate noise floor start as text
 ax.annotate(**plateau_txt9, fontsize=annotation_fontsize)
 
 # Set axes
@@ -444,10 +433,8 @@ ax.set(**axes_b)
 ax.legend(loc=0)
 ax.text(s="b", **panel_labels, transform=ax.transAxes)
 
-# =============================================================================
 
 # c)
-
 # Make sure we have just one label for each repetitive plot
 spec9_label = ["STN-LFP", None, None]
 spec9_fit_labels = [spec9_fit_label, None, None]
@@ -473,13 +460,10 @@ for i, ax in enumerate(c_axes):
     ax.fill_between(*delta_power[i], color=colors_c[i], alpha=0.2)
 
     # Draw arrow
-    if i != 1:
-        # ax.annotate(**arrows[i])
-        pass
-    else:
+    if i == 1:
         ax.set_xlabel(xlabel_c)
 
-    # Save legend handles labels and set axes
+    # Save legend and set axes
     if i == 0:
         handles, labels = ax.get_legend_handles_labels()
         ax.set_ylabel(ylabel_a, labelpad=labelpad)
@@ -492,7 +476,6 @@ for i, ax in enumerate(c_axes):
         ax.set_yticks([], minor=True)
         ax.set_yticks([])
     ax.set(**axes_c)
-
 
 # Set legend between subplots
 leg = ax_leg.legend(handles, labels, **leg_c)

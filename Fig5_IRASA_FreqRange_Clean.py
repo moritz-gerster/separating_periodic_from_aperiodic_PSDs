@@ -11,40 +11,21 @@ import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import mne
 import numpy as np
-# import scipy as sp
 import scipy.signal as sig
 from fooof import FOOOF
 from fooof.sim.gen import gen_aperiodic
-# from numpy.fft import irfft, rfftfreq
 
-from helper import irasa
+from functions import annotate_fit_range5, detect_noise_floor5, osc_signals5
+from functions import calc_error5
+from helper_Clean import irasa
 
 try:
     from tqdm import trange
 except ImportError:
     trange = range
 
-from functions import osc_signals5, detect_noise_floor5, annotate_fit_range5
 
-
-def calc_error5(signal):
-    """Fit IRASA and subtract ground truth to obtain fitting error."""
-    fit_errors = []
-    for i in trange(len(lower_fitting_borders)):
-        freq_range = (lower_fitting_borders[i], upper_fitting_border)
-        _, _, _, params = irasa(data=signal, band=freq_range, sf=srate)
-        exp = -params["Slope"][0]
-        error = np.abs(toy_slope - exp)
-        fit_errors.append(error)
-    return fit_errors
-
-
-# %% PARAMETERS
-
-# Signal params
-srate = 2400
-nperseg = 1*srate  # 4*srate too high resolution for fooof
-welch_params = dict(fs=srate, nperseg=nperseg)
+# %% Plot parameters
 
 # Save Path
 fig_path = "../paper_figures/"
@@ -56,33 +37,27 @@ path = "../data/Fig4/"
 fname = "subj6_off_R1_raw.fif"
 
 # Colors
-
 # a)
 c_sim = "k"
 c_error = "r"
 c_noise = "darkgray"
-
 c_range1 = "b"
 c_range2 = "g"
 c_range3 = "y"
-
 c_ap = "grey"
 
 # b)
 c_real = "purple"
-
-# c_fit3 = "lime"
 
 # c)
 c_fooof = "deepskyblue"
 c_IRASA1 = "g"
 c_IRASA2 = "C1"
 c_IRASA3 = "orangered"
-# c_IRASA3 = "C4"
 
 lw = 2
 
-# %% a Sim Toy Signal with Three Oscillations and Fit
+# %% a) Sim Signal with Three Oscillations and Fit
 
 # fit in all frequency ranges from 1 to 80...
 lower_fitting_borders = range(1, 80)
@@ -90,7 +65,7 @@ lower_fitting_borders = range(1, 80)
 upper_fitting_border = 100
 
 # Oscillations parameters:
-toy_slope = 2
+sim_exponent_a = 2
 freq1, freq2, freq3 = 5, 15, 35  # Hz
 amp1, amp2, amp3 = .4, .1, .02
 width = .01
@@ -99,50 +74,54 @@ periodic_params = [(freq1, amp1, width),
                    (freq2, amp2, width),
                    (freq3, amp3, width)]
 
-# Sim Toy Signal
-_, toy_signal = osc_signals5(toy_slope, periodic_params=periodic_params,
-                             highpass=False)
+# Sim Signal
+_, full_signal = osc_signals5(sim_exponent_a, periodic_params=periodic_params,
+                              highpass=False)
 
-# welch_params["nperseg"] = srate
+# Signal params
+sample_rate = 2400
+nperseg = sample_rate
+welch_params = dict(fs=sample_rate, nperseg=nperseg)
 
-freq_a, toy_psd_a = sig.welch(toy_signal, **welch_params)
+freq_a, sim_psd_a = sig.welch(full_signal, **welch_params)
 
 # Filter 1-100Hz
 filt_a = (freq_a <= 100)
 freq_a = freq_a[filt_a]
-toy_psd_a = toy_psd_a[filt_a]
+sim_psd_a = sim_psd_a[filt_a]
 
 # %% Calc Aperiodic Component for largest range
 
 freq_range = (lower_fitting_borders[0], upper_fitting_border)
-freq0, psd_aperiodic, _, _ = irasa(toy_signal, band=freq_range, sf=srate)
+freq_ir, psd_aperiodic, _, _ = irasa(full_signal, band=freq_range,
+                                     sf=sample_rate)
 
 psd_aperiodic = psd_aperiodic[0]
 
-# %% a IRASA (takes very long)
+# %% a) IRASA sim (takes very long)
 
 # Fit IRASA and subtract ground truth to obtain fitting error
-fit_errors = calc_error5(toy_signal)
-
+fit_errors = calc_error5(full_signal, lower_fitting_borders,
+                         upper_fitting_border, sim_exponent_a, sample_rate)
 error_plot_a = (lower_fitting_borders, fit_errors, c_error)
 
-# %% B
+# %% b) Highpass sim
 
 # Make noise
-slope_b = 2
-noise_params_b = dict(exponent=slope_b, nlv=0, highpass=True, seed=3)
-pink2, _ = osc_signals5(**noise_params_b)
+sim_exponent_b = 2
+noise_params_b = dict(exponent=sim_exponent_b, nlv=0, highpass=True, seed=3)
+aperiodic_b, _ = osc_signals5(**noise_params_b)
 
 # Calc PSD
-welch_params["nperseg"] = 4*srate  # show lowpass filter
-freq_b, psd2_noise_b = sig.welch(pink2, **welch_params)
+welch_params["nperseg"] = 4*sample_rate  # show lowpass filter
+freq_b, psd2_noise_b = sig.welch(aperiodic_b, **welch_params)
 
 
-# %% B Calc IRASA
+# %% b) Calc IRASA
 
 # plot fooof as ground truth
 freq_range = (2, 30)
-irasa_params = dict(sf=srate, band=freq_range, win_sec=4)
+irasa_params = dict(sf=sample_rate, band=freq_range, win_sec=4)
 
 # plot IRASA fits for increasing h
 freq_range = irasa_params["band"]
@@ -164,8 +143,8 @@ h_maxima = [2, 8, 15]
 h_colors = [c_IRASA1, c_IRASA2, c_IRASA3]
 for h_max, color in zip(h_maxima, h_colors):
     # no oscillations, no harmonics, h can be integer
-    N_h = 5  # not more needed for such simple sim
-    IRASA = irasa(data=pink2, hset=np.linspace(1.1, h_max, N_h),
+    N_h = 5  # not more needed for such simple simulation
+    IRASA = irasa(data=aperiodic_b, hset=np.linspace(1.1, h_max, N_h),
                   **irasa_params)
     freq_IR, _, _, IR_fit = IRASA
     IR_slope = -IR_fit["Slope"][0]
@@ -189,14 +168,15 @@ for h_max, color in zip(h_maxima, h_colors):
     IR_plot_eff_args_b.append(plot_IRASA_eff)
     IR_plot_eff_kwargs_b.append(IR_eff_kwargs)
 
-# %% C
+# %% c) lowpass sim
 
 # Make noise
-noise_params_c = dict(exponent=slope_b, nlv=0.00003, highpass=False, seed=3)
-pink2, _ = osc_signals5(**noise_params_c)
+noise_params_c = dict(exponent=sim_exponent_b, nlv=0.00003, highpass=False,
+                      seed=3)
+aperiodic_b, _ = osc_signals5(**noise_params_c)
 
 # Calc PSD
-freq_c, psd2_noise_c = sig.welch(pink2, **welch_params)
+freq_c, psd2_noise_c = sig.welch(aperiodic_b, **welch_params)
 
 # Detect Noise floor
 floor_c = detect_noise_floor5(freq_c, psd2_noise_c, f_start=1)
@@ -211,7 +191,7 @@ label = rf"$\beta(fooof)$={fm.aperiodic_params_[1]:.2f}"
 fooof_kwargs = dict(label=label, zorder=5, ls="--", lw=2)
 plot_fooof_c = (fm.freqs, 10**fit, c_fooof)
 
-# %% C Calc IRASA
+# %% c) Calc irasa
 
 IR_fit_plot_args_c = []
 IR_fit_plot_kwargs_c = []
@@ -223,10 +203,9 @@ IR_plot_eff_args_c = []
 IR_plot_eff_kwargs_c = []
 
 for h_max, color in zip(h_maxima, h_colors):
-    # Calc IRASA
     # no oscillations, no harmonics, h can be integer
-    N_h = 5  # not more needed for such simple sim
-    IRASA = irasa(data=pink2, hset=np.linspace(1.1, h_max, N_h),
+    N_h = 5  # not more needed for such simple simulation
+    IRASA = irasa(data=aperiodic_b, hset=np.linspace(1.1, h_max, N_h),
                   **irasa_params)
 
     # Extract results
@@ -254,37 +233,32 @@ for h_max, color in zip(h_maxima, h_colors):
     IR_plot_eff_args_c.append(plot_IRASA_eff)
     IR_plot_eff_kwargs_c.append(IR_eff_kwargs)
 
-    # Pack aperiodic component for plotting
+    # Pack aperiodic component tuple for plotting
     plot_IRASA_ap = (freq_IR, IR_ap[0], c_fooof)
     IR_ap_plot_args_c.append(plot_IRASA_ap)
 
 
-# %% D Real Spectrum
+# %% d) Real Spectrum
 
-# Load Subj
-sub = mne.io.read_raw_fif(path + fname, preload=True)
-
-# Select channel
-sub.pick_channels(['SMA'])
+# Load data
+sub = mne.io.read_raw_fif(path + fname, preload=True)  # Load Subj
+sub.pick_channels(['SMA'])  # Select channel
 
 # Filter out line noise
 freq_filter = np.r_[np.arange(50, 601, 50), np.arange(60, 601, 60)]
 filter_params = {"freqs": freq_filter,
                  "notch_widths": None,
                  "method": "spectrum_fit"}
-
 sub.notch_filter(**filter_params)
 
 # Convert mne to numpy
-srate = 2400
-start = int(0.5 * srate)  # artefact in beginning of recording
-stop = int(185 * srate)  # artefact at the end of recording
-
+sample_rate = 2400
+start = int(0.5 * sample_rate)  # artefact in beginning of recording
+stop = int(185 * sample_rate)  # artefact at the end of recording
 sub = sub.get_data(start=start, stop=stop)[0]
 
 # Calc Welch
-welch_params = dict(fs=srate, nperseg=4*srate)  # detrend=False?
-
+welch_params = dict(fs=sample_rate, nperseg=4*sample_rate)
 freq, psd_sub = sig.welch(sub, **welch_params)
 
 # Mask above highpass and below lowpass
@@ -292,13 +266,13 @@ filt = (freq <= 600)
 freq = freq[filt]
 psd_sub = psd_sub[filt]
 
-# %% D Calc IRASA
+# %% d) Calc IRASA
 
 band_low = (1, 30)
 band_high = (30, 45)
 
-h_max = 3  # default
-win_sec = 4  # default
+h_max = 3
+win_sec = 4
 f_min_low = band_low[0] / h_max
 f_max_low = band_low[1] * h_max
 f_min_high = band_high[0] / h_max
@@ -310,9 +284,9 @@ band_low_eff = (band_low[0] * h_max, band_low[1] / h_max)
 N_h = len(np.arange(1.1, 1.9, 0.05))
 hset = np.linspace(1.1, h_max, N_h)
 
-IRASA_low = irasa(data=sub, sf=srate, band=band_low, hset=hset)
-IRASA_high = irasa(data=sub, sf=srate, band=band_high, hset=hset)
-IRASA_low_eff = irasa(data=sub, sf=srate, band=band_low_eff, hset=hset)
+IRASA_low = irasa(data=sub, sf=sample_rate, band=band_low, hset=hset)
+IRASA_high = irasa(data=sub, sf=sample_rate, band=band_high, hset=hset)
+IRASA_low_eff = irasa(data=sub, sf=sample_rate, band=band_low_eff, hset=hset)
 
 freq_low, psd_ap_low, psd_osc_low, fit_res_low = IRASA_low
 freq_high, psd_ap_high, psd_osc_high, fit_res_high = IRASA_high
@@ -338,8 +312,10 @@ IR_offset_low = fit_res_low["Intercept"][0]
 IR_offset_high = fit_res_high["Intercept"][0]
 IR_offset_low_eff = fit_res_low_eff["Intercept"][0]
 
-IR_fit_low = gen_aperiodic(freq_low, (IR_offset_low, IR_slope_low))
-IR_fit_high = gen_aperiodic(freq_high, (IR_offset_high, IR_slope_high))
+IR_fit_low = gen_aperiodic(freq_low, (IR_offset_low,
+                                      IR_slope_low))
+IR_fit_high = gen_aperiodic(freq_high, (IR_offset_high,
+                                        IR_slope_high))
 IR_fit_low_eff = gen_aperiodic(freq_low_eff, (IR_offset_low_eff,
                                               IR_slope_low_eff))
 
@@ -387,7 +363,7 @@ fooof_kwargs_high = dict(label=label)
 plot_fooof_high = (fm.freqs, 10**fit, c_fooof)
 
 
-# %% Plot Params
+# %% Plot settings
 
 fig_width = 6.85  # inches
 panel_fontsize = 12
@@ -407,7 +383,7 @@ mpl.rcParams["axes.spines.top"] = False
 abc = dict(x=0, y=1.01, fontsize=panel_fontsize,
            fontdict=dict(fontweight="bold"))
 
-# a
+# a)
 # a1
 ymini = -13
 ymaxi = -7
@@ -435,7 +411,7 @@ ylim_a2 = (0, 1)
 axes_a2 = dict(xticks=xticks_a2, xticklabels=xticks_a2, yticks=yticks_a2,
                xlim=xlim_a, xlabel=xlabel_a2, ylim=ylim_a2, ylabel=ylabel_a2)
 
-# b
+# b)
 xticks_b = [.1, 1, 10, 100, 600]
 xlabel_b = "Frequency [Hz]"
 ymini = -15
@@ -458,7 +434,7 @@ rec_height = np.diff(ylim_b)[0]
 rect_b = dict(xy=rec_xy, width=rec_width, height=rec_height,
               alpha=.15, color="r")
 
-# c
+# c)
 axes_c = dict(xticks=xticks_b, xlabel=xlabel_b, xticklabels=xticks_b,
               yticks=yticks_b, yticklabels=[], ylim=ylim_b,
               xlim=xlim_b)
@@ -468,7 +444,7 @@ rec_width = xlim_b[1] - noise_start
 rect_c = dict(xy=rec_xy, width=rec_width, height=rec_height,
               alpha=.15, color="r")
 
-# d
+# d)
 ylim_d = (1, 10000)
 yticks_d = [1, 10, 100, 1000, 10000]
 yticklabels_d = [r"$10^0$", "", "", "", r"$10^4$"]
@@ -477,17 +453,13 @@ axes_d = dict(xticks=xticks_b, xticklabels=xticks_b, xlim=xlim_d,
               yticks=yticks_d, yticklabels=yticklabels_d, ylim=ylim_d)
 ticks_psd = dict(length=4, width=1)
 
-# e
+# e)
 axes_e = dict(xticks=xticks_b, xlabel=xlabel_b, xticklabels=xticks_b,
               yticks=[], ylim=ylim_d, xlim=xlim_d)
 
-# f
+# f)
 axes_f = dict(xticks=xticks_b, xticklabels=xticks_b, xlim=xlim_d,
               yticks=[], ylim=ylim_d)
-
-
-
-
 
 # %% Plot
 fig = plt.figure(figsize=[fig_width, 5.5], constrained_layout=True)
@@ -505,19 +477,19 @@ ax5 = fig.add_subplot(gs01[0])
 ax6 = fig.add_subplot(gs01[1])
 ax7 = fig.add_subplot(gs01[2])
 
-# a
+# a)
 # a1
 ax = ax1
 
 # Plot sim
-ax.loglog(freq_a, toy_psd_a, c_sim)
-ax.loglog(freq0, psd_aperiodic, c_ap, zorder=0)
+ax.loglog(freq_a, sim_psd_a, c_sim)
+ax.loglog(freq_ir, psd_aperiodic, c_ap, zorder=0)
 
 # Annotate fitting ranges
 vline_dic = dict(ls="--", clip_on=False, alpha=.3)
 ymin = yticks_a[0]
 for i, (freq_low, color) in enumerate(zip(freqs123, colors123)):
-    y = toy_psd_a[freq_low]
+    y = sim_psd_a[freq_low]
     xmin = freq_low
     xmax = upper_fitting_border
     coords = (y, xmin, xmax)
@@ -559,7 +531,7 @@ for i, (freq_low, color) in enumerate(zip(freqs123, colors123)):
 # Set axes
 ax.set(**axes_a2)
 
-# b
+# b)
 ax = ax3
 ax.loglog(freq_b, psd2_noise_b, c_sim)
 ax.loglog(*plot_fooof_b, **fooof_kwargs)
@@ -587,9 +559,9 @@ ylow = plot_fooof_b[1][0]
 yhigh = plot_fooof_b[1][-1]
 height = ylim_b[0] * 2
 annotate_fit_range5(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
-                   height=height, fontsize=annotation_fontsize)
+                    height=height, fontsize=annotation_fontsize)
 
-# c
+# c)
 ax = ax4
 ax.loglog(freq_c[signal_c], psd2_noise_c[signal_c], c_sim)
 ax.loglog(freq_c[noise_c], psd2_noise_c[noise_c], c_noise)
@@ -614,10 +586,10 @@ ax.add_patch(plt.Rectangle(**rect_c))
 ylow = plot_fooof_c[1][0]
 yhigh = plot_fooof_c[1][-1]
 annotate_fit_range5(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
-                   height=height, fontsize=annotation_fontsize)
+                    height=height, fontsize=annotation_fontsize)
 
 
-# d
+# d)
 ax = ax5
 ax.loglog(freq, psd_sub, c_real, label="MEG SMA")
 ax.loglog(*plot_fooof_low, **fooof_kwargs_low)
@@ -633,22 +605,21 @@ ylow = plot_fooof_low[1][0]
 yhigh = plot_fooof_low[1][-1]
 height = 2
 annotate_fit_range5(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
-                   height=height, fontsize=annotation_fontsize)
+                    height=height, fontsize=annotation_fontsize)
 
-
-# e
+# e)
 ax = ax6
 ax.loglog(freq, psd_sub, c_real)
 
-ax.loglog(*plot_IRASA_eff_low_eff, lw=lw, label=label_low_eff) # bold green
-ax.loglog(*plot_IRASA_low, lw=lw, ls="--", label=label_low) # dashed green
-ax.loglog(*plot_IRASA_eff_low1, alpha=.5, lw=lw) # transparent low
-ax.loglog(*plot_IRASA_eff_low2, alpha=.5, lw=lw) # transparent high
+ax.loglog(*plot_IRASA_eff_low_eff, lw=lw, label=label_low_eff)  # bold green
+ax.loglog(*plot_IRASA_low, lw=lw, ls="--", label=label_low)  # dashed green
+ax.loglog(*plot_IRASA_eff_low1, alpha=.5, lw=lw)  # transparent low
+ax.loglog(*plot_IRASA_eff_low2, alpha=.5, lw=lw)  # transparent high
 
 ylow = plot_IRASA_eff_low_eff[1][0]
 yhigh = plot_IRASA_eff_low_eff[1][-1]
 annotate_fit_range5(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
-                   height=height, fontsize=annotation_fontsize)
+                    height=height, fontsize=annotation_fontsize)
 
 ax.legend(**tiny_leg)
 ax.tick_params(**ticks_psd)
@@ -657,7 +628,7 @@ ax.spines["left"].set_visible(False)
 ax.set(**axes_e)
 ax.set_yticks([], minor=True)
 
-# f
+# f)
 ax = ax7
 ax.loglog(freq, psd_sub, c_real)
 
@@ -678,8 +649,8 @@ ylow = plot_IRASA_high[1][0]
 yhigh = plot_IRASA_high[1][-1]
 
 annotate_fit_range5(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
-                   height=height, annotate_middle=False,
-                   fontsize=annotation_fontsize)
+                    height=height, annotate_middle=False,
+                    fontsize=annotation_fontsize)
 
 plt.savefig(fig_path + fig_name + ".pdf", bbox_inches="tight")
 plt.savefig(fig_path + fig_name + ".png", dpi=1000, bbox_inches="tight")

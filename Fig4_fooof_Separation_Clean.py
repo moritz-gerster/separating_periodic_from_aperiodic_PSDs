@@ -3,42 +3,38 @@
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy as sp
 import scipy.signal as sig
 from fooof import FOOOF
-from fooof.sim.gen import gen_aperiodic
-from numpy.fft import irfft, rfftfreq
 from scipy.signal import sawtooth
 
-from functions import osc_signals4, fooof_fit4
+from functions import fooof_fit4, osc_signals4
 
-# %% Parameters
+# %% Plot Parameters
 
 # Paths
-data_path = "../data/Fig3/"
+data_path = "../data/Fig4/"
 fig_path = "../paper_figures/"
 fig_name = "Fig4_Separation"
 
 # Colors
 c_empirical = "purple"
 c_sim = "k"
-
 c_pre = "c"
 c_seiz = "r"
 c_post = "y"
 
 # EEG Params
-srate = 256
+sample_rate = 256
 cha_nm = "F3-C3"
 
 # Seizure sample timepoints
-seiz_start_samples = 87800  # behalten
-seiz_end_samples = 91150  # behalten
-seiz_len_samples = seiz_end_samples - seiz_start_samples  # behalten
+seiz_start_samples = 87800
+seiz_end_samples = 91150
+seiz_len_samples = seiz_end_samples - seiz_start_samples
 
 # Welch Params
-nperseg = srate
-welch_params = {"fs": srate, "nperseg": nperseg}
+nperseg = sample_rate
+welch_params = {"fs": sample_rate, "nperseg": nperseg}
 
 # Fooof params: standard
 fooof_params = dict(verbose=False)
@@ -56,12 +52,12 @@ seiz = slice(seiz_start_samples, seiz_end_samples)
 post_seiz = slice(seiz_end_samples, seiz_end_samples + seiz_len_samples)
 
 data_full = seiz_data[full_seiz]
-time_full = np.linspace(0, data_full.size/srate, num=data_full.size)
+time_full = np.linspace(0, data_full.size/sample_rate, num=data_full.size)
 data_pre = seiz_data[pre_seiz]
 data_seiz = seiz_data[seiz]
 data_post = seiz_data[post_seiz]
 
-# CALC psd pre, post, seiz
+# Calc psd pre, post, seiz
 freq, psd_EEG_pre = sig.welch(data_pre, **welch_params)
 freq, psd_EEG_seiz = sig.welch(data_seiz, **welch_params)
 freq, psd_EEG_post = sig.welch(data_post, **welch_params)
@@ -73,7 +69,7 @@ freq, psd_EEG_post = sig.welch(data_post, **welch_params)
 saw_power = 0.02
 saw_width = 0.69
 freq_saw = 3  # Hz
-time_seiz = np.linspace(0, data_seiz.size/srate, num=data_seiz.size)
+time_seiz = np.linspace(0, data_seiz.size/sample_rate, num=data_seiz.size)
 
 saw = sawtooth(2 * np.pi * freq_saw * time_seiz, width=saw_width)
 saw *= saw_power  # scaling
@@ -84,18 +80,19 @@ saw_full = np.r_[np.zeros(seiz_len_samples),
                  np.zeros(seiz_len_samples)]
 
 # Create 1/f noise and add
-slope = 1.8
+exponent = 1.8
 seed = 2
-noise, _ = osc_signals4(slope, srate=srate, duration=time_full[-1], seed=seed)
-noise_saw = noise + saw_full
+aperiodic, _ = osc_signals4(exponent, sample_rate=sample_rate,
+                            duration=time_full[-1], seed=seed)
+full_saw = aperiodic + saw_full
 
 # normalize
-noise_saw = (noise_saw - noise_saw.mean()) / noise_saw.std()
+full_saw = (full_saw - full_saw.mean()) / full_saw.std()
 
 # Calc PSDs saw
-saw_pre = noise_saw[:seiz_len_samples]
-saw_seiz = noise_saw[seiz_len_samples:2*seiz_len_samples]
-saw_post = noise_saw[2*seiz_len_samples:]
+saw_pre = full_saw[:seiz_len_samples]
+saw_seiz = full_saw[seiz_len_samples:2*seiz_len_samples]
+saw_post = full_saw[2*seiz_len_samples:]
 
 freq, psd_saw_pre = sig.welch(saw_pre, **welch_params)
 freq, psd_saw_seiz = sig.welch(saw_seiz, **welch_params)
@@ -111,6 +108,7 @@ calc_fooof = dict(freq=freq, freq_range=freq_range, fooof_params=fooof_params)
 fit_pre_eeg, lab_pre_eeg = fooof_fit4(psd_EEG_pre, "pre ", **calc_fooof)
 fit_seiz_eeg, lab_seiz_eeg = fooof_fit4(psd_EEG_seiz, "seiz", **calc_fooof)
 fit_post_eeg, lab_post_eeg = fooof_fit4(psd_EEG_post, "post", **calc_fooof)
+
 fit_pre_sim, lab_pre_saw = fooof_fit4(psd_saw_pre, "pre ", **calc_fooof)
 fit_seiz_sim, lab_seiz_saw = fooof_fit4(psd_saw_seiz, "seiz", **calc_fooof)
 fit_post_sim, lab_post_saw = fooof_fit4(psd_saw_post, "post", **calc_fooof)
@@ -118,14 +116,14 @@ fit_post_sim, lab_post_saw = fooof_fit4(psd_saw_post, "post", **calc_fooof)
 # %% Add ground truth
 
 # =============================================================================
-# ground_truth = gen_aperiodic(range(1, 130), np.array([saw_pre[1], slope]))
+# ground_truth = gen_aperiodic(range(1, 130), np.array([saw_pre[1], exponent]))
 # c_ground_a = "k"
 # ground = "ground"
 # line_ground = dict(lw=.5, ls="--", zorder=5)
 # plot_ground = (freq, 10**ground_truth, c_ground_a)
 # =============================================================================
 
-# %% Plot params
+# %% Plot settings
 
 fig_width = 6.85  # inches
 panel_fontsize = 12
@@ -147,8 +145,7 @@ ticks_psd = dict(length=4, width=1)
 panel_labels = dict(x=0, y=1.02, fontsize=panel_fontsize,
                     fontdict=dict(fontweight="bold"))
 
-# a1
-# EEG Time Series
+# a1 EEG Time Series
 yticks_a1 = [-250, 0, 200]
 yticklabels_a1 = [-250, "", 200]
 xlim_a1 = (0, time_full[-1])
@@ -159,7 +156,7 @@ axes_a1 = dict(yticks=yticks_a1, yticklabels=yticklabels_a1, xlim=xlim_a1,
                ylim=ylim_a1)
 
 
-# a2
+# a2 EEG PSD
 xticks_a2 = [1, 10, 100]
 xticklabels_a2 = []
 yticks_a2 = [1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3, 1e4, 1e5]
@@ -173,8 +170,8 @@ axes_a2 = dict(xticks=xticks_a2, xticklabels=xticklabels_a2,
                xlim=xlim_a2, xlabel=xlabel_a2,
                ylabel=ylabel_a2)
 
-# b1
-y_max = np.abs(noise_saw).max() * 1.1
+# b1 Saw tooth Time Series
+y_max = np.abs(full_saw).max() * 1.1
 yticks_b = (-3.5, 0, 3.5)
 yticklabels_b = (-3.5, "", 3.5)
 xlim_b = (0, time_full[-1])
@@ -185,7 +182,7 @@ ylabel_b = "Simulation [a.u.]"
 axes_b = dict(yticks=yticks_b, yticklabels=yticklabels_b,
               xlim=xlim_b, ylim=ylim_b, xlabel=xlabel_b)
 
-# b2
+# b2 Saw tooth PSD
 yticks_b2 = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1e0, 1e1, 1e2]
 yticklabels_b2 = [r"$10^{-6}$", "", "", "", "", "", "", "", r"$10^2$"]
 ylim_b2 = (yticks_b2[0], yticks_b2[-1])
@@ -195,19 +192,19 @@ axes_b2 = dict(xticks=xticks_a2, xticklabels=xticks_a2, yticks=yticks_b2,
                yticklabels=yticklabels_b2, ylim=ylim_b2,
                xlim=xlim_a2, xlabel=xlabel_b2)
 
-# Rectangles to mark pre-, seizure, post
+# Rectangles to mark pre, seizure, post
 rect_height = np.abs(data_full).max() * 2
 rect = dict(height=rect_height, alpha=0.2)
 
 start_pre = 0
-start_seiz = seiz_len_samples / srate
-start_post = 2*seiz_len_samples / srate
+start_seiz = seiz_len_samples / sample_rate
+start_post = 2*seiz_len_samples / sample_rate
 
 xy_pre = (start_pre, ymin)
 xy_seiz = (start_seiz, ymin)
 xy_post = (start_post, ymin)
 
-width = seiz_len_samples / srate
+width = seiz_len_samples / sample_rate
 
 # Add colored rectangles
 rect_EEG_pre_params = dict(xy=xy_pre, width=width, color=c_pre, **rect)
@@ -220,8 +217,7 @@ rect_EEG_post_params = dict(xy=xy_post, width=width, color=c_post, **rect)
 fig, axes = plt.subplots(2, 2, figsize=[fig_width, 4.5], sharex="col",
                          gridspec_kw=dict(width_ratios=[1, .65]))
 
-# a1
-# Plot EEG seizure
+# a1 Plot EEG seizure
 ax = axes[0, 0]
 ax.plot(time_full, data_full, c=c_empirical, lw=1)
 
@@ -239,8 +235,7 @@ ax.set_ylabel(ylabel_a1, labelpad=-15)
 ax.tick_params(**ticks_time)
 ax.text(s="a", **panel_labels, transform=ax.transAxes)
 
-# a2
-# Plot EEG PSD
+# a2 Plot EEG PSD
 ax = axes[0, 1]
 ax.loglog(freq, psd_EEG_pre, c_pre, lw=2)
 ax.loglog(freq, psd_EEG_seiz, c_seiz, lw=2)
@@ -253,17 +248,15 @@ ax.loglog(freq, fit_post_eeg, "--", c=c_post, lw=2, label=lab_post_eeg)
 
 # Set axes
 ax.set(**axes_a2)
-# ax.legend(labelspacing=0.3)
 ax.legend(borderaxespad=0, labelspacing=.3, borderpad=.2)
 ax.set_ylabel(ylabel_a2, labelpad=-17)
 y_minor = mpl.ticker.LogLocator(subs=np.arange(0, 1, 0.1), numticks=10)
 ax.yaxis.set_minor_locator(y_minor)
 ax.tick_params(**ticks_psd)
 
-# b1
-# Sawtooth Time Series
+# b1 Sawtooth Time Series
 ax = axes[1, 0]
-ax.plot(time_full, noise_saw, c=c_sim, lw=1)
+ax.plot(time_full, full_saw, c=c_sim, lw=1)
 
 # Set rectangles
 rect_saw_pre = plt.Rectangle(**rect_EEG_pre_params)
@@ -279,8 +272,7 @@ ax.set_ylabel(ylabel_b, labelpad=-10)
 ax.tick_params(**ticks_time)
 ax.text(s="b", **panel_labels, transform=ax.transAxes)
 
-# b2
-# Plot saw PSD
+# b2 Plot saw tooth PSD
 ax = axes[1, 1]
 ax.loglog(freq, psd_saw_pre, c_pre, lw=2)
 ax.loglog(freq, psd_saw_seiz, c_seiz, lw=2)
@@ -294,12 +286,11 @@ ax.loglog(freq, fit_post_sim, "--", c=c_post, lw=2, label=lab_post_saw)
 # =============================================================================
 # # Plot ground truth
 # ax.loglog(*plot_ground, **line_ground,
-#           label=fr"$\beta_{{{ground}}}$={slope:.2f}")
+#           label=fr"$\beta_{{{ground}}}$={exponent:.2f}")
 # =============================================================================
 
 # Set axes
 ax.set(**axes_b2)
-# ax.legend(labelspacing=0.3)
 ax.legend(borderaxespad=0, labelspacing=.3, borderpad=.2)
 ax.set_ylabel(ylabel_b2, labelpad=-13)
 ax.tick_params(**ticks_psd)
@@ -312,18 +303,16 @@ plt.savefig(fig_path + fig_name + ".png", dpi=1000, bbox_inches="tight")
 plt.show()
 
 
-# %% Supplementary
+# %% Supplementary Figure
 
-
-fm_emp = FOOOF(**fooof_params)
-fm_sim = FOOOF(**fooof_params)
+fm_emp = FOOOF(verbose=False)
+fm_sim = FOOOF(verbose=False)
 
 fm_emp.fit(freq, psd_EEG_seiz, freq_range)
 fm_sim.fit(freq, psd_saw_seiz, freq_range)
 
-
-fm_emp_tuned = FOOOF(peak_width_limits=(0.5, 1))
-fm_sim_tuned = FOOOF(peak_width_limits=(0.5, 1))
+fm_emp_tuned = FOOOF(peak_width_limits=(0.5, 1), verbose=False)
+fm_sim_tuned = FOOOF(peak_width_limits=(0.5, 1), verbose=False)
 
 fm_emp.fit(freq, psd_EEG_seiz, freq_range)
 fm_sim.fit(freq, psd_saw_seiz, freq_range)
@@ -331,15 +320,14 @@ fm_sim.fit(freq, psd_saw_seiz, freq_range)
 fm_emp_tuned.fit(freq, psd_EEG_seiz, freq_range)
 fm_sim_tuned.fit(freq, psd_saw_seiz, freq_range)
 
-
-# %% 
+# %% Plot Supp Mat
 fig, axes = plt.subplots(2, 2,  figsize=[fig_width, 7], sharex=True)
 
 ax = axes[0, 0]
 
 fm_emp.plot(plt_log=True, ax=ax)
 ax.set_ylabel("Fooof default parameters", fontsize=label_fontsize)
-ax.set_title(f"Empirical seizure", fontsize=label_fontsize)
+ax.set_title("Empirical seizure", fontsize=label_fontsize)
 ax.set_xlabel("")
 yticks = ax.get_yticks()
 ax.set_yticklabels(yticks, fontsize=tick_fontsize)
@@ -351,7 +339,7 @@ ax.text(s="a", **panel_labels, transform=ax.transAxes)
 ax = axes[0, 1]
 
 fm_sim.plot(plt_log=True, ax=ax)
-ax.set_title(f"Simulated seizure", fontsize=label_fontsize)
+ax.set_title("Simulated seizure", fontsize=label_fontsize)
 ax.set_ylabel("")
 ax.set_xlabel("")
 yticks = ax.get_yticks()
@@ -360,7 +348,6 @@ handles, labels = ax.get_legend_handles_labels()
 labels[-1] += fr" $\beta=${fm_sim.aperiodic_params_[1]:.2f}"
 ax.legend(handles[-1:], labels[-1:], fontsize=legend_fontsize)
 ax.text(s="b", **panel_labels, transform=ax.transAxes)
-
 
 ax = axes[1, 0]
 
@@ -391,8 +378,7 @@ ax.legend(handles[-1:], labels[-1:], fontsize=legend_fontsize)
 ax.text(s="d", **panel_labels, transform=ax.transAxes)
 
 plt.savefig(fig_path + fig_name + "_SuppMat.pdf", bbox_inches="tight")
-plt.savefig(fig_path + fig_name + "_SuppMat.png", dpi=1000, bbox_inches="tight")
-
-# %%
+plt.savefig(fig_path + fig_name + "_SuppMat.png", dpi=1000,
+            bbox_inches="tight")
 
 # %%

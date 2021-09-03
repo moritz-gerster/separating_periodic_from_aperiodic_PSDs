@@ -1,5 +1,4 @@
 # %%
-# """Figure 2 with updated osc function."""
 from pathlib import Path
 
 import matplotlib as mpl
@@ -7,21 +6,14 @@ import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import mne
 import numpy as np
-# import scipy as sp
 import scipy.signal as sig
 from fooof import FOOOF
 from fooof.sim.gen import gen_aperiodic
-# from numpy.fft import irfft, rfftfreq
 from scipy.stats import pearsonr
 
 from functions import osc_signals3
 
-# %% PARAMETERS
-
-# Signal params
-srate = 2400
-nperseg = srate  # 4*srate too high resolution for fooof
-welch_params = dict(fs=srate, nperseg=nperseg)
+# %% Plot params
 
 # Save Path
 fig_path = "../paper_figures/"
@@ -29,18 +21,15 @@ fig_name = "Fig3_Crossing"
 Path(fig_path).mkdir(parents=True, exist_ok=True)
 
 # Colors
-
 # a)
 c_sim = "k"
 c_error = "r"
-
 c_range1 = "b"
 c_range2 = "g"
 c_range3 = "y"
 
 # b)
 c_real = "purple"
-
 c_fit1 = c_real
 c_fit2 = "c"
 c_fit3 = "lime"
@@ -50,11 +39,15 @@ c_fit4 = "orange"
 c_low = "deepskyblue"
 c_med = "limegreen"
 c_high = "#ff7f00"
-
 c_ground = "grey"
 
 
-# %% a) Sim Toy Signal with Three Oscillations and Fit
+# %% a) Simulate Signal with Three Oscillations and Fit
+
+# Signal params
+srate = 2400
+nperseg = srate
+welch_params = dict(fs=srate, nperseg=nperseg)
 
 # fit in all frequency ranges from 1 to 80...
 lower_fitting_borders = range(1, 80)
@@ -62,7 +55,7 @@ lower_fitting_borders = range(1, 80)
 upper_fitting_border = 100
 
 # Oscillations parameters:
-toy_slope = 2
+sim_exponent = 2
 freq1, freq2, freq3 = 5, 15, 35  # Hz
 amp1, amp2, amp3 = .4, .1, .02
 width = .01
@@ -72,35 +65,34 @@ periodic_params = [(freq1, amp1, width),
                    (freq3, amp3, width)]
 
 # Sim Toy Signal
-_, toy_signal = osc_signals3(toy_slope, periodic_params=periodic_params,
-                             highpass=False)
-freq_a, toy_psd = sig.welch(toy_signal, **welch_params)
+_, full_signal = osc_signals3(sim_exponent, periodic_params=periodic_params,
+                              highpass=False)
+freq_a, full_psd = sig.welch(full_signal, **welch_params)
 
 # Filter 1-100Hz
 filt = (freq_a <= 100)
 freq_a = freq_a[filt]
-toy_psd = toy_psd[filt]
+full_psd = full_psd[filt]
 
 # Fit fooof and subtract ground truth to obtain fitting error
 fit_errors = []
 fm = FOOOF(verbose=None)
 for low in lower_fitting_borders:
     freq_range = (low, upper_fitting_border)
-    fm.fit(freq_a, toy_psd, freq_range)
+    fm.fit(freq_a, full_psd, freq_range)
     exp = fm.get_params("aperiodic", "exponent")
-    error = np.abs(toy_slope - exp)
+    error = np.abs(sim_exponent - exp)
     fit_errors.append(error)
 
 error_plot = (lower_fitting_borders, fit_errors, c_error)
 
-# %% B: Load and Fit
+# %% b) Load real data and fit fooof different freq ranges
 
 # Load data
-data_path = "../data/Fig2/"
+data_path = "../data/Fig3/"
 fname10 = "subj10_on_R8_raw.fif"
 
 sub10 = mne.io.read_raw_fif(data_path + fname10, preload=True)
-
 sub10.pick_channels(["STN_L23"])
 
 # Notch Filter
@@ -117,7 +109,6 @@ freq, spec10 = sig.welch(sub10, **welch_params)
 
 # Filter above highpass and below lowpass
 filt = (freq <= 600)
-
 freq = freq[filt]
 spec10 = spec10[filt]
 
@@ -143,10 +134,10 @@ fit_params = [(frange1, fooof_params1, c_fit1),
               (frange3, fooof_params3, c_fit3),
               (frange4, fooof_params4, c_fit4)]
 
-# Fit for diferent ranges
+# Fit for different ranges
 fit_ranges = []
 fooof_fits = []
-first = True
+dotted = True
 for frange, fooof_params, plot_color in fit_params:
     # fit
     fm = FOOOF(**fooof_params)
@@ -162,9 +153,9 @@ for frange, fooof_params, plot_color in fit_params:
         freq_str = "  " + freq_str
     exp = fm.get_params("aperiodic", "exponent")
     plot_label = freq_str + rf" $\beta$={exp:.2f}"
-    if first:
+    if dotted:  # set linestyle
         ls = ":"
-        first = False
+        dotted = False
     else:
         ls = "-"
     plot_kwargs = dict(lw=2, ls=ls, label=plot_label)
@@ -173,12 +164,12 @@ for frange, fooof_params, plot_color in fit_params:
     fit_ranges.append((plot_args, plot_kwargs))
 
 
-# %% C: Reproduce PSD
+# %% c) Simulate PSD to reproduce real PSD from b)
 
 nlv = 0.0003  # white noise level
-slope = 1.5  # 1/f slope
+exponent = 1.5  # 1/f exponent
 
-# Oscillations as (frequency, amplitude, width)
+# Oscillations as tuple (frequency, amplitude, width)
 alpha = (12, 1.7, 3)
 low_beta = (18, 2, 2)
 high_beta = (27, 20, 6)
@@ -199,21 +190,21 @@ osc_params_med = [med_delta, *oscillations]
 osc_params_high = [high_delta, *oscillations]
 
 # Make signals
-aperiodic, osc_low = osc_signals3(slope,
-                                 periodic_params=osc_params_low,
-                                 nlv=nlv)
-aperiodic, osc_med = osc_signals3(slope,
-                                 periodic_params=osc_params_med,
-                                 nlv=nlv)
-aperiodic, osc_high = osc_signals3(slope,
-                                  periodic_params=osc_params_high,
-                                  nlv=nlv)
+aperiodic, full_low = osc_signals3(exponent,
+                                   periodic_params=osc_params_low,
+                                   nlv=nlv)
+aperiodic, full_med = osc_signals3(exponent,
+                                   periodic_params=osc_params_med,
+                                   nlv=nlv)
+aperiodic, full_high = osc_signals3(exponent,
+                                    periodic_params=osc_params_high,
+                                    nlv=nlv)
 
 # Calc PSD
 freq, psd_aperiodic = sig.welch(aperiodic, **welch_params)
-freq, psd_low = sig.welch(osc_low, **welch_params)
-freq, psd_med = sig.welch(osc_med, **welch_params)
-freq, psd_high = sig.welch(osc_high, **welch_params)
+freq, psd_low = sig.welch(full_low, **welch_params)
+freq, psd_med = sig.welch(full_med, **welch_params)
+freq, psd_high = sig.welch(full_high, **welch_params)
 
 # Bandpass filter between 1Hz and 600Hz
 freq = freq[filt]
@@ -257,8 +248,7 @@ plot_delta_med = (freq_delta, psd_med_delta, psd_aperiodic_delta)
 plot_delta_high = (freq_delta, psd_high_delta, psd_aperiodic_delta)
 
 # Summarize
-delta_power2 = [plot_delta_low, plot_delta_med, plot_delta_high]
-
+delta_power = [plot_delta_low, plot_delta_med, plot_delta_high]
 
 # Fit real and simulated spectra
 fm_LFP = FOOOF(**fooof_params1)
@@ -281,7 +271,6 @@ exponents = [("low", exp_low), ("med", exp_med), ("high", exp_high)]
 delta_labels = [fr"fooof {pwr} delta $\beta$={exp:.2f}"
                 for pwr, exp in exponents]
 
-
 ap_fit_LFP = gen_aperiodic(fm_LFP.freqs, fm_LFP.aperiodic_params_)
 ap_fit_low = gen_aperiodic(fm_low.freqs, fm_low.aperiodic_params_)
 ap_fit_med = gen_aperiodic(fm_med.freqs, fm_med.aperiodic_params_)
@@ -297,7 +286,6 @@ plot_fit_high = (fm_high.freqs, 10**ap_fit_high, "--")
 # Summarize
 psd_delta_fits = [plot_fit_low, plot_fit_med, plot_fit_high]
 
-
 spec10_kwargs = dict(c=c_real, lw=2)
 aperiodic_kwargs = dict(lw=.5)
 low_kwargs = dict(c=c_low, lw=2)
@@ -307,9 +295,8 @@ high_kwargs = dict(c=c_high, lw=2)
 # Summarize
 delta_kwargs = [low_kwargs, med_kwargs, high_kwargs]
 colors_c = [c_low, c_med, c_high]
-
-
-# %% Plot params
+ 
+# %% Plot settings
 
 fig_width = 6.85  # inches
 panel_fontsize = 12
@@ -325,7 +312,6 @@ mpl.rcParams['legend.fontsize'] = legend_fontsize
 mpl.rcParams["axes.spines.right"] = False
 mpl.rcParams["axes.spines.top"] = False
 mpl.rcParams["font.size"] = 14
-
 
 abc = dict(x=0, y=1.04, fontsize=panel_fontsize,
            fontdict=dict(fontweight="bold"))
@@ -360,8 +346,6 @@ axes_a2 = dict(xticks=xticks_a2, xticklabels=xticks_a2, yticks=yticks_a2,
 
 # b)
 xticks_b = [1, 10, 100, 600]
-# yticks_b = [5e-3, 5e-2, 5e-1]
-# yticklabels_b = [r"5$\cdot10^{-3}$", r"5$\cdot10^{-2}$", r"5$\cdot10^{-1}$"]
 xlim_b = (1, 826)
 xlabel_b = "Frequency [Hz]"
 ylabel_b = r"PSD [$\mu$$V^2$/Hz]"
@@ -380,8 +364,8 @@ delta_fill_dic = dict(alpha=0.4)
 # Annotate increased/decreased delta power with arrows
 x_arrow = 0.9  # set arrow slightly below 1Hz
 spec10_fit_offset = 10**ap_fit_LFP[0]  # LFP power at 1Hz
-low_fit_offset = 10**ap_fit_low[0]  # sim low power at 1Hz
-high_fit_offset = 10**ap_fit_high[0]  # sim high power at 1Hz
+low_fit_offset = 10**ap_fit_low[0]  # sim_low power at 1Hz
+high_fit_offset = 10**ap_fit_high[0]  # sim_high power at 1Hz
 
 # Arrow coordinates. Up-scale to account for x_arrow < 1 Hz
 arr_head_low = (x_arrow, low_fit_offset * 0.95)
@@ -409,7 +393,8 @@ fig = plt.figure(figsize=[fig_width, 6.5], constrained_layout=True)
 gs0 = gridspec.GridSpec(3, 1, figure=fig, height_ratios=[10, 1, 10])
 
 # a) and b)
-gs00 = gridspec.GridSpecFromSubplotSpec(2, 2, subplot_spec=gs0[0],
+gs00 = gridspec.GridSpecFromSubplotSpec(2, 2,
+                                        subplot_spec=gs0[0],
                                         width_ratios=[8, 10])
 ax1 = fig.add_subplot(gs00[0, 0])
 ax2 = fig.add_subplot(gs00[1, 0])
@@ -429,23 +414,21 @@ ax6 = fig.add_subplot(gs02[2])
 c_axes = [ax4, ax5, ax6]
 
 # a)
-# a1
-ax = ax1
-
-# Plot sim
-ax.loglog(freq_a, toy_psd, c_sim)
+ax = ax1  # a1
+ax.loglog(freq_a, full_psd, c_sim)  # Plot sim
 
 # Annotate fitting ranges
 vline_dic = dict(ls="--", clip_on=False, alpha=0.3)
 ymin = ylim_a1[0]
 for i, (freq_low, color) in enumerate(zip(freqs123, colors123)):
-    y = toy_psd[freq_low]
+    y = full_psd[freq_low]
     xmin = freq_low
     xmax = upper_fitting_border
     h_coords = (y, xmin, xmax)
     ax.hlines(*h_coords, color=color, ls="--")
     v_coords = (xmin, ymin, y)
     ax.vlines(*v_coords, color=color, **vline_dic)
+
     # Add annotation
     s = f"{freq_low}-{xmax}Hz"
     if i == 0:
@@ -465,9 +448,7 @@ ax.set_yticklabels([], minor=True)
 
 # a2
 ax = ax2
-
-# Plot error
-ax.semilogx(*error_plot)
+ax.semilogx(*error_plot)  # Plot error
 
 # Annotate fitting ranges
 for i, (freq_low, color) in enumerate(zip(freqs123, colors123)):
@@ -481,12 +462,9 @@ for i, (freq_low, color) in enumerate(zip(freqs123, colors123)):
 ax.set(**axes_a2)
 ax.set_ylabel(ylabel_a2, labelpad=0)
 
-
 # b)
 ax = ax3
-
-# Plot spectrum
-ax.loglog(*plot_psd_spec10)
+ax.loglog(*plot_psd_spec10)  # Plot spectrum
 
 # Plot fooof fits
 for fit_range in fit_ranges:
@@ -494,11 +472,7 @@ for fit_range in fit_ranges:
 
 # Set axes
 ax.set(**axes_b)
-# =============================================================================
-# leg = ax.legend(handlelength=3)
-# for handle in leg.legendHandles:
-#     handle.set_linewidth(2.6)
-# =============================================================================
+
 # decrease legend handle linewidth
 leg = ax.legend(handlelength=1.5, borderaxespad=0)
 for handle in leg.legendHandles:
@@ -508,7 +482,7 @@ ax.text(s="b", **abc, transform=ax.transAxes)
 
 # c)
 
-# Make sure we have just one label for each repetitive plot
+# Use "None" to make sure we have just one label for each repetitive plot
 spec10_label = ["STN-LFP", None, None]
 spec10_fit_label = [rf"fooof LFP $\beta$={exp_LFP:.2f}", None, None]
 aperiodic_label = [None, None, "1/f + noise"]
@@ -516,7 +490,6 @@ aperiodic_label = [None, None, "1/f + noise"]
 arrows = [arr_pos_low, None, arr_pos_high]
 
 for i, ax in enumerate(c_axes):
-
     # Plot LFP and fooof fit
     ax.loglog(*plot_psd_spec10_adj, alpha=.3, **spec10_kwargs,
               label=spec10_label[i])
@@ -530,9 +503,8 @@ for i, ax in enumerate(c_axes):
     # Plot aperiodic component of sim
     ax.loglog(*plot_aperiodic, **aperiodic_kwargs, label=aperiodic_label[i])
 
-    # Indicate delta power as fill between aperiodic component
-    # and full spectrum
-    ax.fill_between(*delta_power2[i], color=colors_c[i], **delta_fill_dic)
+    # Indicate delta power as fill between aperiodic component and full spectrum
+    ax.fill_between(*delta_power[i], color=colors_c[i], **delta_fill_dic)
 
     # Draw arrow
     if i != 1:
@@ -556,15 +528,12 @@ for i, ax in enumerate(c_axes):
 # Set legend between subplots
 leg = ax_leg.legend(handles, labels, **leg_c)
 leg.set_in_layout(False)
-# for lh in leg.legendHandles:
-#    lh.set_alpha(1)
 
 plt.savefig(fig_path + fig_name + ".pdf", bbox_inches="tight")
 plt.savefig(fig_path + fig_name + ".png", dpi=1000, bbox_inches="tight")
 plt.show()
 
-# %% Plot Supp Mat b
-
+# %% Plot Supp Mat b)
 
 fig, axes = plt.subplots(2, 4, figsize=[fig_width, 4])
 for i in range(4):
@@ -613,24 +582,22 @@ plt.show()
 
 mpl.rcParams.update(mpl.rcParamsDefault)
 
-
 y_intercepts = [fm_low.aperiodic_params_[0],
                 fm_med.aperiodic_params_[0],
                 fm_high.aperiodic_params_[0]]
 
-delta_power2 = [low_delta[1], med_delta[1], high_delta[1]]
-
+delta_power = [low_delta[1], med_delta[1], high_delta[1]]
 
 # Pearson
-r_corr, p_val = pearsonr(delta_power2, y_intercepts)
+r_corr, p_val = pearsonr(delta_power, y_intercepts)
 
 # Regression
-m, b = np.polyfit(delta_power2, y_intercepts, 1)
+m, b = np.polyfit(delta_power, y_intercepts, 1)
 
 # Plot
 fig, ax = plt.subplots(1, 1, figsize=[3, 3])
-ax.scatter(delta_power2, y_intercepts, c=[c_low, c_med, c_high])
-ax.plot(delta_power2, m*np.array(delta_power2) + b,
+ax.scatter(delta_power, y_intercepts, c=[c_low, c_med, c_high])
+ax.plot(delta_power, m*np.array(delta_power) + b,
         label=f"r={r_corr:.2f}, p={p_val:.2f}")
 ax.set(xlabel="Simulated Delta Power [a.u.]",
        ylabel="fooof fit y-intercept [a.u.]")
@@ -639,6 +606,4 @@ ax.legend(title="Pearson correlation")
 plt.savefig(fig_path + fig_name + "_SuppC.png", dpi=1000, bbox_inches="tight")
 plt.savefig(fig_path + fig_name + "_SuppC.pdf", bbox_inches="tight")
 plt.show()
-# %%
-
 # %%
