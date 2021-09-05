@@ -3,7 +3,6 @@ import os
 import mne
 import numpy as np
 import fractions
-from scipy import signal
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import norm
@@ -32,10 +31,7 @@ def load_fif():
     n_sub = 14
     task = "rest"
     # Paths
-    load_folder = "../../Litvak11/2021-03-03_Wrap_Up/"
     fif_path = f'../../Litvak11/data/1_raw_clean_fif/{task}/'
-    psd_path = load_folder + f"data/{task}/PSD_arrays/"
-
     raw_conds = []
 
     # drop channels
@@ -84,7 +80,6 @@ def load_psd():
     task = "rest"
     # Paths
     load_folder = "../../Litvak11/2021-03-03_Wrap_Up/"
-    fif_path = f'../../Litvak11/data/1_raw_clean_fif/{task}/'
     psd_path = load_folder + f"data/{task}/PSD_arrays/"
 
 # =============================================================================
@@ -96,10 +91,6 @@ def load_psd():
     psd_on = np.load(psd_path + "on" + psd_name)
     psd_off = np.load(psd_path + "off" + psd_name)
     return freqs, psd_on, psd_off
-
-
-
-
 
 
 def noise_white(samples, seed=True):
@@ -152,7 +143,6 @@ def osc_signals(samples, slope, freq_osc, amp, width=None, seed=True,
         width = [width] * peaks
     elif isinstance(width, list):
         assert peaks == len(width), "input lists must be of the same length"
-
 
     # add Gaussian peaks to the spectrum
     if isinstance(width, list):
@@ -244,15 +234,15 @@ def osc_signals_correct(samples, slopes, freq_osc=[], amp=[], width=[],
     random_phases = np.random.uniform(0, 2*np.pi, size=amps.shape)
     print(seed)
     print(random_phases[0])
-    
 
     for j, slope in enumerate(slopes):
         # Multiply Amp Spectrum by 1/f
-        amps = amps / freqs ** (slope / 2)  # half slope needed: 1/f^2 in power spectrum = sqrt(1/f^2)=1/f^2*0.5=1/f in amp spectrum
+        # half slope needed: 1/f^2 in power spectrum = 
+        # sqrt(1/f^2)=1/f^2*0.5=1/f in amp spectrum
+        amps = amps / freqs ** (slope / 2)
         amps *= np.exp(1j * random_phases)
 
         for i in range(len(freq_osc)):
-            freq_idx = np.abs(freqs - freq_osc[i]).argmin()
             # make Gaussian peak
             amp_dist = norm(freq_osc[i], width[i]).pdf(freqs)
             # amp_dist /= np.max(amp_dist)    # check ich nciht
@@ -260,13 +250,6 @@ def osc_signals_correct(samples, slopes, freq_osc=[], amp=[], width=[],
 
         noises[j] = np.fft.irfft(amps)
     return noises
-
-
-
-
-
-
-
 
 
 def psds_pink(noises, srate, nperseg, normalize=False):
@@ -343,6 +326,7 @@ def slope_error(slopes, freq, noise_psds, freq_range, IRASA,
         return slopes-slopes_f, slopes-slopes_i
     else:
         return slopes-slopes_f, None
+
 
 def plot_all(freq, noise_psds, freq_f, noise_psds_f, IRASA, slopes, freq_range,
              white_ratio, plot_osc=False, save_path=None, save_name=None,
@@ -503,10 +487,11 @@ def calc_psd(x, fs=1.0, nperseg=None, axis=-1, average='mean', **kwargs):
             return np.nanmean(x, axis=-1)
     if average == 'median':
         def average(x):
-           return (np.nanmedian(x, axis=-1) /
-                   sig.spectral._median_bias(x.shape[-1]))
+            return (np.nanmedian(x, axis=-1) /
+                    sig.spectral._median_bias(x.shape[-1]))
     f, t, csd = sig.spectral._spectral_helper(x, x,
-            fs=fs, nperseg=nperseg, axis=-1, mode='psd', **kwargs)
+                                              fs=fs, nperseg=nperseg,
+                                              axis=-1, mode='psd', **kwargs)
     # calculate the requested average
     try:
         csd_mean = average(csd)
@@ -737,139 +722,3 @@ def irasa(data, sf=None, ch_names=None, band=(1, 30),
         return freqs, psd_aperiodic, psd_osc, pd.DataFrame(fit_params)
     else:
         return freqs, psd_aperiodic, psd_osc
-
-
-"""
-VOYTEK LAB
-The IRASA algorithm for separating periodic and aperiodic activity."""
-
-import fractions
-
-import numpy as np
-
-from scipy import signal
-from scipy.optimize import curve_fit
-
-# from neurodsp.spectral import compute_spectrum, trim_spectrum
-
-###################################################################################################
-###################################################################################################
-# =============================================================================
-# 
-# def compute_irasa(sig, fs, f_range=None, hset=None, thresh=None, **spectrum_kwargs):
-#     """Separate aperiodic and periodic components using IRASA.
-#     Parameters
-#     ----------
-#     sig : 1d array
-#         Time series.
-#     fs : float
-#         The sampling frequency of sig.
-#     f_range : tuple, optional
-#         Frequency range to restrict the analysis to.
-#     hset : 1d array, optional
-#         Resampling factors used in IRASA calculation.
-#         If not provided, defaults to values from 1.1 to 1.9 with an increment of 0.05.
-#     thresh : float, optional
-#         A relative threshold to apply when separating out periodic components.
-#         The threshold is defined in terms of standard deviations of the original spectrum.
-#     spectrum_kwargs : dict
-#         Optional keywords arguments that are passed to `compute_spectrum`.
-#     Returns
-#     -------
-#     freqs : 1d array
-#         Frequency vector.
-#     psd_aperiodic : 1d array
-#         The aperiodic component of the power spectrum.
-#     psd_periodic : 1d array
-#         The periodic component of the power spectrum.
-#     Notes
-#     -----
-#     Irregular-Resampling Auto-Spectral Analysis (IRASA) is an algorithm that aims to
-#     separate 1/f and periodic components by resampling time series and computing power spectra,
-#     averaging away any activity that is frequency specific to isolate the aperiodic component.
-#     References
-#     ----------
-#     Wen, H., & Liu, Z. (2016). Separating Fractal and Oscillatory Components in the Power Spectrum
-#     of Neurophysiological Signal. Brain Topography, 29(1), 13–26. DOI: 10.1007/s10548-015-0448-0
-#     """
-# 
-#     # Check & get the resampling factors, with rounding to avoid floating point precision errors
-#     hset = np.arange(1.1, 1.95, 0.05) if hset is None else hset
-#     hset = np.round(hset, 4)
-# 
-#     # The `nperseg` input needs to be set to lock in the size of the FFT's
-#     if 'nperseg' not in spectrum_kwargs:
-#         spectrum_kwargs['nperseg'] = int(4 * fs)
-# 
-#     # Calculate the original spectrum across the whole signal
-#     freqs, psd = compute_spectrum(sig, fs, **spectrum_kwargs)
-# 
-#     # Do the IRASA resampling procedure
-#     psds = np.zeros((len(hset), *psd.shape))
-#     for ind, h_val in enumerate(hset):
-# 
-#         # Get the up-sampling / down-sampling (h, 1/h) factors as integers
-#         rat = fractions.Fraction(str(h_val))
-#         up, dn = rat.numerator, rat.denominator
-# 
-#         # Resample signal
-#         sig_up = signal.resample_poly(sig, up, dn, axis=-1)
-#         sig_dn = signal.resample_poly(sig, dn, up, axis=-1)
-# 
-#         # Calculate the power spectrum, using the same params as original
-#         freqs_up, psd_up = compute_spectrum(sig_up, h_val * fs, **spectrum_kwargs)
-#         freqs_dn, psd_dn = compute_spectrum(sig_dn, fs / h_val, **spectrum_kwargs)
-# 
-#         # Calculate the geometric mean of h and 1/h
-#         psds[ind, :] = np.sqrt(psd_up * psd_dn)
-# 
-#     # Take the median resampled spectra, as an estimate of the aperiodic component
-#     psd_aperiodic = np.median(psds, axis=0)
-# 
-#     # Subtract aperiodic from original, to get the periodic component
-#     psd_periodic = psd - psd_aperiodic
-# 
-#     # Apply a relative threshold for tuning which activity is labelled as periodic
-#     if thresh is not None:
-#         sub_thresh = np.where(psd_periodic - psd_aperiodic < thresh * np.std(psd))[0]
-#         psd_periodic[sub_thresh] = 0
-#         psd_aperiodic[sub_thresh] = psd[sub_thresh]
-# 
-#     # Restrict spectrum to requested range
-#     if f_range:
-#         psds = np.array([psd_aperiodic, psd_periodic])
-#         freqs, (psd_aperiodic, psd_periodic) = trim_spectrum(freqs, psds, f_range)
-# 
-#     return freqs, psd_aperiodic, psd_periodic
-# 
-# 
-# =============================================================================
-def fit_irasa(freqs, psd_aperiodic):
-    """Fit the IRASA derived aperiodic component of the spectrum.
-    Parameters
-    ----------
-    freqs : 1d array
-        Frequency vector, in linear space.
-    psd_aperidic : 1d array
-        Power values, in linear space.
-    Returns
-    -------
-    intercept : float
-        Fit intercept value.
-    slope : float
-        Fit slope value.
-    Notes
-    -----
-    This fits a linear function of the form `y = ax + b` to the log-log aperiodic power spectrum.
-    """
-
-    popt, _ = curve_fit(fit_func, np.log10(freqs), np.log10(psd_aperiodic))
-    intercept, slope = popt
-
-    return intercept, slope
-
-
-def fit_func(freqs, intercept, slope):
-    """A fit function to use for fitting IRASA separated 1/f power spectra components."""
-
-    return slope * freqs + intercept

@@ -1,15 +1,14 @@
 # %%
+import mne
 import numpy as np
 import scipy.signal as sig
-import mne
 from fooof import FOOOFGroup
+
 from helper_Clean import irasa
 
-
-# Litvak file names
+# File names
 path = "../data/Fig5/"
 fname = "subj6_off_R1_raw.fif"
-
 sub = mne.io.read_raw_fif(path + fname, preload=True)
 
 # Convert mne to numpy
@@ -18,7 +17,6 @@ start = int(0.5 * srate)  # artefact in beginning of recording
 stop = int(185 * srate)  # artefact at the end of recording
 
 sub = sub.get_data(start=start, stop=stop)[:9]
-
 
 band = (1, 30)
 
@@ -48,7 +46,6 @@ _, _, _, params = IRASA
 
 IRASA = irasa(data=sub, sf=srate, band=band, win_sec=0.5)
 _, _, _, params = IRASA
-
 
 # %% IRASA slows down if number of hset is increased
 %%timeit

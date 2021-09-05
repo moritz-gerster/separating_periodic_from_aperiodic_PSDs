@@ -1,9 +1,4 @@
 # %%
-"""
-The evaluated frequency range is larger than the fitting range.
-
-Rule: Avoid noise floor + highpass range!
-"""
 from pathlib import Path
 
 import matplotlib as mpl
@@ -15,8 +10,8 @@ import scipy.signal as sig
 from fooof import FOOOF
 from fooof.sim.gen import gen_aperiodic
 
-from functions import annotate_fit_range5, detect_noise_floor5, osc_signals5
-from functions import calc_error5
+from functions import (annotate_fit_range5, calc_error5, detect_noise_floor5,
+                       osc_signals5)
 from helper_Clean import irasa
 
 try:
@@ -32,9 +27,12 @@ fig_path = "../paper_figures/"
 fig_name = "Fig5_FreqRange"
 Path(fig_path).mkdir(parents=True, exist_ok=True)
 
-# Litvak file names
+# File names
 path = "../data/Fig4/"
 fname = "subj6_off_R1_raw.fif"
+
+# Sizes
+lw = 2
 
 # Colors
 # a)
@@ -55,8 +53,6 @@ c_IRASA1 = "g"
 c_IRASA2 = "C1"
 c_IRASA3 = "orangered"
 
-lw = 2
-
 # %% a) Sim Signal with Three Oscillations and Fit
 
 # fit in all frequency ranges from 1 to 80...
@@ -66,13 +62,13 @@ upper_fitting_border = 100
 
 # Oscillations parameters:
 sim_exponent_a = 2
-freq1, freq2, freq3 = 5, 15, 35  # Hz
-amp1, amp2, amp3 = .4, .1, .02
-width = .01
+peak_center_freq1, peak_center_freq2, peak_center_freq3 = 5, 15, 35  # Hz
+peak_amplitude1, peak_amplitude2, peak_amplitude3 = .4, .1, .02
+peak_width = .01
 
-periodic_params = [(freq1, amp1, width),
-                   (freq2, amp2, width),
-                   (freq3, amp3, width)]
+periodic_params = [(peak_center_freq1, peak_amplitude1, peak_width),
+                   (peak_center_freq2, peak_amplitude2, peak_width),
+                   (peak_center_freq3, peak_amplitude3, peak_width)]
 
 # Sim Signal
 _, full_signal = osc_signals5(sim_exponent_a, periodic_params=periodic_params,
@@ -98,7 +94,7 @@ freq_ir, psd_aperiodic, _, _ = irasa(full_signal, band=freq_range,
 
 psd_aperiodic = psd_aperiodic[0]
 
-# %% a) IRASA sim (takes very long)
+# %% a) IRASA (takes very long)
 
 # Fit IRASA and subtract ground truth to obtain fitting error
 fit_errors = calc_error5(full_signal, lower_fitting_borders,
@@ -115,7 +111,6 @@ aperiodic_b, _ = osc_signals5(**noise_params_b)
 # Calc PSD
 welch_params["nperseg"] = 4*sample_rate  # show lowpass filter
 freq_b, psd2_noise_b = sig.welch(aperiodic_b, **welch_params)
-
 
 # %% b) Calc IRASA
 
@@ -142,7 +137,7 @@ h_maxima = [2, 11, 20]
 h_maxima = [2, 8, 15]
 h_colors = [c_IRASA1, c_IRASA2, c_IRASA3]
 for h_max, color in zip(h_maxima, h_colors):
-    # no oscillations, no harmonics, h can be integer
+    # no oscillations, no harmonics -> h can be integer
     N_h = 5  # not more needed for such simple simulation
     IRASA = irasa(data=aperiodic_b, hset=np.linspace(1.1, h_max, N_h),
                   **irasa_params)
@@ -203,7 +198,7 @@ IR_plot_eff_args_c = []
 IR_plot_eff_kwargs_c = []
 
 for h_max, color in zip(h_maxima, h_colors):
-    # no oscillations, no harmonics, h can be integer
+    # no oscillations, no harmonics -> h can be integer
     N_h = 5  # not more needed for such simple simulation
     IRASA = irasa(data=aperiodic_b, hset=np.linspace(1.1, h_max, N_h),
                   **irasa_params)
@@ -398,7 +393,7 @@ xticklabels_a1 = []
 xlim_a = (1, 100)
 axes_a1 = dict(xticklabels=xticklabels_a1, xlim=xlim_a, yticks=yticks_a,
                yticklabels=yticklabels_a, ylim=ylim_a)
-freqs123 = [freq1, freq2, freq3]
+freqs123 = [peak_center_freq1, peak_center_freq2, peak_center_freq3]
 colors123 = [c_range1, c_range2, c_range3]
 text_dic = dict(x=100, ha="right", fontsize=annotation_fontsize)
 

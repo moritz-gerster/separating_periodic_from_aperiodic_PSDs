@@ -295,7 +295,7 @@ high_kwargs = dict(c=c_high, lw=2)
 # Summarize
 delta_kwargs = [low_kwargs, med_kwargs, high_kwargs]
 colors_c = [c_low, c_med, c_high]
- 
+
 # %% Plot settings
 
 fig_width = 6.85  # inches
@@ -503,7 +503,7 @@ for i, ax in enumerate(c_axes):
     # Plot aperiodic component of sim
     ax.loglog(*plot_aperiodic, **aperiodic_kwargs, label=aperiodic_label[i])
 
-    # Indicate delta power as fill between aperiodic component and full spectrum
+    # Indicate delta power as fill between ap. component and full spectrum
     ax.fill_between(*delta_power[i], color=colors_c[i], **delta_fill_dic)
 
     # Draw arrow

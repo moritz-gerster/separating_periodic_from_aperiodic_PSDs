@@ -1,16 +1,19 @@
 from typing import List, Tuple
+
 import numpy as np
-import scipy.signal as sig
-from numpy.fft import irfft, rfftfreq
 import scipy as sp
+import scipy.signal as sig
 from fooof import FOOOF
 from fooof.sim.gen import gen_aperiodic
+from numpy.fft import irfft, rfftfreq
+
 try:
     from tqdm import trange
 except ImportError:
     trange = range
 
 
+# osc_signals1 -> elec_phys_signal
 def osc_signals1(exponent: float,
                  periodic_params: List[Tuple[float, float, float]] = None,
                  nlv: float = None,
@@ -770,8 +773,22 @@ def annotate_range6(ax, xmin, xmax, height, ylow=None, yhigh=None,
         xdiff = xmax - xmin
         if xdiff > 50:  # round large intervals
             xdiff = np.round(xdiff, -1)
-        range_str = (r"$\Delta f=$"f"{xdiff:.0f}Hz\n"
-                     r"$\Delta f_{log}=$"f"{(np.log10(xmax/xmin)):.1f}")
+        range_str = (r"$\Delta f=$"
+                     f"{xdiff:.0f}Hz\n"
+                     r"$\Delta f_{log}=$"
+                     f"{(np.log10(xmax/xmin)):.1f} log(Hz)")
+    elif annotation == "log-diff_short":
+        xdiff = xmax - xmin
+        if xdiff > 50:  # round large intervals
+            xdiff = np.round(xdiff, -1)
+        range_str = (f"{xdiff:.0f}Hz\n"
+                     f"{(np.log10(xmax/xmin)):.1f} log(Hz)")
+    elif annotation == "log-diff_veryshort":
+        xdiff = xmax - xmin
+        if xdiff > 50:  # round large intervals
+            xdiff = np.round(xdiff, -1)
+        range_str = (f"{xdiff:.0f}\n"
+                     f"{(np.log10(xmax/xmin)):.1f}")
     else:
         range_str = f"{xmin:.1f}-{xmax:.1f}Hz"
     ax.text(text_pos, text_height, s=range_str, **anno_dic)

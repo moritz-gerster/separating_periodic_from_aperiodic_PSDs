@@ -1,16 +1,13 @@
 # %%
-# """Fooof needs clearly separable (and ideally Gaussian) peaks."""
-import numpy as np
-from numpy.fft import irfft, rfftfreq
-import scipy as sp
-import scipy.signal as sig
-from scipy.signal import sawtooth
-import matplotlib.pyplot as plt
 import matplotlib as mpl
-from helper import irasa
+import matplotlib.pyplot as plt
+import numpy as np
+import scipy.signal as sig
 from fooof.sim.gen import gen_aperiodic
+from scipy.signal import sawtooth
 
 from functions import osc_signals7
+from helper_Clean import irasa
 
 
 def IRASA_fit(data, freq_range, cond):
@@ -31,7 +28,7 @@ def IRASA_fit(data, freq_range, cond):
     tuple(ndarray, str)
         (aperiodic fit, plot label).
     """
-    _, _, _, params = irasa(data, sf=srate, band=freq_range)
+    _, _, _, params = irasa(data, sf=sample_rate, band=freq_range)
     exp = -params["Slope"][0]
     intercept = params["Intercept"][0]
     label = fr"$\beta_{{{cond}}}$={exp:.2f}"
@@ -39,7 +36,7 @@ def IRASA_fit(data, freq_range, cond):
     return 10**ap_fit, label
 
 
-# %% Parameters
+# %% Plot Parameters
 
 # Paths
 data_path = "../data/Fig3/"
@@ -49,43 +46,41 @@ fig_name = "Fig7_Separation"
 # Colors
 c_empirical = "purple"
 c_sim = "k"
-
 c_pre = "c"
 c_seiz = "r"
 c_post = "y"
 
-# EEG Params
-srate = 256
-cha_nm = "F3-C3"
+# %% EEG Params
+sample_rate = 256
+electrode = "F3-C3"
 
 # Seizure sample timepoints
-seiz_start_samples = 87800  # behalten
-seiz_end_samples = 91150  # behalten
-seiz_len_samples = seiz_end_samples - seiz_start_samples  # behalten
+seiz_start_samples = 87800  # keep
+seiz_end_samples = 91150  # keep
+seiz_len_samples = seiz_end_samples - seiz_start_samples  # keep
 
 # Welch Params
-nperseg = srate
-welch_params = {"fs": srate, "nperseg": nperseg}
-
+nperseg = sample_rate
+welch_params = {"fs": sample_rate, "nperseg": nperseg}
 
 # %% Load data, calc PSD
-seiz_data = np.load(data_path + cha_nm + ".npy", allow_pickle=True)
+seiz_data = np.load(data_path + electrode + ".npy", allow_pickle=True)
 
 # Select seizure time points
-full_seiz = slice(seiz_start_samples - seiz_len_samples,
-                  seiz_end_samples + seiz_len_samples)
-pre_seiz = slice(seiz_start_samples - seiz_len_samples,
-                 seiz_start_samples)
-seiz = slice(seiz_start_samples, seiz_end_samples)
-post_seiz = slice(seiz_end_samples, seiz_end_samples + seiz_len_samples)
+slice_full = slice(seiz_start_samples - seiz_len_samples,
+                   seiz_end_samples + seiz_len_samples)
+slice_pre_seiz = slice(seiz_start_samples - seiz_len_samples,
+                       seiz_start_samples)
+slice_seiz = slice(seiz_start_samples, seiz_end_samples)
+slice_post_seiz = slice(seiz_end_samples, seiz_end_samples + seiz_len_samples)
 
-data_full = seiz_data[full_seiz]
-time_full = np.linspace(0, data_full.size/srate, num=data_full.size)
-data_pre = seiz_data[pre_seiz]
-data_seiz = seiz_data[seiz]
-data_post = seiz_data[post_seiz]
+data_full = seiz_data[slice_full]
+time_full = np.linspace(0, data_full.size/sample_rate, num=data_full.size)
+data_pre = seiz_data[slice_pre_seiz]
+data_seiz = seiz_data[slice_seiz]
+data_post = seiz_data[slice_post_seiz]
 
-# CALC psd pre, post, seiz
+# Calc psd pre, post, seiz
 freq, psd_EEG_pre = sig.welch(data_pre, **welch_params)
 freq, psd_EEG_seiz = sig.welch(data_seiz, **welch_params)
 freq, psd_EEG_post = sig.welch(data_post, **welch_params)
@@ -93,12 +88,13 @@ freq, psd_EEG_post = sig.welch(data_post, **welch_params)
 
 # %% Simulate sawtooth signal of same length
 
-# Sawtooth Signal
+# Sawtooth Parameters
 saw_power = 0.02
 saw_width = 0.69
 freq_saw = 3  # Hz
-time_seiz = np.linspace(0, data_seiz.size/srate, num=data_seiz.size)
+time_seiz = np.linspace(0, data_seiz.size/sample_rate, num=data_seiz.size)
 
+# Make Signal
 saw = sawtooth(2 * np.pi * freq_saw * time_seiz, width=saw_width)
 saw *= saw_power  # scaling
 
@@ -107,19 +103,30 @@ saw_full = np.r_[np.zeros(seiz_len_samples),
                  saw,
                  np.zeros(seiz_len_samples)]
 
-# add too broad overlapping oscillations
-periodic_params = [(10, .5e5, 3.5), (25, .5e5, 15)]
+# add two broad overlapping oscillations
+peak_center_freq1 = 10
+peak_center_freq2 = 25
+peak_amplitude = .5e5
+peak_width1 = 3.5
+peak_width2 = 15
+
+periodic_params = [(peak_center_freq1, peak_amplitude, peak_width1),
+                   (peak_center_freq2, peak_amplitude, peak_width2)]
 seed = 2
-_, osc = osc_signals7(0, periodic_params=periodic_params,
-                         srate=srate, duration=time_seiz[-1], seed=seed)
-osc /= 1e4  # decrease white noise
+exponent_sim_oscs = 0
+_, full_signal = osc_signals7(exponent_sim_oscs,
+                              periodic_params=periodic_params,
+                              srate=sample_rate, duration=time_seiz[-1],
+                              seed=seed)
+full_signal /= 1e4  # decrease white noise
 osc_full = np.r_[np.zeros(seiz_len_samples),
-                        osc,
-                        np.zeros(seiz_len_samples)]
+                 full_signal,
+                 np.zeros(seiz_len_samples)]
 
 # Create 1/f noise and add
-slope = 1.8
-noise, _ = osc_signals7(slope, srate=srate, duration=time_full[-1], seed=seed)
+exponent_sim = 1.8
+noise, _ = osc_signals7(exponent_sim, srate=sample_rate,
+                        duration=time_full[-1], seed=seed)
 noise_saw = noise + saw_full
 noise_saw_osc = noise + saw_full + osc_full
 
@@ -147,9 +154,9 @@ freq, psd_saw_osc_seiz = sig.welch(saw_osc_seiz, **welch_params)
 freq, psd_saw_osc_post = sig.welch(saw_osc_post, **welch_params)
 
 
-# %% Fit IRASA
+# %% Fit irasa
 
-# Calc IRASA pre-, post-, and during seizure
+# Calc irasa pre-, post-, and during seizure
 freq_range = [1, 100]
 
 fit_pre_eeg, lab_pre_eeg = IRASA_fit(data_pre, freq_range, "pre ")
@@ -160,11 +167,12 @@ fit_pre_sim, lab_pre_saw = IRASA_fit(saw_pre, freq_range, "pre ")
 fit_seiz_sim, lab_seiz_saw = IRASA_fit(saw_seiz, freq_range, "seiz")
 fit_post_sim, lab_post_saw = IRASA_fit(saw_post, freq_range, "post")
 
-fit_pre_sim_osc, lab_pre_saw_osc = IRASA_fit(saw_pre,freq_range, "pre ")
-fit_seiz_sim_osc, lab_seiz_saw_osc = IRASA_fit(saw_osc_seiz, freq_range, "seiz")
+fit_pre_sim_osc, lab_pre_saw_osc = IRASA_fit(saw_pre, freq_range, "pre ")
+fit_seiz_sim_osc, lab_seiz_saw_osc = IRASA_fit(saw_osc_seiz,
+                                               freq_range, "seiz")
 fit_post_sim_osc, lab_post_saw_osc = IRASA_fit(saw_post, freq_range, "post")
 
-# %% Plot params
+# %% Plot settings
 
 fig_width = 6.85  # inches
 panel_fontsize = 12
@@ -191,12 +199,11 @@ panel_labels = dict(x=0, y=1.02, fontsize=panel_fontsize,
 yticks_a1 = [-250, 0, 200]
 yticklabels_a1 = [-250, "", 200]
 xlim_a1 = (0, time_full[-1])
-ylabel_a1 = fr"{cha_nm} [$\mu$V]"
+ylabel_a1 = fr"{electrode} [$\mu$V]"
 ymin = -250
 ylim_a1 = (ymin, 200)
 axes_a1 = dict(yticks=yticks_a1, yticklabels=yticklabels_a1, xlim=xlim_a1,
                ylim=ylim_a1)
-
 
 # a2
 xticks_a2 = [1, 10, 100]
@@ -220,7 +227,6 @@ xlim_b = (0, time_full[-1])
 ylim_b = (yticks_b[0], yticks_b[-1])
 xlabel_b = "Time [s]"
 ylabel_b = "Simulation [a.u.]"
-
 axes_b = dict(yticks=yticks_b, yticklabels=yticklabels_b,
               xlim=xlim_b, ylim=ylim_b, xlabel=xlabel_b)
 
@@ -239,14 +245,14 @@ rect_height = np.abs(data_full).max() * 2
 rect = dict(height=rect_height, alpha=0.2)
 
 start_pre = 0
-start_seiz = seiz_len_samples / srate
-start_post = 2*seiz_len_samples / srate
+start_seiz = seiz_len_samples / sample_rate
+start_post = 2*seiz_len_samples / sample_rate
 
 xy_pre = (start_pre, ymin)
 xy_seiz = (start_seiz, ymin)
 xy_post = (start_post, ymin)
 
-width = seiz_len_samples / srate
+width = seiz_len_samples / sample_rate
 
 # Add colored rectangles
 rect_EEG_pre_params = dict(xy=xy_pre, width=width, color=c_pre, **rect)
@@ -263,6 +269,7 @@ def add_rectangles(ax):
     ax.add_patch(rect_EEG_pre)
     ax.add_patch(rect_EEG_seiz)
     ax.add_patch(rect_EEG_post)
+
 
 # %% Plot
 
@@ -295,7 +302,6 @@ ax.loglog(freq, fit_post_eeg, "--", c=c_post, lw=2, label=lab_post_eeg)
 
 # Set axes
 ax.set(**axes_a2)
-# ax.legend(labelspacing=0.3)
 ax.legend(borderaxespad=0, labelspacing=.3, borderpad=.2)
 ax.set_ylabel(ylabel_a2, labelpad=-17)
 y_minor = mpl.ticker.LogLocator(subs=np.arange(0, 1, 0.1), numticks=10)
@@ -328,7 +334,6 @@ ax.loglog(freq, fit_post_sim, "--", c=c_post, lw=2, label=lab_post_saw)
 
 # Set axes
 ax.set(**axes_b2)
-# ax.legend(labelspacing=0.3)
 ax.legend(borderaxespad=0, labelspacing=.3, borderpad=.2)
 ax.set_ylabel(ylabel_b2, labelpad=-13)
 ax.tick_params(**ticks_psd)
@@ -361,7 +366,6 @@ ax.loglog(freq, fit_post_sim_osc, "--", c=c_post, lw=2, label=lab_post_saw_osc)
 
 # Set axes
 ax.set(**axes_b2)
-# ax.legend(labelspacing=0.3)
 ax.legend(borderaxespad=0, labelspacing=.3, borderpad=.2)
 ax.set_ylabel(ylabel_b2, labelpad=-13)
 ax.tick_params(**ticks_psd)
@@ -374,117 +378,109 @@ plt.savefig(fig_path + fig_name + ".png", dpi=1000, bbox_inches="tight")
 plt.show()
 
 
-# %% Supp IRASA Result
+# %% Supp irasa Result
 
-freqs, ap_pre, osc_pre, params_pre = irasa(data_pre,
-                                           sf=srate,
-                                           band=freq_range)
-_, ap_seiz, osc_seiz, params_seiz = irasa(data_seiz,
-                                          sf=srate,
-                                          band=freq_range)
-_, ap_post, osc_post, params_post = irasa(data_post,
-                                          sf=srate,
-                                          band=freq_range)
+freqs, aperiodic_EEG_pre, periodic_EEG_pre, params_EEG_pre = \
+                        irasa(data_pre, sf=sample_rate, band=freq_range)
+_, aperoidic_EEG_seiz, periodic_EEG_seiz, params_EEG_seiz = \
+                        irasa(data_seiz, sf=sample_rate, band=freq_range)
+_, aperoidic_EEG_post, periodic_EEG_post, params_EEG_post = \
+                        irasa(data_post, sf=sample_rate, band=freq_range)
 
-_, ap_saw_pre, osc_saw_pre, params_saw_pre = irasa(saw_pre,
-                                                   sf=srate,
-                                                   band=freq_range)
-_, ap_saw_seiz, osc_saw_seiz, params_saw_seiz = irasa(saw_seiz,
-                                                      sf=srate,
-                                                      band=freq_range)
-_, ap_saw_post, osc_saw_post, params_saw_post = irasa(saw_post,
-                                                      sf=srate,
-                                                      band=freq_range)
+_, aperoidic_saw_pre, periodic_saw_pre, params_saw_pre = \
+                        irasa(saw_pre, sf=sample_rate, band=freq_range)
+_, aperiodic_saw_seiz, periodic_saw_seiz, params_saw_seiz = \
+                        irasa(saw_seiz, sf=sample_rate, band=freq_range)
+_, aperiodic_saw_post, periodic_saw_post, params_saw_post = \
+                        irasa(saw_post, sf=sample_rate, band=freq_range)
 
 
-_, ap_saw_osc_seiz, osc_saw_osc_seiz, params_saw_osc_seiz = irasa(saw_osc_seiz,
-                                                                  sf=srate,
-                                                                  band=freq_range)
+_, ap_saw_osc_seiz, osc_saw_osc_seiz, params_saw_osc_seiz = \
+                        irasa(saw_osc_seiz, sf=sample_rate, band=freq_range)
 
-exp_pre = -params_pre["Slope"][0]
-intercept_pre = params_pre["Intercept"][0]
-exp_seiz = -params_seiz["Slope"][0]
-intercept_seiz = params_seiz["Intercept"][0]
-exp_post = -params_post["Slope"][0]
-intercept_post = params_post["Intercept"][0]
+exponent_EEG_pre = -params_EEG_pre["Slope"][0]
+intercept_EEG_pre = params_EEG_pre["Intercept"][0]
+exponent_EEG_seiz = -params_EEG_seiz["Slope"][0]
+intercept_EEG_seiz = params_EEG_seiz["Intercept"][0]
+exponent_EEG_post = -params_EEG_post["Slope"][0]
+intercept_EEG_post = params_EEG_post["Intercept"][0]
 
-exp_saw_pre = -params_saw_pre["Slope"][0]
+exponent_saw_pre = -params_saw_pre["Slope"][0]
 intercept_saw_pre = params_saw_pre["Intercept"][0]
-exp_saw_seiz = -params_saw_seiz["Slope"][0]
+exponent_saw_seiz = -params_saw_seiz["Slope"][0]
 intercept_saw_seiz = params_saw_seiz["Intercept"][0]
-exp_saw_post = -params_saw_post["Slope"][0]
+exponent_saw_post = -params_saw_post["Slope"][0]
 intercept_saw_post = params_saw_post["Intercept"][0]
 
-exp_saw_osc_seiz = -params_saw_osc_seiz["Slope"][0]
+exponent_saw_osc_seiz = -params_saw_osc_seiz["Slope"][0]
 intercept_saw_osc_seiz = params_saw_osc_seiz["Intercept"][0]
 
-ap_fit_pre = gen_aperiodic(freqs, [intercept_pre, exp_pre])
-ap_fit_seiz = gen_aperiodic(freqs, [intercept_seiz, exp_seiz])
-ap_fit_post = gen_aperiodic(freqs, [intercept_post, exp_post])
+ap_fit_EEG_pre = gen_aperiodic(freqs, [intercept_EEG_pre, exponent_EEG_pre])
+ap_fit_EEG_seiz = gen_aperiodic(freqs, [intercept_EEG_seiz, exponent_EEG_seiz])
+ap_fit_EEG_post = gen_aperiodic(freqs, [intercept_EEG_post, exponent_EEG_post])
 
-ap_fit_saw_pre = gen_aperiodic(freqs, [intercept_saw_pre, exp_saw_pre])
-ap_fit_saw_seiz = gen_aperiodic(freqs, [intercept_saw_seiz, exp_saw_seiz])
-ap_fit_saw_post = gen_aperiodic(freqs, [intercept_saw_post, exp_saw_post])
+ap_fit_saw_pre = gen_aperiodic(freqs, [intercept_saw_pre, exponent_saw_pre])
+ap_fit_saw_seiz = gen_aperiodic(freqs, [intercept_saw_seiz, exponent_saw_seiz])
+ap_fit_saw_post = gen_aperiodic(freqs, [intercept_saw_post, exponent_saw_post])
 
 ap_fit_saw_osc_seiz = gen_aperiodic(freqs,
-                                    [intercept_saw_osc_seiz, exp_saw_osc_seiz])
+                                    [intercept_saw_osc_seiz,
+                                     exponent_saw_osc_seiz])
 # %% Plot loglog
 
-fig, ax = plt.subplots(3, 3, figsize=[fig_width, 7], sharex=True,
-                       sharey="row")
-
-ax[0, 0].set_ylabel(r"EEG PSD [$\mu$$V^2$/Hz]")
+fig, ax = plt.subplots(3, 3, figsize=[fig_width, 7], sharex=True, sharey="row")
 
 ax[0, 0].set_title("Pre")
-ax[0, 0].loglog(freqs, ap_pre[0], label="aperiodic")
-ax[0, 0].loglog(freqs, osc_pre[0], label="periodic")
-ax[0, 0].loglog(freqs, 10**ap_fit_pre, label=fr"$\beta=${exp_pre:.2f}")
+ax[0, 0].loglog(freqs, aperiodic_EEG_pre[0], label="aperiodic")
+ax[0, 0].loglog(freqs, periodic_EEG_pre[0], label="periodic")
+ax[0, 0].loglog(freqs, 10**ap_fit_EEG_pre,
+                label=fr"$\beta=${exponent_EEG_pre:.2f}")
 ax[0, 0].legend()
 ax[0, 0].text(s="a", **panel_labels, transform=ax[0, 0].transAxes)
-
+ax[0, 0].set_ylabel(r"EEG PSD [$\mu$$V^2$/Hz]")
 
 ax[0, 1].set_title("Seiz")
-ax[0, 1].loglog(freqs, ap_seiz[0])
-ax[0, 1].loglog(freqs, osc_seiz[0])
-ax[0, 1].loglog(freqs, 10**ap_fit_seiz, label=fr"$\beta=${exp_seiz:.2f}")
+ax[0, 1].loglog(freqs, aperoidic_EEG_seiz[0])
+ax[0, 1].loglog(freqs, periodic_EEG_seiz[0])
+ax[0, 1].loglog(freqs, 10**ap_fit_EEG_seiz,
+                label=fr"$\beta=${exponent_EEG_seiz:.2f}")
 ax[0, 1].legend()
 
-
 ax[0, 2].set_title("Post")
-ax[0, 2].loglog(freqs, ap_post[0])
-ax[0, 2].loglog(freqs, osc_post[0])
-ax[0, 2].loglog(freqs, 10**ap_fit_post, label=fr"$\beta=${exp_post:.2f}")
+ax[0, 2].loglog(freqs, aperoidic_EEG_post[0])
+ax[0, 2].loglog(freqs, periodic_EEG_post[0])
+ax[0, 2].loglog(freqs, 10**ap_fit_EEG_post,
+                label=fr"$\beta=${exponent_EEG_post:.2f}")
 ax[0, 2].legend()
 
 ax[1, 0].set_ylabel("Simulated PSD [a.u.]")
-
-ax[1, 0].loglog(freqs, ap_saw_pre[0])
-ax[1, 0].loglog(freqs, osc_saw_pre[0])
+ax[1, 0].loglog(freqs, aperoidic_saw_pre[0])
+ax[1, 0].loglog(freqs, periodic_saw_pre[0])
 ax[1, 0].loglog(freqs, 10**ap_fit_saw_pre,
-                label=fr"$\beta=${exp_saw_pre:.2f}")
+                label=fr"$\beta=${exponent_saw_pre:.2f}")
 ax[1, 0].legend()
 ax[1, 0].set_xlabel("Frequency [Hz]")
 ax[1, 0].text(s="b", **panel_labels, transform=ax[1, 0].transAxes)
 
-ax[1, 1].loglog(freqs, ap_saw_seiz[0])
-ax[1, 1].loglog(freqs, osc_saw_seiz[0])
+ax[1, 1].loglog(freqs, aperiodic_saw_seiz[0])
+ax[1, 1].loglog(freqs, periodic_saw_seiz[0])
 ax[1, 1].loglog(freqs, 10**ap_fit_saw_seiz,
-                label=fr"$\beta=${exp_saw_seiz:.2f}")
+                label=fr"$\beta=${exponent_saw_seiz:.2f}")
 ax[1, 1].legend()
 ax[1, 1].set_xlabel("Frequency [Hz]")
 
-ax[1, 2].loglog(freqs, ap_saw_post[0])
-ax[1, 2].loglog(freqs, osc_saw_post[0])
+ax[1, 2].loglog(freqs, aperiodic_saw_post[0])
+ax[1, 2].loglog(freqs, periodic_saw_post[0])
 ax[1, 2].loglog(freqs, 10**ap_fit_saw_post,
-                label=fr"$\beta=${exp_saw_post:.2f}")
+                label=fr"$\beta=${exponent_saw_post:.2f}")
 ax[1, 2].legend()
 
 ax[2, 0].set_ylabel("Simulated PSD [a.u.]")
 
-ax[2, 0].loglog(freqs, ap_saw_pre[0])
-ax[2, 0].loglog(freqs, osc_saw_pre[0])
+ax[2, 0].loglog(freqs, aperoidic_saw_pre[0])
+ax[2, 0].loglog(freqs, periodic_saw_pre[0])
 ax[2, 0].loglog(freqs, 10**ap_fit_saw_pre,
-                label=fr"$\beta=${exp_saw_pre:.2f}")
+                label=fr"$\beta=${exponent_saw_pre:.2f}")
 ax[2, 0].legend()
 ax[2, 0].set_xlabel("Frequency [Hz]")
 ax[2, 0].text(s="c", **panel_labels, transform=ax[2, 0].transAxes)
@@ -492,14 +488,14 @@ ax[2, 0].text(s="c", **panel_labels, transform=ax[2, 0].transAxes)
 ax[2, 1].loglog(freqs, ap_saw_osc_seiz[0])
 ax[2, 1].loglog(freqs, osc_saw_osc_seiz[0])
 ax[2, 1].loglog(freqs, 10**ap_fit_saw_osc_seiz,
-                label=fr"$\beta=${exp_saw_osc_seiz:.2f}")
+                label=fr"$\beta=${exponent_saw_osc_seiz:.2f}")
 ax[2, 1].legend()
 ax[2, 1].set_xlabel("Frequency [Hz]")
 
-ax[2, 2].loglog(freqs, ap_saw_post[0])
-ax[2, 2].loglog(freqs, osc_saw_post[0])
+ax[2, 2].loglog(freqs, aperiodic_saw_post[0])
+ax[2, 2].loglog(freqs, periodic_saw_post[0])
 ax[2, 2].loglog(freqs, 10**ap_fit_saw_post,
-                label=fr"$\beta=${exp_saw_post:.2f}")
+                label=fr"$\beta=${exponent_saw_post:.2f}")
 ax[2, 2].legend()
 ax[2, 2].set_xlabel("Frequency [Hz]")
 
