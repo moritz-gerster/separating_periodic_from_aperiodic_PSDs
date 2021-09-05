@@ -7,7 +7,7 @@ import scipy.signal as sig
 from fooof import FOOOF
 from scipy.signal import sawtooth
 
-from functions import fooof_fit4, osc_signals4
+from utils import fooof_fit4, osc_signals4
 
 # %% Plot Parameters
 
@@ -114,7 +114,6 @@ fit_seiz_sim, lab_seiz_saw = fooof_fit4(psd_saw_seiz, "seiz", **calc_fooof)
 fit_post_sim, lab_post_saw = fooof_fit4(psd_saw_post, "post", **calc_fooof)
 
 # %% Add ground truth
-
 # =============================================================================
 # ground_truth = gen_aperiodic(range(1, 130), np.array([saw_pre[1], exponent]))
 # c_ground_a = "k"

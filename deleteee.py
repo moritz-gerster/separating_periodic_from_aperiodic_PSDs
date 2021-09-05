@@ -237,7 +237,7 @@ def osc_signals_correct(samples, slopes, freq_osc=[], amp=[], width=[],
 
     for j, slope in enumerate(slopes):
         # Multiply Amp Spectrum by 1/f
-        # half slope needed: 1/f^2 in power spectrum = 
+        # half slope needed: 1/f^2 in power spectrum =
         # sqrt(1/f^2)=1/f^2*0.5=1/f in amp spectrum
         amps = amps / freqs ** (slope / 2)
         amps *= np.exp(1j * random_phases)
@@ -496,7 +496,7 @@ def calc_psd(x, fs=1.0, nperseg=None, axis=-1, average='mean', **kwargs):
     try:
         csd_mean = average(csd)
     except(TypeError):
-        'average must be a function, got %' % type(average)
+        f'average must be a function, got {type(average)}'
     else:
         return f, csd_mean
 
@@ -507,12 +507,8 @@ def irasa(data, sf=None, ch_names=None, band=(1, 30),
           reject_bad_segs=True,
           kwargs_welch=dict(average='mean', window='hann')):
     r"""
-    TO DO: REJECT BAD SEGMENTS: TRUE
-     if mne reject bad data and set nan 
-     
-     Fit ist 1e6 zu groß
-    
-    
+    Function modified from https://github.com/raphaelvallat/yasa/.
+
     Separate the aperiodic (= fractal, or 1/f) and oscillatory component
     of the power spectra of EEG data using the IRASA method.
 
@@ -647,10 +643,10 @@ def irasa(data, sf=None, ch_names=None, band=(1, 30),
     win = int(win_sec * sf)  # nperseg
 
     # Calculate the original PSD over the whole data
-# =============================================================================
-#     CHANGED TO ALLOW NAN VALUES
+    # ==========================================================================
+    #   CHANGED TO ALLOW NAN SEGMENTS
     freqs, psd = calc_psd(data, sf, nperseg=win, **kwargs_welch)
-# =============================================================================
+    # ==========================================================================
 
     # Start the IRASA procedure
     psds = np.zeros((len(hset), *psd.shape))
@@ -663,13 +659,13 @@ def irasa(data, sf=None, ch_names=None, band=(1, 30),
         data_up = sig.resample_poly(data, up, down, axis=-1)
         data_down = sig.resample_poly(data, down, up, axis=-1)
         # Calculate the PSD using same params as original
-# =============================================================================
-#     CHANGED TO ALLOW NAN VALUES
+        # ======================================================================
+        # CHANGED TO ALLOW NAN SEGMENTS
         freqs_up, psd_up = calc_psd(data_up, h * sf, nperseg=win,
                                     **kwargs_welch)
         freqs_dw, psd_dw = calc_psd(data_down, sf / h, nperseg=win,
                                     **kwargs_welch)
-# =============================================================================
+        # ======================================================================
         # Geometric mean of h and 1/h
         psds[i, :] = np.sqrt(psd_up * psd_dw)
 
@@ -693,16 +689,16 @@ def irasa(data, sf=None, ch_names=None, band=(1, 30),
 
         def func(t, a, b):
             # See https://github.com/fooof-tools/fooof
-# =============================================================================
-#             CORRECTED ERROR: NP.LOG -> NP.LOG10
+            # ==================================================================
+            # CORRECTED: NP.LOG -> NP.LOG10
             return a + np.log10(t**b)
-# =============================================================================
+            # ==================================================================
 
         for y in np.atleast_2d(psd_aperiodic):
-# =============================================================================
-#             CORRECTED ERROR: NP.LOG -> NP.LOG10
+            # ==================================================================
+            # CORRECTED: NP.LOG -> NP.LOG10
             y_log = np.log10(y)
-# =============================================================================
+            # ==================================================================
             # Note that here we define bounds for the slope but not for the
             # intercept.
             popt, pcov = curve_fit(func, freqs, y_log, p0=(2, -1),

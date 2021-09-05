@@ -1,5 +1,4 @@
 # %%
-# """Figure 1."""
 from pathlib import Path
 
 import matplotlib as mpl
@@ -11,7 +10,7 @@ import scipy.signal as sig
 from fooof import FOOOF
 from fooof.sim.gen import gen_aperiodic
 
-from functions import detect_plateau_onset2, osc_signals2
+from utils import detect_plateau_onset2, osc_signals2
 
 # %% Plot params
 

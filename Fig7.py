@@ -6,8 +6,7 @@ import scipy.signal as sig
 from fooof.sim.gen import gen_aperiodic
 from scipy.signal import sawtooth
 
-from functions import osc_signals7
-from helper_Clean import irasa
+from utils import osc_signals7, irasa
 
 
 def IRASA_fit(data, freq_range, cond):
@@ -39,7 +38,7 @@ def IRASA_fit(data, freq_range, cond):
 # %% Plot Parameters
 
 # Paths
-data_path = "../data/Fig3/"
+data_path = "../data/Fig7/"
 fig_path = "../paper_figures/"
 fig_name = "Fig7_Separation"
 
@@ -116,7 +115,7 @@ seed = 2
 exponent_sim_oscs = 0
 _, full_signal = osc_signals7(exponent_sim_oscs,
                               periodic_params=periodic_params,
-                              srate=sample_rate, duration=time_seiz[-1],
+                              sample_rate=sample_rate, duration=time_seiz[-1],
                               seed=seed)
 full_signal /= 1e4  # decrease white noise
 osc_full = np.r_[np.zeros(seiz_len_samples),
@@ -125,7 +124,7 @@ osc_full = np.r_[np.zeros(seiz_len_samples),
 
 # Create 1/f noise and add
 exponent_sim = 1.8
-noise, _ = osc_signals7(exponent_sim, srate=sample_rate,
+noise, _ = osc_signals7(exponent_sim, sample_rate=sample_rate,
                         duration=time_full[-1], seed=seed)
 noise_saw = noise + saw_full
 noise_saw_osc = noise + saw_full + osc_full

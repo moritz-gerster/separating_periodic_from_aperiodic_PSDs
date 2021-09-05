@@ -9,9 +9,8 @@ import scipy.signal as sig
 from fooof.plts.spectra import plot_spectrum
 from fooof.sim.gen import gen_aperiodic
 
-from fooof_modified_MG_Clean import FOOOF, plot_annotated_peak_search_MG
-from functions import osc_signals1
-from helper_Clean import irasa
+from fooof_modified import FOOOF, plot_annotated_peak_search_MG
+from utils import osc_signals1, irasa
 
 try:
     from tqdm import trange

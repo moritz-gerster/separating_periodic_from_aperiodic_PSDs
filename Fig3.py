@@ -11,7 +11,7 @@ from fooof import FOOOF
 from fooof.sim.gen import gen_aperiodic
 from scipy.stats import pearsonr
 
-from functions import osc_signals3
+from utils import osc_signals3
 
 # %% Plot params
 
@@ -606,4 +606,6 @@ ax.legend(title="Pearson correlation")
 plt.savefig(fig_path + fig_name + "_SuppC.png", dpi=1000, bbox_inches="tight")
 plt.savefig(fig_path + fig_name + "_SuppC.pdf", bbox_inches="tight")
 plt.show()
+# %%
+
 # %%

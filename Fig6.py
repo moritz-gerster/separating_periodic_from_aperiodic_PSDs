@@ -7,14 +7,12 @@ import numpy as np
 import scipy.signal as sig
 import mne
 from fooof import FOOOF
-from helper_Clean import irasa
+from utils import irasa, osc_signals6, annotate_range6
 
 try:
     from tqdm import trange
 except ImportError:
     trange = range
-
-from functions import osc_signals6, annotate_range6
 
 
 def calc_error6(signal):
@@ -78,7 +76,7 @@ fig_name = "Fig6_PeakWidth"
 Path(fig_path).mkdir(parents=True, exist_ok=True)
 
 # File names
-path = "../data/Fig5/"
+path = "../data/Fig6/"
 
 # Sizes
 lw = 2
@@ -282,15 +280,18 @@ periodic_params_l = [(peak_center_freq, peak_amplitude_l, peak_width_l),
 aperiodic_signal_s, full_signal_s = \
                             osc_signals6(aperiodic_exponent_simulation,
                                          periodic_params=periodic_params_s,
-                                         highpass=False, srate=sample_rate_s)
+                                         highpass=False,
+                                         sample_rate=sample_rate_s)
 aperiodic_signal_m, full_signal_m = \
                             osc_signals6(aperiodic_exponent_simulation,
                                          periodic_params=periodic_params_m,
-                                         highpass=False, srate=sample_rate_m)
+                                         highpass=False,
+                                         sample_rate=sample_rate_m)
 aperiodic_signal_l, full_signal_l = \
                             osc_signals6(aperiodic_exponent_simulation,
                                          periodic_params=periodic_params_l,
-                                         highpass=False, srate=sample_rate_l)
+                                         highpass=False,
+                                         sample_rate=sample_rate_l)
 
 freqs_s, full_psd_s = sig.welch(full_signal_s, **welch_params_s)
 freqs_m, full_psd_m = sig.welch(full_signal_m, **welch_params_m)
@@ -956,3 +957,5 @@ ax.set_xticklabels(xticks_bc)
 plt.tight_layout()
 plt.savefig(fig_path + fig_name[:-4] + "SuppMat.pdf", bbox_inches="tight")
 plt.show()
+
+# %%

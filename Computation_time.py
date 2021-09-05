@@ -4,7 +4,7 @@ import numpy as np
 import scipy.signal as sig
 from fooof import FOOOFGroup
 
-from helper_Clean import irasa
+from utils import irasa
 
 # File names
 path = "../data/Fig5/"

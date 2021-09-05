@@ -10,9 +10,8 @@ import scipy.signal as sig
 from fooof import FOOOF
 from fooof.sim.gen import gen_aperiodic
 
-from functions import (annotate_fit_range5, calc_error5, detect_noise_floor5,
-                       osc_signals5)
-from helper_Clean import irasa
+from utils import (annotate_fit_range5, calc_error5, detect_noise_floor5,
+                   osc_signals5, irasa)
 
 try:
     from tqdm import trange
@@ -28,7 +27,7 @@ fig_name = "Fig5_FreqRange"
 Path(fig_path).mkdir(parents=True, exist_ok=True)
 
 # File names
-path = "../data/Fig4/"
+path = "../data/Fig5/"
 fname = "subj6_off_R1_raw.fif"
 
 # Sizes

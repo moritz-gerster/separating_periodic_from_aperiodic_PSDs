@@ -6,7 +6,7 @@ from fooof import FOOOF
 from fooof.sim.gen import gen_aperiodic
 from mne.time_frequency import psd_welch
 
-from helper_Clean import irasa
+from utils import irasa
 
 supp = False
 # %% Parameters b)

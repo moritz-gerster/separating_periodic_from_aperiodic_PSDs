@@ -6,14 +6,13 @@ from fooof import FOOOF
 from fooof.sim.gen import gen_aperiodic
 from mne.time_frequency import psd_welch
 
-from functions import annotate_range8, detect_noise_floor8
-from helper_Clean import irasa
+from utils import annotate_range8, detect_noise_floor8, irasa
 
 supp = False
 # %% Plot Parameters
 
 # Paths
-data_path = "../data/Fig7/"
+data_path = "../data/Fig8/"
 fig_path = "../paper_figures/"
 fig_name = "Fig8_Summary_anno"
 
