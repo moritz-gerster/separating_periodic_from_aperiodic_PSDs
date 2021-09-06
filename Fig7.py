@@ -6,7 +6,7 @@ import scipy.signal as sig
 from fooof.sim.gen import gen_aperiodic
 from scipy.signal import sawtooth
 
-from utils import osc_signals7, irasa
+from utils import irasa, elec_phys_signal
 
 
 def IRASA_fit(data, freq_range, cond):
@@ -84,7 +84,6 @@ freq, psd_EEG_pre = sig.welch(data_pre, **welch_params)
 freq, psd_EEG_seiz = sig.welch(data_seiz, **welch_params)
 freq, psd_EEG_post = sig.welch(data_post, **welch_params)
 
-
 # %% Simulate sawtooth signal of same length
 
 # Sawtooth Parameters
@@ -113,10 +112,11 @@ periodic_params = [(peak_center_freq1, peak_amplitude, peak_width1),
                    (peak_center_freq2, peak_amplitude, peak_width2)]
 seed = 2
 exponent_sim_oscs = 0
-_, full_signal = osc_signals7(exponent_sim_oscs,
-                              periodic_params=periodic_params,
-                              sample_rate=sample_rate, duration=time_seiz[-1],
-                              seed=seed)
+duration = time_seiz[-1] + 2/sample_rate  # two time units lost during Fourier
+_, full_signal = elec_phys_signal(exponent_sim_oscs,
+                                  periodic_params=periodic_params,
+                                  sample_rate=sample_rate, duration=duration,
+                                  seed=seed, highpass=True)
 full_signal /= 1e4  # decrease white noise
 osc_full = np.r_[np.zeros(seiz_len_samples),
                  full_signal,
@@ -124,8 +124,9 @@ osc_full = np.r_[np.zeros(seiz_len_samples),
 
 # Create 1/f noise and add
 exponent_sim = 1.8
-noise, _ = osc_signals7(exponent_sim, sample_rate=sample_rate,
-                        duration=time_full[-1], seed=seed)
+duration = time_full[-1] + 2/sample_rate  # two time units lost during Fourier
+noise, _ = elec_phys_signal(exponent_sim, sample_rate=sample_rate,
+                            duration=duration, seed=seed, highpass=True)
 noise_saw = noise + saw_full
 noise_saw_osc = noise + saw_full + osc_full
 

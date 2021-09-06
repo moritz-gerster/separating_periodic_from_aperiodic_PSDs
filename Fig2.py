@@ -10,7 +10,7 @@ import scipy.signal as sig
 from fooof import FOOOF
 from fooof.sim.gen import gen_aperiodic
 
-from utils import detect_plateau_onset2, osc_signals2
+from utils import detect_plateau_onset, elec_phys_signal
 
 # %% Plot params
 
@@ -71,9 +71,8 @@ psd_sub9 = psd_sub9[filt]
 
 # Make noise
 sim_exponent = 2
-aperiodic_params = dict(exponent=sim_exponent, nlv=0.00005, highpass=False,
-                        seed=3)
-signal_sim, _ = osc_signals2(**aperiodic_params)
+aperiodic_params = dict(exponent=sim_exponent, nlv=0.00005, seed=3)
+signal_sim, _ = elec_phys_signal(**aperiodic_params)
 
 # Calc PSD
 freq, psd_sim = sig.welch(signal_sim, **welch_params)
@@ -85,7 +84,7 @@ freq, psd_sim = freq[filt], psd_sim[filt]
 psd_sim /= psd_sim[0]
 
 # Detect Noise floor
-plateau_onset_sim = detect_plateau_onset2(freq, psd_sim, f_start=1)
+plateau_onset_sim = detect_plateau_onset(freq, psd_sim, f_start=1)
 signal_sim = (freq <= plateau_onset_sim)
 plateau_sim = (freq >= plateau_onset_sim)
 
@@ -130,7 +129,7 @@ dic_line = dict(color=c_sim, linestyle=":", lw=.3)
 # %% Plot params b)
 
 # Detect Noise floor
-plateau_onset_sub9 = detect_plateau_onset2(freq, psd_sub9, f_start=1)
+plateau_onset_sub9 = detect_plateau_onset(freq, psd_sub9, f_start=1)
 
 # Mask signal/noise
 signal_sub9 = (freq <= plateau_onset_sub9)
@@ -216,17 +215,16 @@ peak_params2 = [(3, 0.1, .6),
                 (42, 15, 20),
                 (360, 25, 70)]
 
-aperiodic_signal1, full_signal1 = osc_signals2(exponent1,
-                                               periodic_params=peak_params1,
-                                               nlv=.0002)
+params1 = dict(exponent=exponent1, periodic_params=peak_params1,
+               highpass=True, nlv=.0002)
+params15 = dict(exponent=exponent15, periodic_params=peak_params15,
+                highpass=True, nlv=.0002)
+params2 = dict(exponent=exponent2, periodic_params=peak_params2,
+               highpass=True, nlv=.0002)
 
-aperiodic_signal15, full_signal15 = osc_signals2(exponent15,
-                                                 periodic_params=peak_params15,
-                                                 nlv=.0002)
-
-aperiodic_signal2, full_signal2 = osc_signals2(exponent2,
-                                               periodic_params=peak_params2,
-                                               nlv=.0002)
+aperiodic_signal1, full_signal1 = elec_phys_signal(**params1)
+aperiodic_signal15, full_signal15 = elec_phys_signal(**params15)
+aperiodic_signal2, full_signal2 = elec_phys_signal(**params2)
 
 # Calc Welch
 freq, psd_aperiodic1 = sig.welch(aperiodic_signal1, **welch_params)
@@ -285,7 +283,7 @@ ap_fit_sub9 = gen_aperiodic(fm_sub9.freqs, fm_sub9.aperiodic_params_)
 
 fit1 = fm1.freqs, 10**ap_fit1, c_low
 fit15 = fm15.freqs, 10**ap_fit15, c_med
-fit2 = fm2.freqs, 10**ap_fit2, c_low
+fit2 = fm2.freqs, 10**ap_fit2, c_high
 fit_sub9 = fm_sub9.freqs, 10**ap_fit_sub9, c_real
 
 psd_plateau_fits = [fit1, fit15, fit2]
@@ -307,12 +305,8 @@ plot_plateau2 = (freq, psd_aperiodic2, c_ground)
 xlim_c = (1, 825)
 xlabel_c = "Frequency in Hz"
 
-low_kwargs = dict(c=c_low, ls="-", lw=2, alpha=1)
-med_kwargs = dict(c=c_med, ls="-", lw=2, alpha=1)
-high_kwargs = dict(c=c_high, ls="-", lw=2, alpha=1)
-
 # Summarize
-plateau_kwargs = [low_kwargs, med_kwargs, high_kwargs]
+# plateau_kwargs = [low_kwargs, med_kwargs, high_kwargs]
 plateau_labels = [r"$\beta_{fit}$="f"{exp1:.2f}",
                   r"$\beta_{fit}$="f"{exp15:.2f}",
                   r"$\beta_{fit}$="f"{exp2:.2f}"]
@@ -447,8 +441,7 @@ for i, ax in enumerate(c_axes):
 
     # Plot sim low delta power and fooof fit
     ax.loglog(*psd_plateau_vary[i])
-    ax.loglog(*psd_plateau_fits[i], **plateau_kwargs[i],
-              label=plateau_labels[i])
+    ax.loglog(*psd_plateau_fits[i], lw=2, label=plateau_labels[i])
 
     # Plot aperiodic component of sim
     ax.loglog(*psd_aperiodic_vary[i], **psd_aperiodic_kwargs,

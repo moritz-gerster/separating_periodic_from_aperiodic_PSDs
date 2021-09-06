@@ -7,7 +7,7 @@ import numpy as np
 import scipy.signal as sig
 import mne
 from fooof import FOOOF
-from utils import irasa, osc_signals6, annotate_range6
+from utils import irasa, annotate_range, elec_phys_signal
 
 try:
     from tqdm import trange
@@ -15,7 +15,7 @@ except ImportError:
     trange = range
 
 
-def calc_error6(signal):
+def calc_error(signal):
     """Fit IRASA and subtract ground truth to obtain fitting error."""
     fit_errors = []
     for i in trange(len(lower_fitting_borders)):
@@ -27,7 +27,8 @@ def calc_error6(signal):
     return fit_errors
 
 
-def peak_width6(freq, psd, ground_truth, freq_range=(1, 100), threshold=.001):
+def calc_peak_width(freq, psd, ground_truth,
+                    freq_range=(1, 100), threshold=.001):
     """
     Calculate peak width as start- and endpoints from aperiodic ground truth.
 
@@ -98,8 +99,8 @@ c_IRASA3 = "y"
 
 # Supp. Mat.
 c_real = "purple"
-c_IRASA_real = "C1"
-c_IRASA_real = "C2"
+c_IRASA_real1 = "C1"
+c_IRASA_real2 = "C2"
 # %% a) Simulate Signal with Three Oscillations and Fit
 
 # Signal params
@@ -132,17 +133,14 @@ periodic_params_c = [(peak_center_freq1, peak_amplitude*4.4, peak_width*.8),
 
 # Simulate Signal
 aperiodic_signal_a, full_signal_a = \
-                                osc_signals6(aperiodic_exponent_simulation,
-                                             periodic_params=periodic_params_a,
-                                             highpass=False)
+                            elec_phys_signal(aperiodic_exponent_simulation,
+                                             periodic_params=periodic_params_a)
 aperiodic_signal_b, full_signal_b = \
-                                osc_signals6(aperiodic_exponent_simulation,
-                                             periodic_params=periodic_params_b,
-                                             highpass=False)
+                            elec_phys_signal(aperiodic_exponent_simulation,
+                                             periodic_params=periodic_params_b)
 aperiodic_signal_c, full_signal_c = \
-                                osc_signals6(aperiodic_exponent_simulation,
-                                             periodic_params=periodic_params_c,
-                                             highpass=False)
+                            elec_phys_signal(aperiodic_exponent_simulation,
+                                             periodic_params=periodic_params_c)
 
 freq_a, full_psd_a = sig.welch(full_signal_a, **welch_params)
 _, full_psd_b = sig.welch(full_signal_b, **welch_params)
@@ -172,26 +170,26 @@ range2 = (10, 20)
 range3 = (20, 100)
 
 # Start and end points xaxis
-xmin_a11, xmax_a11 = peak_width6(freq_a, full_psd_a, aperiodic_psd_a,
-                                 freq_range=range1)
-xmin_a12, xmax_a12 = peak_width6(freq_a, full_psd_a, aperiodic_psd_a,
-                                 freq_range=range2)
-xmin_a13, xmax_a13 = peak_width6(freq_a, full_psd_a, aperiodic_psd_a,
-                                 freq_range=range3)
+xmin_a11, xmax_a11 = calc_peak_width(freq_a, full_psd_a, aperiodic_psd_a,
+                                     freq_range=range1)
+xmin_a12, xmax_a12 = calc_peak_width(freq_a, full_psd_a, aperiodic_psd_a,
+                                     freq_range=range2)
+xmin_a13, xmax_a13 = calc_peak_width(freq_a, full_psd_a, aperiodic_psd_a,
+                                     freq_range=range3)
 
-xmin_a21, xmax_a21 = peak_width6(freq_a, full_psd_b, aperiodic_psd_b,
-                                 freq_range=range1)
-xmin_a22, xmax_a22 = peak_width6(freq_a, full_psd_b, aperiodic_psd_b,
-                                 freq_range=range2)
-xmin_a23, xmax_a23 = peak_width6(freq_a, full_psd_b, aperiodic_psd_b,
-                                 freq_range=range3)
+xmin_a21, xmax_a21 = calc_peak_width(freq_a, full_psd_b, aperiodic_psd_b,
+                                     freq_range=range1)
+xmin_a22, xmax_a22 = calc_peak_width(freq_a, full_psd_b, aperiodic_psd_b,
+                                     freq_range=range2)
+xmin_a23, xmax_a23 = calc_peak_width(freq_a, full_psd_b, aperiodic_psd_b,
+                                     freq_range=range3)
 
-xmin_a31, xmax_a31 = peak_width6(freq_a, full_psd_c, aperiodic_psd_c,
-                                 freq_range=range1)
-xmin_a32, xmax_a32 = peak_width6(freq_a, full_psd_c, aperiodic_psd_c,
-                                 freq_range=range2)
-xmin_a33, xmax_a33 = peak_width6(freq_a, full_psd_c, aperiodic_psd_c,
-                                 freq_range=range3)
+xmin_a31, xmax_a31 = calc_peak_width(freq_a, full_psd_c, aperiodic_psd_c,
+                                     freq_range=range1)
+xmin_a32, xmax_a32 = calc_peak_width(freq_a, full_psd_c, aperiodic_psd_c,
+                                     freq_range=range2)
+xmin_a33, xmax_a33 = calc_peak_width(freq_a, full_psd_c, aperiodic_psd_c,
+                                     freq_range=range3)
 
 # freq resolution too low for proper estimation of first peak:
 xmin_a11 -= 1
@@ -236,9 +234,9 @@ psd_aperiodic_b = psd_aperiodic_b[0]
 psd_aperiodic_c = psd_aperiodic_c[0]
 # %% a) IRASA (takes very long)
 
-fit_errors_a = calc_error6(full_signal_a)
-fit_errors_b = calc_error6(full_signal_b)
-fit_errors_c = calc_error6(full_signal_c)
+fit_errors_a = calc_error(full_signal_a)
+fit_errors_b = calc_error(full_signal_b)
+fit_errors_c = calc_error(full_signal_c)
 
 error_plot_a = (lower_fitting_borders, fit_errors_a, c_error)
 error_plot_b = (lower_fitting_borders, fit_errors_b, c_error)
@@ -278,20 +276,17 @@ periodic_params_l = [(peak_center_freq, peak_amplitude_l, peak_width_l),
 
 # Sim Signal
 aperiodic_signal_s, full_signal_s = \
-                            osc_signals6(aperiodic_exponent_simulation,
-                                         periodic_params=periodic_params_s,
-                                         highpass=False,
-                                         sample_rate=sample_rate_s)
+                            elec_phys_signal(aperiodic_exponent_simulation,
+                                             periodic_params=periodic_params_s,
+                                             sample_rate=sample_rate_s)
 aperiodic_signal_m, full_signal_m = \
-                            osc_signals6(aperiodic_exponent_simulation,
-                                         periodic_params=periodic_params_m,
-                                         highpass=False,
-                                         sample_rate=sample_rate_m)
+                            elec_phys_signal(aperiodic_exponent_simulation,
+                                             periodic_params=periodic_params_m,
+                                             sample_rate=sample_rate_m)
 aperiodic_signal_l, full_signal_l = \
-                            osc_signals6(aperiodic_exponent_simulation,
-                                         periodic_params=periodic_params_l,
-                                         highpass=False,
-                                         sample_rate=sample_rate_l)
+                            elec_phys_signal(aperiodic_exponent_simulation,
+                                             periodic_params=periodic_params_l,
+                                             sample_rate=sample_rate_l)
 
 freqs_s, full_psd_s = sig.welch(full_signal_s, **welch_params_s)
 freqs_m, full_psd_m = sig.welch(full_signal_m, **welch_params_m)
@@ -379,28 +374,28 @@ frange1 = (10, 100)
 frange2 = (100, 1000)
 
 # Peak start and endpoints xaxis
-xmin_small_min1, xmin_small_max1 = peak_width6(freqs_s,
-                                               full_psd_s,
-                                               aperiodic_psd_s,
+xmin_small_min1, xmin_small_max1 = calc_peak_width(freqs_s,
+                                                   full_psd_s,
+                                                   aperiodic_psd_s,
+                                                   freq_range=frange1)
+xmin_small_min2, xmin_small_max2 = calc_peak_width(freqs_s,
+                                                   full_psd_s,
+                                                   aperiodic_psd_s,
+                                                   freq_range=frange2)
+xmin_med_min1, xmin_med_max1 = calc_peak_width(freqs_m, full_psd_m,
+                                               aperiodic_psd_m,
                                                freq_range=frange1)
-xmin_small_min2, xmin_small_max2 = peak_width6(freqs_s,
-                                               full_psd_s,
-                                               aperiodic_psd_s,
+xmin_med_min2, xmin_med_max2 = calc_peak_width(freqs_m, full_psd_m,
+                                               aperiodic_psd_m,
                                                freq_range=frange2)
-xmin_med_min1, xmin_med_max1 = peak_width6(freqs_m, full_psd_m,
-                                           aperiodic_psd_m,
-                                           freq_range=frange1)
-xmin_med_min2, xmin_med_max2 = peak_width6(freqs_m, full_psd_m,
-                                           aperiodic_psd_m,
-                                           freq_range=frange2)
-xmin_large_min1, xmin_large_max1 = peak_width6(freqs_l,
-                                               full_psd_l,
-                                               aperiodic_psd_l,
-                                               freq_range=frange1)
-xmin_large_min2, xmin_large_max2 = peak_width6(freqs_l,
-                                               full_psd_l,
-                                               aperiodic_psd_l,
-                                               freq_range=frange2)
+xmin_large_min1, xmin_large_max1 = calc_peak_width(freqs_l,
+                                                   full_psd_l,
+                                                   aperiodic_psd_l,
+                                                   freq_range=frange1)
+xmin_large_min2, xmin_large_max2 = calc_peak_width(freqs_l,
+                                                   full_psd_l,
+                                                   aperiodic_psd_l,
+                                                   freq_range=frange2)
 
 # Peak start and endpoints yaxis
 ylow_small1 = full_psd_s[np.argmin(np.abs(freqs_s - xmin_small_min1))]
@@ -524,7 +519,7 @@ height_b = ylim_b[0] * 4
 anno_small1 = dict(xmin=xmin_small_min1, xmax=xmin_small_max1,
                    ylow=ylow_small1, yhigh=yhigh_small1,
                    height=height_b*10, annotate_pos="left",
-                   annotation="log-diff")
+                   annotation="log-diff_unit")
 anno_small2 = dict(xmin=xmin_small_min2, xmax=xmin_small_max2,
                    ylow=ylow_small2, yhigh=yhigh_small2,
                    height=height_b*10, annotate_pos="below",
@@ -607,9 +602,9 @@ ax.loglog(freq_a, full_psd_a, c_sim)
 ax.loglog(freq0, psd_aperiodic_a, c_ap, zorder=0)
 draw_fitrange6(ax_a11, ax_a12, full_psd_a, freqs123, colors123)
 
-annotate_range6(ax, **fit_range_a11)
-annotate_range6(ax, **fit_range_a12)
-annotate_range6(ax, **fit_range_a13)
+annotate_range(ax, **fit_range_a11)
+annotate_range(ax, **fit_range_a12)
+annotate_range(ax, **fit_range_a13)
 
 # Set axes
 ax.text(s="a", **panel_labels, transform=ax.transAxes)
@@ -634,9 +629,9 @@ ax.loglog(freq_a, full_psd_b, c_sim)
 ax.loglog(freq0, psd_aperiodic_b, c_ap, zorder=0)
 draw_fitrange6(ax_a21, ax_a22, full_psd_b, freqs123, colors123)
 
-annotate_range6(ax, **fit_range_a21)
-annotate_range6(ax, **fit_range_a22)
-annotate_range6(ax, **fit_range_a23)
+annotate_range(ax, **fit_range_a21)
+annotate_range(ax, **fit_range_a22)
+annotate_range(ax, **fit_range_a23)
 
 # Set axes
 y_minor = mpl.ticker.LogLocator(subs=np.arange(0, 1, 0.1), numticks=10)
@@ -658,9 +653,9 @@ ax.loglog(freq_a, full_psd_c, c_sim)
 ax.loglog(freq0, psd_aperiodic_c, c_ap, zorder=0)
 draw_fitrange6(ax_a31, ax_a32, full_psd_c, freqs123, colors123)
 
-annotate_range6(ax, **fit_range_a31)
-annotate_range6(ax, **fit_range_a32)
-annotate_range6(ax, **fit_range_a33)
+annotate_range(ax, **fit_range_a31)
+annotate_range(ax, **fit_range_a32)
+annotate_range(ax, **fit_range_a33)
 
 # Set axes
 y_minor = mpl.ticker.LogLocator(subs=np.arange(0, 1, 0.1), numticks=10)
@@ -684,8 +679,8 @@ ax.loglog(freqs_sim_s, ap_sim_s_h1, c_IRASA1,
           label=r"$h_{max}$="f"{h_max_s}")
 
 # annotate freq bandwidth
-annotate_range6(ax, **anno_small1)
-annotate_range6(ax, **anno_small2)
+annotate_range(ax, **anno_small1)
+annotate_range(ax, **anno_small2)
 
 # Set axes
 y_minor = mpl.ticker.LogLocator(subs=np.arange(0, 1, 0.1), numticks=20)
@@ -707,8 +702,8 @@ ax.loglog(freqs_sim_m, ap_sim_m_h2, c_IRASA2,
           label=r"$h_{max}$="f"{h_max_m}")
 
 # annotate freq bandwidth
-annotate_range6(ax, **anno_med1)
-annotate_range6(ax, **anno_med2)
+annotate_range(ax, **anno_med1)
+annotate_range(ax, **anno_med2)
 
 # Set axes
 ax.set(**axes_b2)
@@ -730,8 +725,8 @@ ax.loglog(freqs_sim_l, ap_sim_l_h3, c_IRASA3,
           label=r"$h_{max}$="f"{h_max_l}")
 
 # annotate freq bandwidth
-annotate_range6(ax, **anno_large1)
-annotate_range6(ax, **anno_large2)
+annotate_range(ax, **anno_large1)
+annotate_range(ax, **anno_large2)
 
 # Set axes
 ax.set(**axes_b2)
@@ -829,11 +824,11 @@ _, aperiodic_l_h1, periodic_l_h1, params_l_h1 = IRASA_l_h1
 freq_I_h2, aperiodic_m_h2, periodic_m_h2, params_m_h2 = IRASA_m_h2
 freq_I_h2, aperiodic_l_h2, periodic_l_h2, params_l_h2 = IRASA_l_h2
 
-plot_aperiodic_s_h1 = (freq_I_h1, aperiodic_s_h1[0], c_IRASA_real)
-plot_aperiodic_m_h1 = (freq_I_h1, aperiodic_m_h1[0], c_IRASA_real)
-plot_aperiodic_l_h1 = (freq_I_h1, aperiodic_l_h1[0], c_IRASA_real)
-plot_aperoidic_m_h2 = (freq_I_h2, aperiodic_m_h2[0]/10, c_IRASA_real)
-plot_aperiodic_l_h2 = (freq_I_h2, aperiodic_l_h2[0]/10, c_IRASA_real)
+plot_aperiodic_s_h1 = (freq_I_h1, aperiodic_s_h1[0], c_IRASA_real1)
+plot_aperiodic_m_h1 = (freq_I_h1, aperiodic_m_h1[0], c_IRASA_real1)
+plot_aperiodic_l_h1 = (freq_I_h1, aperiodic_l_h1[0], c_IRASA_real1)
+plot_aperoidic_m_h2 = (freq_I_h2, aperiodic_m_h2[0]/10, c_IRASA_real2)
+plot_aperiodic_l_h2 = (freq_I_h2, aperiodic_l_h2[0]/10, c_IRASA_real2)
 
 # Show what happens for larger freq ranges
 irasa_params2["band"] = band_h1
@@ -849,10 +844,10 @@ _, aperiodic_l_h1_long, periodic_l_h1_long, params_l_h1_long = IRASA_l_h1_long
 _, aperiodic_m_h2_long, periodic_m_h2_long, params_m_h2_long = IRASA_m_h2_long
 _, ap_l_h2_long, periodic_l_h2_long, params_l_h2_long = IRASA_l_h2_long
 
-plot_ap_m_h1_long = (freq_I_long, aperiodic_m_h1_long[0], c_IRASA_real)
-plot_ap_l_h1_long = (freq_I_long, aperiodic_l_h1_long[0], c_IRASA_real)
-plot_ap_m_h2_long = (freq_I_long, aperiodic_m_h2_long[0]/10, c_IRASA_real)
-plot_ap_l_h2_long = (freq_I_long, ap_l_h2_long[0]/10, c_IRASA_real)
+plot_ap_m_h1_long = (freq_I_long, aperiodic_m_h1_long[0], c_IRASA_real1)
+plot_ap_l_h1_long = (freq_I_long, aperiodic_l_h1_long[0], c_IRASA_real1)
+plot_ap_m_h2_long = (freq_I_long, aperiodic_m_h2_long[0]/10, c_IRASA_real2)
+plot_ap_l_h2_long = (freq_I_long, ap_l_h2_long[0]/10, c_IRASA_real2)
 
 
 # %% Plot Settings
@@ -883,9 +878,9 @@ xmin = freq_real_s - bw_real_s
 xmax = freq_real_s + bw_real_s
 ylow = plot_s[1][np.argmin(np.abs(plot_s[0] - xmin))]
 yhigh = plot_s[1][np.argmin(np.abs(plot_s[0] - xmax))]
-height = 6e-26
-annotate_range6(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
-                height=height, annotate_pos="left")
+height = 9e-26
+annotate_range(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
+               height=height, annotate_pos=.55)
 ax.set_xticks(xticks_a)
 ax.set_xticklabels(xticks_a)
 ax.legend(loc=1, borderaxespad=0)
@@ -916,8 +911,8 @@ xmax = freq_real_m + bw_real_m + 2
 ylow = plot_m_low[1][np.argmin(np.abs(plot_m_low[0] - xmin))]
 yhigh = plot_m_low[1][np.argmin(np.abs(plot_m_low[0] - xmax))]
 height = 5 * ylim[0]
-annotate_range6(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
-                height=height, annotate_pos=.4)
+annotate_range(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
+               height=height, annotate_pos=.35)
 ax.set_xticks(xticks_bc)
 ax.set_xticklabels(xticks_bc)
 
@@ -949,8 +944,8 @@ xmax = freq_real_l + bw_real_l
 ylow = plot_l_low[1][np.argmin(np.abs(plot_l_low[0] - xmin))]
 yhigh = plot_l_low[1][np.argmin(np.abs(plot_l_low[0] - xmax))]
 height = 10 * ylim[0]
-annotate_range6(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
-                height=height, annotate_pos="left")
+annotate_range(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
+               height=height, annotate_pos="left")
 ax.set_xticks(xticks_bc)
 ax.set_xticklabels(xticks_bc)
 

@@ -10,7 +10,7 @@ from fooof.plts.spectra import plot_spectrum
 from fooof.sim.gen import gen_aperiodic
 
 from fooof_modified import FOOOF, plot_annotated_peak_search_MG
-from utils import osc_signals1, irasa
+from utils import elec_phys_signal, irasa
 
 try:
     from tqdm import trange
@@ -72,9 +72,9 @@ peak_width = .001
 periodic_params = [(peak_center_freq, peak_amplitude, peak_width)]
 
 # Simulate Signal
-aperiodic_signal, full_signal = osc_signals1(aperiodic_exponent_simulation,
-                                             periodic_params=periodic_params,
-                                             highpass=False)
+tme_series_params = dict(exponent=aperiodic_exponent_simulation,
+                         periodic_params=periodic_params)
+aperiodic_signal, full_signal = elec_phys_signal(**tme_series_params)
 
 # Increase arbitrary units
 aperiodic_signal, full_signal = aperiodic_signal*1e6, full_signal*1e6

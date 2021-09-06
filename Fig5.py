@@ -10,8 +10,8 @@ import scipy.signal as sig
 from fooof import FOOOF
 from fooof.sim.gen import gen_aperiodic
 
-from utils import (annotate_fit_range5, calc_error5, detect_noise_floor5,
-                   osc_signals5, irasa)
+from utils import (annotate_range, calc_error, detect_plateau_onset, irasa,
+                   elec_phys_signal)
 
 try:
     from tqdm import trange
@@ -70,8 +70,8 @@ periodic_params = [(peak_center_freq1, peak_amplitude1, peak_width),
                    (peak_center_freq3, peak_amplitude3, peak_width)]
 
 # Sim Signal
-_, full_signal = osc_signals5(sim_exponent_a, periodic_params=periodic_params,
-                              highpass=False)
+_, full_signal = elec_phys_signal(sim_exponent_a,
+                                  periodic_params=periodic_params)
 
 # Signal params
 sample_rate = 2400
@@ -96,8 +96,8 @@ psd_aperiodic = psd_aperiodic[0]
 # %% a) IRASA (takes very long)
 
 # Fit IRASA and subtract ground truth to obtain fitting error
-fit_errors = calc_error5(full_signal, lower_fitting_borders,
-                         upper_fitting_border, sim_exponent_a, sample_rate)
+fit_errors = calc_error(full_signal, lower_fitting_borders,
+                        upper_fitting_border, sim_exponent_a, sample_rate)
 error_plot_a = (lower_fitting_borders, fit_errors, c_error)
 
 # %% b) Highpass sim
@@ -105,7 +105,8 @@ error_plot_a = (lower_fitting_borders, fit_errors, c_error)
 # Make noise
 sim_exponent_b = 2
 noise_params_b = dict(exponent=sim_exponent_b, nlv=0, highpass=True, seed=3)
-aperiodic_b, _ = osc_signals5(**noise_params_b)
+# aperiodic_b, _ = osc_signals5(**noise_params_b)
+aperiodic_b, _ = elec_phys_signal(**noise_params_b)
 
 # Calc PSD
 welch_params["nperseg"] = 4*sample_rate  # show lowpass filter
@@ -145,7 +146,7 @@ for h_max, color in zip(h_maxima, h_colors):
     IR_offset = IR_fit["Intercept"][0]
 
     IR_fit = gen_aperiodic(freq_IR, (IR_offset, IR_slope))
-    label = fr"$\beta$(h$\leq${h_max})={IR_slope:.2f}"
+    label = fr"$\beta$(h$\leq${h_max:2})={IR_slope:.2f}"
     IR_kwargs = dict(label=label)
     plot_IRASA = (freq_IR, 10**IR_fit, color)
     IR_fit_plot_args_b.append(plot_IRASA)
@@ -165,15 +166,17 @@ for h_max, color in zip(h_maxima, h_colors):
 # %% c) lowpass sim
 
 # Make noise
-noise_params_c = dict(exponent=sim_exponent_b, nlv=0.00003, highpass=False,
-                      seed=3)
-aperiodic_b, _ = osc_signals5(**noise_params_c)
+# noise_params_c = dict(exponent=sim_exponent_b, nlv=0.00003,
+#                       highpass=False, seed=3)
+# aperiodic_b, _ = osc_signals5(**noise_params_c)
+noise_params_c = dict(exponent=sim_exponent_b, nlv=0.00003, seed=3)
+aperiodic_b, _ = elec_phys_signal(**noise_params_c)
 
 # Calc PSD
 freq_c, psd2_noise_c = sig.welch(aperiodic_b, **welch_params)
 
 # Detect Noise floor
-floor_c = detect_noise_floor5(freq_c, psd2_noise_c, f_start=1)
+floor_c = detect_plateau_onset(freq_c, psd2_noise_c, f_start=1)
 signal_c = (freq_c <= floor_c)
 noise_c = (freq_c >= floor_c)
 
@@ -211,7 +214,7 @@ for h_max, color in zip(h_maxima, h_colors):
     IR_fit = gen_aperiodic(freq_IR, (IR_offset, IR_slope))
 
     # Pack for plotting
-    label = fr"$\beta$(h$\leq${h_max})={IR_slope:.2f}"
+    label = fr"$\beta$(h$\leq${h_max:2})={IR_slope:.2f}"
     IR_kwargs = dict(label=label, lw=2)
     plot_IRASA = (freq_IR, 10**IR_fit, color)
     IR_fit_plot_args_c.append(plot_IRASA)
@@ -420,7 +423,7 @@ axes_b = dict(xticks=xticks_b, xlabel=xlabel_b, xticklabels=xticks_b,
               yticks=yticks_b, yticklabels=yticklabels_b, ylim=ylim_b,
               xlim=xlim_b)
 tiny_leg = dict(loc=1, borderaxespad=0, labelspacing=.3, handlelength=1.9,
-                handletextpad=.3, borderpad=.1)
+                handletextpad=.2, borderpad=.1)
 
 rec_xy = (xlim_b[0], ylim_b[0])
 rec_width = 1
@@ -552,8 +555,9 @@ xmax = freq_range[1]
 ylow = plot_fooof_b[1][0]
 yhigh = plot_fooof_b[1][-1]
 height = ylim_b[0] * 2
-annotate_fit_range5(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
-                    height=height, fontsize=annotation_fontsize)
+annotate_range(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
+               height=height, annotation="range", annotate_pos=None,
+               annotation_fontsize=annotation_fontsize)
 
 # c)
 ax = ax4
@@ -579,8 +583,9 @@ ax.add_patch(plt.Rectangle(**rect_c))
 
 ylow = plot_fooof_c[1][0]
 yhigh = plot_fooof_c[1][-1]
-annotate_fit_range5(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
-                    height=height, fontsize=annotation_fontsize)
+annotate_range(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
+               height=height, annotation="range", annotate_pos=None,
+               annotation_fontsize=annotation_fontsize)
 
 
 # d)
@@ -598,8 +603,9 @@ xmax = band_low[1]
 ylow = plot_fooof_low[1][0]
 yhigh = plot_fooof_low[1][-1]
 height = 2
-annotate_fit_range5(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
-                    height=height, fontsize=annotation_fontsize)
+annotate_range(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
+               height=height, annotation="range", annotate_pos=None,
+               annotation_fontsize=annotation_fontsize)
 
 # e)
 ax = ax6
@@ -612,8 +618,9 @@ ax.loglog(*plot_IRASA_eff_low2, alpha=.5, lw=lw)  # transparent high
 
 ylow = plot_IRASA_eff_low_eff[1][0]
 yhigh = plot_IRASA_eff_low_eff[1][-1]
-annotate_fit_range5(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
-                    height=height, fontsize=annotation_fontsize)
+annotate_range(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
+               height=height, annotation="range", annotate_pos=None,
+               annotation_fontsize=annotation_fontsize)
 
 ax.legend(**tiny_leg)
 ax.tick_params(**ticks_psd)
@@ -642,9 +649,9 @@ xmax = band_high[1]
 ylow = plot_IRASA_high[1][0]
 yhigh = plot_IRASA_high[1][-1]
 
-annotate_fit_range5(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
-                    height=height, annotate_middle=False,
-                    fontsize=annotation_fontsize)
+annotate_range(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
+               height=height, annotate_pos="left", annotation="range",
+               annotation_fontsize=annotation_fontsize)
 
 plt.savefig(fig_path + fig_name + ".pdf", bbox_inches="tight")
 plt.savefig(fig_path + fig_name + ".png", dpi=1000, bbox_inches="tight")

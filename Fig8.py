@@ -6,7 +6,7 @@ from fooof import FOOOF
 from fooof.sim.gen import gen_aperiodic
 from mne.time_frequency import psd_welch
 
-from utils import annotate_range8, detect_noise_floor8, irasa
+from utils import annotate_range, irasa, detect_plateau_onset
 
 supp = False
 # %% Plot Parameters
@@ -200,7 +200,7 @@ ax[1, 0].legend(handles, labels)
 # Add Plateau rectangle
 ylim_b = (5e-3, 6)
 xlim_b = ax[1, 0].get_xlim()
-noise_start = detect_noise_floor8(freq, PSD_sub9, 50)
+noise_start = detect_plateau_onset(freq, PSD_sub9, 50)
 rec_xy = (noise_start, ylim_b[0])
 rec_width = freq[-1] - noise_start
 rec_height = np.diff(ylim_b)[0]
@@ -223,7 +223,7 @@ ax[1, 1].annotate(text="Early\nPlateau\nonset",
 height1 = 100
 xmin1 = center_freq_sub5_1 - peak_width_sub5_1
 xmax1 = center_freq_sub5_1 + peak_width_sub5_1
-annotate_range8(ax[0, 1], xmin1, xmax1, height1, annotate_pos="left")
+annotate_range(ax[0, 1], xmin1, xmax1, height1, annotate_pos="left")
 
 # Add Peak width annotation
 height1 = .029
@@ -232,8 +232,8 @@ xmin1 = center_freq_sub9_1 - peak_width_sub9_1
 xmax1 = center_freq_sub9_1 + peak_width_sub9_1
 xmin2 = center_freq_sub9_2 - peak_width_sub9_2
 xmax2 = center_freq_sub9_2 + peak_width_sub9_2
-annotate_range8(ax[1, 1], xmin1, xmax1, height1, annotate_pos=.93)
-annotate_range8(ax[1, 1], xmin2, xmax2, height2, annotate_pos=.93)
+annotate_range(ax[1, 1], xmin1, xmax1, height1, annotate_pos=.93)
+annotate_range(ax[1, 1], xmin2, xmax2, height2, annotate_pos=.93)
 
 # Add indication of peak overlap as vertical arrow
 overlap = 15

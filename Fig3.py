@@ -11,7 +11,7 @@ from fooof import FOOOF
 from fooof.sim.gen import gen_aperiodic
 from scipy.stats import pearsonr
 
-from utils import osc_signals3
+from utils import elec_phys_signal
 
 # %% Plot params
 
@@ -65,8 +65,8 @@ periodic_params = [(freq1, amp1, width),
                    (freq3, amp3, width)]
 
 # Sim Toy Signal
-_, full_signal = osc_signals3(sim_exponent, periodic_params=periodic_params,
-                              highpass=False)
+_, full_signal = elec_phys_signal(sim_exponent,
+                                  periodic_params=periodic_params)
 freq_a, full_psd = sig.welch(full_signal, **welch_params)
 
 # Filter 1-100Hz
@@ -190,15 +190,14 @@ osc_params_med = [med_delta, *oscillations]
 osc_params_high = [high_delta, *oscillations]
 
 # Make signals
-aperiodic, full_low = osc_signals3(exponent,
-                                   periodic_params=osc_params_low,
-                                   nlv=nlv)
-aperiodic, full_med = osc_signals3(exponent,
-                                   periodic_params=osc_params_med,
-                                   nlv=nlv)
-aperiodic, full_high = osc_signals3(exponent,
-                                    periodic_params=osc_params_high,
-                                    nlv=nlv)
+elec_params = dict(exponent=exponent, nlv=nlv, highpass=True)
+
+aperiodic, full_low = elec_phys_signal(periodic_params=osc_params_low,
+                                       **elec_params)
+aperiodic, full_med = elec_phys_signal(periodic_params=osc_params_med,
+                                       **elec_params)
+aperiodic, full_high = elec_phys_signal(periodic_params=osc_params_high,
+                                        **elec_params)
 
 # Calc PSD
 freq, psd_aperiodic = sig.welch(aperiodic, **welch_params)

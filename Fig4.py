@@ -5,9 +5,42 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.signal as sig
 from fooof import FOOOF
+from fooof.sim.gen import gen_aperiodic
 from scipy.signal import sawtooth
 
-from utils import fooof_fit4, osc_signals4
+from utils import elec_phys_signal
+
+
+def fooof_fit(psd: np.array, cond: str, freq: np.array,
+              freq_range: tuple, fooof_params: dict) -> tuple:
+    """
+    Return aperiodic fit and corresponding label.
+
+    Parameters
+    ----------
+    psd : np.array
+        PSD.
+    cond : str
+        Condition.
+    freq : np.array
+        Freq array for PSD.
+    freq_range : tuple of int
+        Fitting range.
+    fooof_params : dict
+        Fooof params.
+
+    Returns
+    -------
+    tuple(ndarray, str)
+        (aperiodic fit, plot label).
+    """
+    fm = FOOOF(**fooof_params)
+    fm.fit(freq, psd, freq_range)
+    exp = fm.get_params("aperiodic", "exponent")
+    label = fr"$\beta_{{{cond}}}$={exp:.2f}"
+    ap_fit = gen_aperiodic(freq, fm.aperiodic_params_)
+    return 10**ap_fit, label
+
 
 # %% Plot Parameters
 
@@ -82,9 +115,11 @@ saw_full = np.r_[np.zeros(seiz_len_samples),
 # Create 1/f noise and add
 exponent = 1.8
 seed = 2
-aperiodic, _ = osc_signals4(exponent, sample_rate=sample_rate,
-                            duration=time_full[-1], seed=seed)
+duration = time_full[-1] + 2/sample_rate  # two time units lost during Fourier
+aperiodic, _ = elec_phys_signal(exponent, sample_rate=sample_rate,
+                                duration=duration, seed=seed, highpass=True)
 full_saw = aperiodic + saw_full
+
 
 # normalize
 full_saw = (full_saw - full_saw.mean()) / full_saw.std()
@@ -105,13 +140,13 @@ freq, psd_saw_post = sig.welch(saw_post, **welch_params)
 freq_range = [1, 100]
 calc_fooof = dict(freq=freq, freq_range=freq_range, fooof_params=fooof_params)
 
-fit_pre_eeg, lab_pre_eeg = fooof_fit4(psd_EEG_pre, "pre ", **calc_fooof)
-fit_seiz_eeg, lab_seiz_eeg = fooof_fit4(psd_EEG_seiz, "seiz", **calc_fooof)
-fit_post_eeg, lab_post_eeg = fooof_fit4(psd_EEG_post, "post", **calc_fooof)
+fit_pre_eeg, lab_pre_eeg = fooof_fit(psd_EEG_pre, "pre ", **calc_fooof)
+fit_seiz_eeg, lab_seiz_eeg = fooof_fit(psd_EEG_seiz, "seiz", **calc_fooof)
+fit_post_eeg, lab_post_eeg = fooof_fit(psd_EEG_post, "post", **calc_fooof)
 
-fit_pre_sim, lab_pre_saw = fooof_fit4(psd_saw_pre, "pre ", **calc_fooof)
-fit_seiz_sim, lab_seiz_saw = fooof_fit4(psd_saw_seiz, "seiz", **calc_fooof)
-fit_post_sim, lab_post_saw = fooof_fit4(psd_saw_post, "post", **calc_fooof)
+fit_pre_sim, lab_pre_saw = fooof_fit(psd_saw_pre, "pre ", **calc_fooof)
+fit_seiz_sim, lab_seiz_saw = fooof_fit(psd_saw_seiz, "seiz", **calc_fooof)
+fit_post_sim, lab_post_saw = fooof_fit(psd_saw_post, "post", **calc_fooof)
 
 # %% Add ground truth
 # =============================================================================
