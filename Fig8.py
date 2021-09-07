@@ -2,6 +2,7 @@
 import matplotlib.pyplot as plt
 import mne
 import numpy as np
+import yaml
 from fooof import FOOOF
 from fooof.sim.gen import gen_aperiodic
 from mne.time_frequency import psd_welch
@@ -9,21 +10,17 @@ from mne.time_frequency import psd_welch
 from utils import annotate_range, irasa, detect_plateau_onset
 
 supp = False
-# %% Plot Parameters
+# %% Load params and make directory
 
-# Paths
-data_path = "../data/Fig8/"
-fig_path = "../paper_figures/"
-fig_name = "Fig8_Summary_anno"
+# Load params
+yaml_file = open('params.yml')
+parsed_yaml_file = yaml.load(yaml_file, Loader=yaml.FullLoader)
+globals().update(parsed_yaml_file)
 
-# Colors
-c_empirical = "purple"
-c_straight = "r--"
-c_fooof = "b--"
-c_low = "g--"
+Path(fig_path).mkdir(parents=True, exist_ok=True)  # make directory
 
 # %% Load data
-
+data_path = "../data/Fig8/"
 sub5 = mne.io.read_raw_fif(data_path + "subj5_on_R1_raw.fif", preload=True)
 sub9 = mne.io.read_raw_fif(data_path + "subj9_on_R8_raw.fif", preload=True)
 
@@ -133,25 +130,23 @@ ap_irasa_fit_sub9 = gen_aperiodic(freq_I,
                                   np.array([irasa_offset_sub9,
                                             exponent_irasa_sub9]))
 
-PSD_plot_sub5 = freq, PSD_sub5, c_empirical
-PSD_plot_sub9 = freq, PSD_sub9, c_empirical
+PSD_plot_sub5 = freq, PSD_sub5, c_empirical8
+PSD_plot_sub9 = freq, PSD_sub9, c_empirical8
 
-fooof_plot_sub5 = fm_sub5.freqs, 10**ap_fooof_fit_sub5, c_fooof
-fooof_plot_sub9 = fm_sub9.freqs, 10**ap_fooof_fit_sub9, c_fooof
+fooof_plot_sub5 = fm_sub5.freqs, 10**ap_fooof_fit_sub5, c_fooof8
+fooof_plot_sub9 = fm_sub9.freqs, 10**ap_fooof_fit_sub9, c_fooof8
 
-straight_plot_sub5 = fm_sub5.freqs, 10**ap_straight_fit_sub5, c_straight
-straight_plot_sub9 = fm_sub9.freqs, 10**ap_straight_fit_sub9, c_straight
+straight_plot_sub5 = fm_sub5.freqs, 10**ap_straight_fit_sub5, c_straight8
+straight_plot_sub9 = fm_sub9.freqs, 10**ap_straight_fit_sub9, c_straight8
 
-irasa_plot_sub5 = freq_I, 10**ap_irasa_fit_sub5, c_low
-irasa_plot_sub9 = freq_I, 10**ap_irasa_fit_sub9, c_low
+irasa_plot_sub5 = freq_I, 10**ap_irasa_fit_sub5, c_low8
+irasa_plot_sub9 = freq_I, 10**ap_irasa_fit_sub9, c_low8
 
 # %% Fig Params
 
-fig_width = 6.85  # inches
-panel_fontsize = 12
-panel_labels = dict(x=0, y=1.02, fontsize=panel_fontsize,
+panel_labels = dict(x=0, y=1.02, fontsize=panel_fontsize8,
                     fontdict=dict(fontweight="bold"))
-panel_description = dict(x=0, y=1.02, fontsize=panel_fontsize)
+panel_description = dict(x=0, y=1.02, fontsize=panel_fontsize8)
 
 # %% Plot
 
@@ -283,8 +278,8 @@ ax[0, 0].text(s="a", **panel_labels, transform=ax[0, 0].transAxes)
 ax[1, 0].text(s="b", **panel_labels, transform=ax[1, 0].transAxes)
 
 plt.tight_layout()
-plt.savefig(fig_path + fig_name + ".pdf", bbox_inches="tight")
-plt.savefig(fig_path + fig_name + ".png", dpi=1000, bbox_inches="tight")
+plt.savefig(fig_path + "Fig8.pdf", bbox_inches="tight")
+plt.savefig(fig_path + "Fig8.png", dpi=1000, bbox_inches="tight")
 plt.show()
 
 

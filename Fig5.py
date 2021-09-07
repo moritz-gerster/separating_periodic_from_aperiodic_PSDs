@@ -6,6 +6,7 @@ import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import mne
 import numpy as np
+import yaml
 import scipy.signal as sig
 from fooof import FOOOF
 from fooof.sim.gen import gen_aperiodic
@@ -18,39 +19,14 @@ try:
 except ImportError:
     trange = range
 
+# %% Load params and make directory
 
-# %% Plot parameters
+# Load params
+yaml_file = open('params.yml')
+parsed_yaml_file = yaml.load(yaml_file, Loader=yaml.FullLoader)
+globals().update(parsed_yaml_file)
 
-# Save Path
-fig_path = "../paper_figures/"
-fig_name = "Fig5_FreqRange"
-Path(fig_path).mkdir(parents=True, exist_ok=True)
-
-# File names
-path = "../data/Fig5/"
-fname = "subj6_off_R1_raw.fif"
-
-# Sizes
-lw = 2
-
-# Colors
-# a)
-c_sim = "k"
-c_error = "r"
-c_noise = "darkgray"
-c_range1 = "b"
-c_range2 = "g"
-c_range3 = "y"
-c_ap = "grey"
-
-# b)
-c_real = "purple"
-
-# c)
-c_fooof = "deepskyblue"
-c_IRASA1 = "g"
-c_IRASA2 = "C1"
-c_IRASA3 = "orangered"
+Path(fig_path).mkdir(parents=True, exist_ok=True)  # make directory
 
 # %% a) Sim Signal with Three Oscillations and Fit
 
@@ -98,7 +74,7 @@ psd_aperiodic = psd_aperiodic[0]
 # Fit IRASA and subtract ground truth to obtain fitting error
 fit_errors = calc_error(full_signal, lower_fitting_borders,
                         upper_fitting_border, sim_exponent_a, sample_rate)
-error_plot_a = (lower_fitting_borders, fit_errors, c_error)
+error_plot_a = (lower_fitting_borders, fit_errors, c_error5)
 
 # %% b) Highpass sim
 
@@ -125,7 +101,7 @@ fm.fit(freq_b, psd2_noise_b, freq_range)
 fit = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
 label = rf"$\beta(fooof)$={fm.aperiodic_params_[1]:.2f}"
 fooof_kwargs = dict(label=label)
-plot_fooof_b = (fm.freqs, 10**fit, c_fooof)
+plot_fooof_b = (fm.freqs, 10**fit, c_fooof_5)
 
 IR_fit_plot_args_b = []
 IR_fit_plot_kwargs_b = []
@@ -135,13 +111,13 @@ IR_plot_eff_kwargs_b = []
 
 h_maxima = [2, 11, 20]
 h_maxima = [2, 8, 15]
-h_colors = [c_IRASA1, c_IRASA2, c_IRASA3]
+h_colors = [c_IRASA1_5, c_IRASA2_5, c_IRASA3_5]
 for h_max, color in zip(h_maxima, h_colors):
     # no oscillations, no harmonics -> h can be integer
     N_h = 5  # not more needed for such simple simulation
-    IRASA = irasa(data=aperiodic_b, hset=np.linspace(1.1, h_max, N_h),
-                  **irasa_params)
-    freq_IR, _, _, IR_fit = IRASA
+    irasa_result = irasa(data=aperiodic_b, hset=np.linspace(1.1, h_max, N_h),
+                         **irasa_params)
+    freq_IR, _, _, IR_fit = irasa_result
     IR_slope = -IR_fit["Slope"][0]
     IR_offset = IR_fit["Intercept"][0]
 
@@ -186,7 +162,7 @@ fm.fit(freq_c, psd2_noise_c, freq_range)
 fit = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
 label = rf"$\beta(fooof)$={fm.aperiodic_params_[1]:.2f}"
 fooof_kwargs = dict(label=label, zorder=5, ls="--", lw=2)
-plot_fooof_c = (fm.freqs, 10**fit, c_fooof)
+plot_fooof_c = (fm.freqs, 10**fit, c_fooof_5)
 
 # %% c) Calc irasa
 
@@ -202,11 +178,11 @@ IR_plot_eff_kwargs_c = []
 for h_max, color in zip(h_maxima, h_colors):
     # no oscillations, no harmonics -> h can be integer
     N_h = 5  # not more needed for such simple simulation
-    IRASA = irasa(data=aperiodic_b, hset=np.linspace(1.1, h_max, N_h),
-                  **irasa_params)
+    irasa_result = irasa(data=aperiodic_b, hset=np.linspace(1.1, h_max, N_h),
+                         **irasa_params)
 
     # Extract results
-    freq_IR, _, IR_ap, IR_fit = IRASA
+    freq_IR, _, IR_ap, IR_fit = irasa_result
     IR_slope = -IR_fit["Slope"][0]
     IR_offset = IR_fit["Intercept"][0]
 
@@ -231,11 +207,15 @@ for h_max, color in zip(h_maxima, h_colors):
     IR_plot_eff_kwargs_c.append(IR_eff_kwargs)
 
     # Pack aperiodic component tuple for plotting
-    plot_IRASA_ap = (freq_IR, IR_ap[0], c_fooof)
+    plot_IRASA_ap = (freq_IR, IR_ap[0], c_fooof_5)
     IR_ap_plot_args_c.append(plot_IRASA_ap)
 
 
 # %% d) Real Spectrum
+
+# Path
+path = "../data/Fig5/"
+fname = "subj6_off_R1_raw.fif"
 
 # Load data
 sub = mne.io.read_raw_fif(path + fname, preload=True)  # Load Subj
@@ -316,9 +296,9 @@ IR_fit_high = gen_aperiodic(freq_high, (IR_offset_high,
 IR_fit_low_eff = gen_aperiodic(freq_low_eff, (IR_offset_low_eff,
                                               IR_slope_low_eff))
 
-plot_IRASA_low = (freq_low, 10**IR_fit_low, c_IRASA1)
-plot_IRASA_high = (freq_high, 10**IR_fit_high, c_IRASA1)
-plot_IRASA_low_eff = (freq_low_eff, 10**IR_fit_low_eff, c_IRASA1)
+plot_IRASA_low = (freq_low, 10**IR_fit_low, c_IRASA1_5)
+plot_IRASA_high = (freq_high, 10**IR_fit_high, c_IRASA1_5)
+plot_IRASA_low_eff = (freq_low_eff, 10**IR_fit_low_eff, c_IRASA1_5)
 
 freq_IR_eff_low = np.arange(f_min_low, f_max_low, f_step)
 freq_IR_eff_high = np.arange(f_min_high, f_max_high, f_step)
@@ -336,48 +316,40 @@ mask_eff2 = (freq_IR_eff_low >= band_low[1])
 
 plot_IRASA_eff_low1 = (freq_IR_eff_low[mask_eff1],
                        10**IR_fit_eff_low[mask_eff1],
-                       c_IRASA1)
+                       c_IRASA1_5)
 plot_IRASA_eff_low2 = (freq_IR_eff_low[mask_eff2],
                        10**IR_fit_eff_low[mask_eff2],
-                       c_IRASA1)
+                       c_IRASA1_5)
 plot_IRASA_eff_high = (freq_IR_eff_high,
                        10**IR_fit_eff_high,
-                       c_IRASA1)
+                       c_IRASA1_5)
 plot_IRASA_eff_low_eff = (freq_IR_eff_low_eff,
                           10**IR_fit_eff_low_eff,
-                          c_IRASA1)
+                          c_IRASA1_5)
 
 fm.fit(freq, psd_sub, band_low)
 fit = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
 label = rf"$\beta(fooof)$={fm.aperiodic_params_[1]:.2f}"
 fooof_kwargs_low = dict(label=label, lw=2, ls="--")
-plot_fooof_low = (fm.freqs, 10**fit, c_fooof)
+plot_fooof_low = (fm.freqs, 10**fit, c_fooof_5)
 
 fm.fit(freq, psd_sub, band_high)
 fit = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
 label = rf"$\beta(fooof)$={fm.aperiodic_params_[1]:.2f}"
 fooof_kwargs_high = dict(label=label)
-plot_fooof_high = (fm.freqs, 10**fit, c_fooof)
+plot_fooof_high = (fm.freqs, 10**fit, c_fooof_5)
 
 
 # %% Plot settings
 
-fig_width = 6.85  # inches
-panel_fontsize = 12
-legend_fontsize = 9
-label_fontsize = 9
-tick_fontsize = 9
-annotation_fontsize = 7.5
-
-mpl.rcParams['xtick.labelsize'] = tick_fontsize
-mpl.rcParams['ytick.labelsize'] = tick_fontsize
-mpl.rcParams['axes.labelsize'] = label_fontsize
-mpl.rcParams['legend.fontsize'] = legend_fontsize
+mpl.rcParams['xtick.labelsize'] = legend_fontsize5
+mpl.rcParams['ytick.labelsize'] = legend_fontsize5
+mpl.rcParams['axes.labelsize'] = legend_fontsize5
+mpl.rcParams['legend.fontsize'] = legend_fontsize5
 mpl.rcParams["axes.spines.right"] = False
 mpl.rcParams["axes.spines.top"] = False
 
-
-abc = dict(x=0, y=1.01, fontsize=panel_fontsize,
+abc = dict(x=0, y=1.01, fontsize=panel_fontsize5,
            fontdict=dict(fontweight="bold"))
 
 # a)
@@ -396,8 +368,8 @@ xlim_a = (1, 100)
 axes_a1 = dict(xticklabels=xticklabels_a1, xlim=xlim_a, yticks=yticks_a,
                yticklabels=yticklabels_a, ylim=ylim_a)
 freqs123 = [peak_center_freq1, peak_center_freq2, peak_center_freq3]
-colors123 = [c_range1, c_range2, c_range3]
-text_dic = dict(x=100, ha="right", fontsize=annotation_fontsize)
+colors123 = [c_range1_5, c_range2_5, c_range3_5]
+text_dic = dict(x=100, ha="right", fontsize=annotation_fontsize5)
 
 # a2
 xticks_a2 = [1, 10, 100]
@@ -479,8 +451,8 @@ ax7 = fig.add_subplot(gs01[2])
 ax = ax1
 
 # Plot sim
-ax.loglog(freq_a, sim_psd_a, c_sim)
-ax.loglog(freq_ir, psd_aperiodic, c_ap, zorder=0)
+ax.loglog(freq_a, sim_psd_a, c_sim5)
+ax.loglog(freq_ir, psd_aperiodic, c_ap_5, zorder=0)
 
 # Annotate fitting ranges
 vline_dic = dict(ls="--", clip_on=False, alpha=.3)
@@ -530,7 +502,7 @@ ax.set(**axes_a2)
 
 # b)
 ax = ax3
-ax.loglog(freq_b, psd2_noise_b, c_sim)
+ax.loglog(freq_b, psd2_noise_b, c_sim5)
 ax.loglog(*plot_fooof_b, **fooof_kwargs)
 for plot_IRASA, IR_kwargs in zip(IR_fit_plot_args_b, IR_fit_plot_kwargs_b):
     ax.loglog(*plot_IRASA, **IR_kwargs)
@@ -557,12 +529,12 @@ yhigh = plot_fooof_b[1][-1]
 height = ylim_b[0] * 2
 annotate_range(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
                height=height, annotation="range", annotate_pos=None,
-               annotation_fontsize=annotation_fontsize)
+               annotation_fontsize=annotation_fontsize5)
 
 # c)
 ax = ax4
-ax.loglog(freq_c[signal_c], psd2_noise_c[signal_c], c_sim)
-ax.loglog(freq_c[noise_c], psd2_noise_c[noise_c], c_noise)
+ax.loglog(freq_c[signal_c], psd2_noise_c[signal_c], c_sim5)
+ax.loglog(freq_c[noise_c], psd2_noise_c[noise_c], c_noise5)
 ax.loglog(*plot_fooof_c, **fooof_kwargs)
 for plot_IRASA, IR_kwargs in zip(IR_fit_plot_args_c, IR_fit_plot_kwargs_c):
     ax.loglog(*plot_IRASA, **IR_kwargs)
@@ -585,12 +557,12 @@ ylow = plot_fooof_c[1][0]
 yhigh = plot_fooof_c[1][-1]
 annotate_range(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
                height=height, annotation="range", annotate_pos=None,
-               annotation_fontsize=annotation_fontsize)
+               annotation_fontsize=annotation_fontsize5)
 
 
 # d)
 ax = ax5
-ax.loglog(freq, psd_sub, c_real, label="MEG SMA")
+ax.loglog(freq, psd_sub, c_real_5, label="MEG SMA")
 ax.loglog(*plot_fooof_low, **fooof_kwargs_low)
 ax.legend(**tiny_leg)
 ax.tick_params(**ticks_psd)
@@ -605,22 +577,22 @@ yhigh = plot_fooof_low[1][-1]
 height = 2
 annotate_range(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
                height=height, annotation="range", annotate_pos=None,
-               annotation_fontsize=annotation_fontsize)
+               annotation_fontsize=annotation_fontsize5)
 
 # e)
 ax = ax6
-ax.loglog(freq, psd_sub, c_real)
+ax.loglog(freq, psd_sub, c_real_5)
 
-ax.loglog(*plot_IRASA_eff_low_eff, lw=lw, label=label_low_eff)  # bold green
-ax.loglog(*plot_IRASA_low, lw=lw, ls="--", label=label_low)  # dashed green
-ax.loglog(*plot_IRASA_eff_low1, alpha=.5, lw=lw)  # transparent low
-ax.loglog(*plot_IRASA_eff_low2, alpha=.5, lw=lw)  # transparent high
+ax.loglog(*plot_IRASA_eff_low_eff, lw=2, label=label_low_eff)  # bold green
+ax.loglog(*plot_IRASA_low, lw=2, ls="--", label=label_low)  # dashed green
+ax.loglog(*plot_IRASA_eff_low1, alpha=.5, lw=2)  # transparent low
+ax.loglog(*plot_IRASA_eff_low2, alpha=.5, lw=2)  # transparent high
 
 ylow = plot_IRASA_eff_low_eff[1][0]
 yhigh = plot_IRASA_eff_low_eff[1][-1]
 annotate_range(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
                height=height, annotation="range", annotate_pos=None,
-               annotation_fontsize=annotation_fontsize)
+               annotation_fontsize=annotation_fontsize5)
 
 ax.legend(**tiny_leg)
 ax.tick_params(**ticks_psd)
@@ -631,11 +603,11 @@ ax.set_yticks([], minor=True)
 
 # f)
 ax = ax7
-ax.loglog(freq, psd_sub, c_real)
+ax.loglog(freq, psd_sub, c_real_5)
 
-ax.loglog(*plot_fooof_high, **fooof_kwargs_high, lw=lw, ls="-")
-ax.loglog(*plot_IRASA_high, label=label_high, lw=lw)
-ax.loglog(*plot_IRASA_eff_high, alpha=.5, lw=lw)
+ax.loglog(*plot_fooof_high, **fooof_kwargs_high, lw=2, ls="-")
+ax.loglog(*plot_IRASA_high, label=label_high, lw=2)
+ax.loglog(*plot_IRASA_eff_high, alpha=.5, lw=2)
 
 ax.legend(**tiny_leg)
 ax.tick_params(**ticks_psd)
@@ -651,10 +623,10 @@ yhigh = plot_IRASA_high[1][-1]
 
 annotate_range(ax, xmin=xmin, xmax=xmax, ylow=ylow, yhigh=yhigh,
                height=height, annotate_pos="left", annotation="range",
-               annotation_fontsize=annotation_fontsize)
+               annotation_fontsize=annotation_fontsize5)
 
-plt.savefig(fig_path + fig_name + ".pdf", bbox_inches="tight")
-plt.savefig(fig_path + fig_name + ".png", dpi=1000, bbox_inches="tight")
+plt.savefig(fig_path + "Fig5.pdf", bbox_inches="tight")
+plt.savefig(fig_path + "Fig5.png", dpi=1000, bbox_inches="tight")
 plt.show()
 
 # %%

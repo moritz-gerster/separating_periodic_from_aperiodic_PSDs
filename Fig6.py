@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.signal as sig
 import mne
+import yaml
 from fooof import FOOOF
 from utils import irasa, annotate_range, elec_phys_signal
 
@@ -27,33 +28,34 @@ def calc_error(signal):
     return fit_errors
 
 
-def calc_peak_width(freq, psd, ground_truth,
-                    freq_range=(1, 100), threshold=.001):
-    """
-    Calculate peak width as start- and endpoints from aperiodic ground truth.
+def calc_peak_width(freq: np.array, psd: np.array, ground_truth: np.array,
+                    freq_range: (int, int) = (1, 100),
+                    threshold: float = .001) -> (float, float):
+    # """
+    # Calculate peak width as start- and endpoints from aperiodic ground truth.
 
-    Parameters
-    ----------
-    freq : ndarray
-        Freq array.
-    psd : ndarray
-        PSD Array including oscillation peaks.
-    ground_truth : ndarray
-        Aperiodic ground truth excluding oscillations peaks.
-    freq_range : tuple of floats, optional
-        Range to detect the peak. Multi-peak estimation is not supported.
-        The default is (1, 100).
-    threshold : float, optional
-        Threshold for deviation from ground truth as percentage of peak
-        maximum. The default is .001.
+    # Parameters
+    # ----------
+    # freq : ndarray
+    #     Freq array.
+    # psd : ndarray
+    #     PSD array including oscillation peaks.
+    # ground_truth : ndarray
+    #     Aperiodic ground truth excluding oscillations peaks.
+    # freq_range : tuple of floats, optional
+    #     Range to detect the peak. Multi-peak estimation is not supported.
+    #     The default is (1, 100).
+    # threshold : float, optional
+    #     Threshold for deviation from ground truth as percentage of peak
+    #     maximum. The default is .001.
 
-    Returns
-    -------
-    freq_start : float
-        Frequency of peak start.
-    freq_end : float
-        Frequency of peak end.
-    """
+    # Returns
+    # -------
+    # freq_start : float
+    #     Frequency of peak start.
+    # freq_end : float
+    #     Frequency of peak end.
+    # """
     # select range for difference calculation
     mask = (freq > freq_range[0]) & (freq < freq_range[1])
     psd_diff = np.abs(psd - ground_truth)[mask]
@@ -69,38 +71,15 @@ def calc_peak_width(freq, psd, ground_truth,
     return freq[arg_start], freq[arg_end]
 
 
-# %% Plot params
+# %% Load params and make directory
 
-# Save Path
-fig_path = "../paper_figures/"
-fig_name = "Fig6_PeakWidth"
-Path(fig_path).mkdir(parents=True, exist_ok=True)
+# Load params
+yaml_file = open('params.yml')
+parsed_yaml_file = yaml.load(yaml_file, Loader=yaml.FullLoader)
+globals().update(parsed_yaml_file)
 
-# File names
-path = "../data/Fig6/"
+Path(fig_path).mkdir(parents=True, exist_ok=True)  # make directory
 
-# Sizes
-lw = 2
-
-# Colors
-# a)
-c_sim = "k"
-c_error = "r"
-c_ap = "grey"
-c_range1 = "b"
-c_range2 = "g"
-c_range3 = "y"
-colors123 = [c_range1, c_range2, c_range3]
-
-# b)
-c_IRASA1 = "c"
-c_IRASA2 = "m"
-c_IRASA3 = "y"
-
-# Supp. Mat.
-c_real = "purple"
-c_IRASA_real1 = "C1"
-c_IRASA_real2 = "C2"
 # %% a) Simulate Signal with Three Oscillations and Fit
 
 # Signal params
@@ -238,9 +217,9 @@ fit_errors_a = calc_error(full_signal_a)
 fit_errors_b = calc_error(full_signal_b)
 fit_errors_c = calc_error(full_signal_c)
 
-error_plot_a = (lower_fitting_borders, fit_errors_a, c_error)
-error_plot_b = (lower_fitting_borders, fit_errors_b, c_error)
-error_plot_c = (lower_fitting_borders, fit_errors_c, c_error)
+error_plot_a = (lower_fitting_borders, fit_errors_a, c_error6)
+error_plot_b = (lower_fitting_borders, fit_errors_b, c_error6)
+error_plot_c = (lower_fitting_borders, fit_errors_c, c_error6)
 
 
 # %% b) Simulate varying peak widths
@@ -415,22 +394,15 @@ yhigh_large2 = peak_psd_l_lower[np.argmin(np.abs(freqs_l - xmin_large_max2))]
 
 # %% Plot settings
 
-fig_width = 6.85  # inches
-panel_fontsize = 12
-legend_fontsize = 9
-label_fontsize = 9
-tick_fontsize = 9
-annotation_fontsize = 7.5
-
-mpl.rcParams['xtick.labelsize'] = tick_fontsize
-mpl.rcParams['ytick.labelsize'] = tick_fontsize
-mpl.rcParams['axes.labelsize'] = label_fontsize
-mpl.rcParams['legend.fontsize'] = legend_fontsize
+mpl.rcParams['xtick.labelsize'] = legend_fontsize6
+mpl.rcParams['ytick.labelsize'] = legend_fontsize6
+mpl.rcParams['axes.labelsize'] = legend_fontsize6
+mpl.rcParams['legend.fontsize'] = legend_fontsize6
 mpl.rcParams["axes.spines.right"] = False
 mpl.rcParams["axes.spines.top"] = False
 
 
-panel_labels = dict(x=0, y=1.01, fontsize=panel_fontsize,
+panel_labels = dict(x=0, y=1.01, fontsize=panel_fontsize6,
                     fontdict=dict(fontweight="bold"))
 
 # a11
@@ -547,9 +519,9 @@ leg = dict(labelspacing=.1, loc=1, borderaxespad=0, borderpad=.1,
            handletextpad=.2, handlelength=2)
 
 
-def draw_fitrange6(ax1, ax2, toy_psd, freqs, colors):
+def draw_fitrange(ax1, ax2, toy_psd, freqs, colors):
     """Make horizontal lines to annotate fit range."""
-    text_dic = dict(x=100, ha="right", fontsize=annotation_fontsize)
+    text_dic = dict(x=100, ha="right", fontsize=annotation_fontsize6)
     vline_dic = dict(ls="--", clip_on=False, alpha=.3)
     for i, (freq_low, color) in enumerate(zip(freqs, colors)):
         ymin = ylim_a1[0]
@@ -598,9 +570,9 @@ ax_b3 = ax[2, 2]
 ax = ax_a11
 
 # Plot sim
-ax.loglog(freq_a, full_psd_a, c_sim)
-ax.loglog(freq0, psd_aperiodic_a, c_ap, zorder=0)
-draw_fitrange6(ax_a11, ax_a12, full_psd_a, freqs123, colors123)
+ax.loglog(freq_a, full_psd_a, c_sim6)
+ax.loglog(freq0, psd_aperiodic_a, c_ap6, zorder=0)
+draw_fitrange(ax_a11, ax_a12, full_psd_a, freqs123, colors123_6)
 
 annotate_range(ax, **fit_range_a11)
 annotate_range(ax, **fit_range_a12)
@@ -625,9 +597,9 @@ ax.set(**axes_a2)
 ax = ax_a21
 
 # Plot sim
-ax.loglog(freq_a, full_psd_b, c_sim)
-ax.loglog(freq0, psd_aperiodic_b, c_ap, zorder=0)
-draw_fitrange6(ax_a21, ax_a22, full_psd_b, freqs123, colors123)
+ax.loglog(freq_a, full_psd_b, c_sim6)
+ax.loglog(freq0, psd_aperiodic_b, c_ap6, zorder=0)
+draw_fitrange(ax_a21, ax_a22, full_psd_b, freqs123, colors123_6)
 
 annotate_range(ax, **fit_range_a21)
 annotate_range(ax, **fit_range_a22)
@@ -649,9 +621,9 @@ ax.set(**axes_a22)
 
 # a31
 ax = ax_a31
-ax.loglog(freq_a, full_psd_c, c_sim)
-ax.loglog(freq0, psd_aperiodic_c, c_ap, zorder=0)
-draw_fitrange6(ax_a31, ax_a32, full_psd_c, freqs123, colors123)
+ax.loglog(freq_a, full_psd_c, c_sim6)
+ax.loglog(freq0, psd_aperiodic_c, c_ap6, zorder=0)
+draw_fitrange(ax_a31, ax_a32, full_psd_c, freqs123, colors123_6)
 
 annotate_range(ax, **fit_range_a31)
 annotate_range(ax, **fit_range_a32)
@@ -674,8 +646,8 @@ ax.set(**axes_a22)
 # b)
 # b1
 ax = ax_b1
-ax.loglog(freqs_s, full_psd_s, c_sim)
-ax.loglog(freqs_sim_s, ap_sim_s_h1, c_IRASA1,
+ax.loglog(freqs_s, full_psd_s, c_sim6)
+ax.loglog(freqs_sim_s, ap_sim_s_h1, c_IRASA1_6,
           label=r"$h_{max}$="f"{h_max_s}")
 
 # annotate freq bandwidth
@@ -694,11 +666,11 @@ ax.legend(**leg)
 
 # b2
 ax = ax_b2
-ax.loglog(freqs_m, full_psd_m, c_sim)
-ax.loglog(freqs_sim_m, ap_sim_m_h1, c_IRASA1)
+ax.loglog(freqs_m, full_psd_m, c_sim6)
+ax.loglog(freqs_sim_m, ap_sim_m_h1, c_IRASA1_6)
 
-ax.loglog(freqs_m, peak_psd_m_low, c_sim, alpha=.5)
-ax.loglog(freqs_sim_m, ap_sim_m_h2, c_IRASA2,
+ax.loglog(freqs_m, peak_psd_m_low, c_sim6, alpha=.5)
+ax.loglog(freqs_sim_m, ap_sim_m_h2, c_IRASA2_6,
           label=r"$h_{max}$="f"{h_max_m}")
 
 # annotate freq bandwidth
@@ -714,14 +686,14 @@ ax.legend(**leg)
 
 # b3
 ax = ax_b3
-ax.loglog(freqs_l, full_psd_l, c_sim)
-ax.loglog(freqs_sim_l, ap_sim_l_h1, c_IRASA1)
+ax.loglog(freqs_l, full_psd_l, c_sim6)
+ax.loglog(freqs_sim_l, ap_sim_l_h1, c_IRASA1_6)
 
-ax.loglog(freqs_l, peak_psd_l_low, c_sim, alpha=.5)
-ax.loglog(freqs_sim_l, ap_sim_l_h2, c_IRASA2)
+ax.loglog(freqs_l, peak_psd_l_low, c_sim6, alpha=.5)
+ax.loglog(freqs_sim_l, ap_sim_l_h2, c_IRASA2_6)
 
-ax.loglog(freqs_l, peak_psd_l_lower, c_sim, alpha=.5)
-ax.loglog(freqs_sim_l, ap_sim_l_h3, c_IRASA3,
+ax.loglog(freqs_l, peak_psd_l_lower, c_sim6, alpha=.5)
+ax.loglog(freqs_sim_l, ap_sim_l_h3, c_IRASA3_6,
           label=r"$h_{max}$="f"{h_max_l}")
 
 # annotate freq bandwidth
@@ -735,13 +707,15 @@ ax.yaxis.set_minor_locator(y_minor)
 ax.set_yticklabels([], minor=True)
 ax.legend(**leg)
 
-plt.savefig(fig_path + fig_name + ".pdf", bbox_inches="tight")
-plt.savefig(fig_path + fig_name + ".png", dpi=1000, bbox_inches="tight")
+plt.savefig(fig_path + "Fig6.pdf", bbox_inches="tight")
+plt.savefig(fig_path + "Fig6.png", dpi=1000, bbox_inches="tight")
 plt.show()
 
 # %% Supp. Material: Real data
 
 # %% Real data
+
+path = "../data/Fig6/"
 
 highpass = .3  # Hz
 lowpass = 600  # Hz
@@ -774,12 +748,12 @@ freq_filt = freq[filt]
 spec_GRAD = spec_MEG[0, filt]
 spec_MAG = spec_MEG[1, filt]
 
-plot_s = (freq_filt, spec_GRAD, c_real)
-plot_m = (freq_filt, spec_MAG, c_real)
-plot_l = (freq, spec_LFP, c_real)
+plot_s = (freq_filt, spec_GRAD, c_real_6)
+plot_m = (freq_filt, spec_MAG, c_real_6)
+plot_l = (freq, spec_LFP, c_real_6)
 
-plot_m_low = (freq_filt, spec_MAG/10, c_real)
-plot_l_low = (freq, spec_LFP/10, c_real)
+plot_m_low = (freq_filt, spec_MAG/10, c_real_6)
+plot_l_low = (freq, spec_LFP/10, c_real_6)
 
 # %% Apply fooof to determine peak width
 
@@ -824,11 +798,11 @@ _, aperiodic_l_h1, periodic_l_h1, params_l_h1 = IRASA_l_h1
 freq_I_h2, aperiodic_m_h2, periodic_m_h2, params_m_h2 = IRASA_m_h2
 freq_I_h2, aperiodic_l_h2, periodic_l_h2, params_l_h2 = IRASA_l_h2
 
-plot_aperiodic_s_h1 = (freq_I_h1, aperiodic_s_h1[0], c_IRASA_real1)
-plot_aperiodic_m_h1 = (freq_I_h1, aperiodic_m_h1[0], c_IRASA_real1)
-plot_aperiodic_l_h1 = (freq_I_h1, aperiodic_l_h1[0], c_IRASA_real1)
-plot_aperoidic_m_h2 = (freq_I_h2, aperiodic_m_h2[0]/10, c_IRASA_real2)
-plot_aperiodic_l_h2 = (freq_I_h2, aperiodic_l_h2[0]/10, c_IRASA_real2)
+plot_aperiodic_s_h1 = (freq_I_h1, aperiodic_s_h1[0], c_IRASA_real1_6)
+plot_aperiodic_m_h1 = (freq_I_h1, aperiodic_m_h1[0], c_IRASA_real1_6)
+plot_aperiodic_l_h1 = (freq_I_h1, aperiodic_l_h1[0], c_IRASA_real1_6)
+plot_aperoidic_m_h2 = (freq_I_h2, aperiodic_m_h2[0]/10, c_IRASA_real2_6)
+plot_aperiodic_l_h2 = (freq_I_h2, aperiodic_l_h2[0]/10, c_IRASA_real2_6)
 
 # Show what happens for larger freq ranges
 irasa_params2["band"] = band_h1
@@ -844,10 +818,10 @@ _, aperiodic_l_h1_long, periodic_l_h1_long, params_l_h1_long = IRASA_l_h1_long
 _, aperiodic_m_h2_long, periodic_m_h2_long, params_m_h2_long = IRASA_m_h2_long
 _, ap_l_h2_long, periodic_l_h2_long, params_l_h2_long = IRASA_l_h2_long
 
-plot_ap_m_h1_long = (freq_I_long, aperiodic_m_h1_long[0], c_IRASA_real1)
-plot_ap_l_h1_long = (freq_I_long, aperiodic_l_h1_long[0], c_IRASA_real1)
-plot_ap_m_h2_long = (freq_I_long, aperiodic_m_h2_long[0]/10, c_IRASA_real2)
-plot_ap_l_h2_long = (freq_I_long, ap_l_h2_long[0]/10, c_IRASA_real2)
+plot_ap_m_h1_long = (freq_I_long, aperiodic_m_h1_long[0], c_IRASA_real1_6)
+plot_ap_l_h1_long = (freq_I_long, aperiodic_l_h1_long[0], c_IRASA_real1_6)
+plot_ap_m_h2_long = (freq_I_long, aperiodic_m_h2_long[0]/10, c_IRASA_real2_6)
+plot_ap_l_h2_long = (freq_I_long, ap_l_h2_long[0]/10, c_IRASA_real2_6)
 
 
 # %% Plot Settings
@@ -950,7 +924,7 @@ ax.set_xticks(xticks_bc)
 ax.set_xticklabels(xticks_bc)
 
 plt.tight_layout()
-plt.savefig(fig_path + fig_name[:-4] + "SuppMat.pdf", bbox_inches="tight")
+plt.savefig(fig_path + "Fig6_SuppMat.pdf", bbox_inches="tight")
 plt.show()
 
 # %%

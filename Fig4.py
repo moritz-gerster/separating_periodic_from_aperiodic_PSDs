@@ -4,6 +4,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.signal as sig
+import yaml
 from fooof import FOOOF
 from fooof.sim.gen import gen_aperiodic
 from scipy.signal import sawtooth
@@ -19,7 +20,7 @@ def fooof_fit(psd: np.array, cond: str, freq: np.array,
     Parameters
     ----------
     psd : np.array
-        PSD.
+        Power spectral density.
     cond : str
         Condition.
     freq : np.array
@@ -27,7 +28,7 @@ def fooof_fit(psd: np.array, cond: str, freq: np.array,
     freq_range : tuple of int
         Fitting range.
     fooof_params : dict
-        Fooof params.
+        Fooof parameters.
 
     Returns
     -------
@@ -41,40 +42,28 @@ def fooof_fit(psd: np.array, cond: str, freq: np.array,
     ap_fit = gen_aperiodic(freq, fm.aperiodic_params_)
     return 10**ap_fit, label
 
+# %% Load params and make directory
 
-# %% Plot Parameters
+# Load params
+yaml_file = open('params.yml')
+parsed_yaml_file = yaml.load(yaml_file, Loader=yaml.FullLoader)
+globals().update(parsed_yaml_file)
 
-# Paths
-data_path = "../data/Fig4/"
-fig_path = "../paper_figures/"
-fig_name = "Fig4_Separation"
+Path(fig_path).mkdir(parents=True, exist_ok=True)  # make directory
 
-# Colors
-c_empirical = "purple"
-c_sim = "k"
-c_pre = "c"
-c_seiz = "r"
-c_post = "y"
+# %% Load data, calc PSD
 
 # EEG Params
 sample_rate = 256
 cha_nm = "F3-C3"
 
+data_path = "../data/Fig4+7/"
+seiz_data = np.load(data_path + cha_nm + ".npy", allow_pickle=True)
+
 # Seizure sample timepoints
 seiz_start_samples = 87800
 seiz_end_samples = 91150
 seiz_len_samples = seiz_end_samples - seiz_start_samples
-
-# Welch Params
-nperseg = sample_rate
-welch_params = {"fs": sample_rate, "nperseg": nperseg}
-
-# Fooof params: standard
-fooof_params = dict(verbose=False)
-
-
-# %% Load data, calc PSD
-seiz_data = np.load(data_path + cha_nm + ".npy", allow_pickle=True)
 
 # Select seizure time points
 full_seiz = slice(seiz_start_samples - seiz_len_samples,
@@ -89,6 +78,10 @@ time_full = np.linspace(0, data_full.size/sample_rate, num=data_full.size)
 data_pre = seiz_data[pre_seiz]
 data_seiz = seiz_data[seiz]
 data_post = seiz_data[post_seiz]
+
+# Welch Params
+nperseg = sample_rate
+welch_params = {"fs": sample_rate, "nperseg": nperseg}
 
 # Calc psd pre, post, seiz
 freq, psd_EEG_pre = sig.welch(data_pre, **welch_params)
@@ -136,6 +129,9 @@ freq, psd_saw_post = sig.welch(saw_post, **welch_params)
 
 # %% Fit fooof
 
+# Fooof params: standard
+fooof_params = dict(verbose=False)
+
 # Calc fooof pre-, post-, and during seizure
 freq_range = [1, 100]
 calc_fooof = dict(freq=freq, freq_range=freq_range, fooof_params=fooof_params)
@@ -159,24 +155,17 @@ fit_post_sim, lab_post_saw = fooof_fit(psd_saw_post, "post", **calc_fooof)
 
 # %% Plot settings
 
-fig_width = 6.85  # inches
-panel_fontsize = 12
-legend_fontsize = 9
-label_fontsize = 9
-tick_fontsize = 9
-annotation_fontsize = tick_fontsize
-
-mpl.rcParams['xtick.labelsize'] = tick_fontsize
-mpl.rcParams['ytick.labelsize'] = tick_fontsize
-mpl.rcParams['axes.labelsize'] = label_fontsize
-mpl.rcParams['legend.fontsize'] = legend_fontsize
+mpl.rcParams['xtick.labelsize'] = legend_fontsize2
+mpl.rcParams['ytick.labelsize'] = legend_fontsize2
+mpl.rcParams['axes.labelsize'] = legend_fontsize2
+mpl.rcParams['legend.fontsize'] = legend_fontsize2
 mpl.rcParams["axes.spines.right"] = False
 mpl.rcParams["axes.spines.top"] = False
 
 # Tick params
 ticks_time = dict(length=6, width=1.5)
 ticks_psd = dict(length=4, width=1)
-panel_labels = dict(x=0, y=1.02, fontsize=panel_fontsize,
+panel_labels = dict(x=0, y=1.02, fontsize=panel_fontsize2,
                     fontdict=dict(fontweight="bold"))
 
 # a1 EEG Time Series
@@ -241,9 +230,9 @@ xy_post = (start_post, ymin)
 width = seiz_len_samples / sample_rate
 
 # Add colored rectangles
-rect_EEG_pre_params = dict(xy=xy_pre, width=width, color=c_pre, **rect)
-rect_EEG_seiz_params = dict(xy=xy_seiz, width=width, color=c_seiz, **rect)
-rect_EEG_post_params = dict(xy=xy_post, width=width, color=c_post, **rect)
+rect_EEG_pre_params = dict(xy=xy_pre, width=width, color=c_pre4, **rect)
+rect_EEG_seiz_params = dict(xy=xy_seiz, width=width, color=c_seiz4, **rect)
+rect_EEG_post_params = dict(xy=xy_post, width=width, color=c_post4, **rect)
 
 
 # %% Plot
@@ -253,7 +242,7 @@ fig, axes = plt.subplots(2, 2, figsize=[fig_width, 4.5], sharex="col",
 
 # a1 Plot EEG seizure
 ax = axes[0, 0]
-ax.plot(time_full, data_full, c=c_empirical, lw=1)
+ax.plot(time_full, data_full, c=c_empirical4, lw=1)
 
 # Set rectangles
 rect_EEG_pre = plt.Rectangle(**rect_EEG_pre_params)
@@ -271,14 +260,14 @@ ax.text(s="a", **panel_labels, transform=ax.transAxes)
 
 # a2 Plot EEG PSD
 ax = axes[0, 1]
-ax.loglog(freq, psd_EEG_pre, c_pre, lw=2)
-ax.loglog(freq, psd_EEG_seiz, c_seiz, lw=2)
-ax.loglog(freq, psd_EEG_post, c_post, lw=2)
+ax.loglog(freq, psd_EEG_pre, c_pre4, lw=2)
+ax.loglog(freq, psd_EEG_seiz, c_seiz4, lw=2)
+ax.loglog(freq, psd_EEG_post, c_post4, lw=2)
 
 # Plot EEG fooof fit
-ax.loglog(freq, fit_pre_eeg, "--", c=c_pre, lw=2, label=lab_pre_eeg)
-ax.loglog(freq, fit_seiz_eeg, "--", c=c_seiz, lw=2, label=lab_seiz_eeg)
-ax.loglog(freq, fit_post_eeg, "--", c=c_post, lw=2, label=lab_post_eeg)
+ax.loglog(freq, fit_pre_eeg, "--", c=c_pre4, lw=2, label=lab_pre_eeg)
+ax.loglog(freq, fit_seiz_eeg, "--", c=c_seiz4, lw=2, label=lab_seiz_eeg)
+ax.loglog(freq, fit_post_eeg, "--", c=c_post4, lw=2, label=lab_post_eeg)
 
 # Set axes
 ax.set(**axes_a2)
@@ -290,7 +279,7 @@ ax.tick_params(**ticks_psd)
 
 # b1 Sawtooth Time Series
 ax = axes[1, 0]
-ax.plot(time_full, full_saw, c=c_sim, lw=1)
+ax.plot(time_full, full_saw, c=c_sim4, lw=1)
 
 # Set rectangles
 rect_saw_pre = plt.Rectangle(**rect_EEG_pre_params)
@@ -308,14 +297,14 @@ ax.text(s="b", **panel_labels, transform=ax.transAxes)
 
 # b2 Plot saw tooth PSD
 ax = axes[1, 1]
-ax.loglog(freq, psd_saw_pre, c_pre, lw=2)
-ax.loglog(freq, psd_saw_seiz, c_seiz, lw=2)
-ax.loglog(freq, psd_saw_post, c_post, lw=2)
+ax.loglog(freq, psd_saw_pre, c_pre4, lw=2)
+ax.loglog(freq, psd_saw_seiz, c_seiz4, lw=2)
+ax.loglog(freq, psd_saw_post, c_post4, lw=2)
 
 # Plot Saw fooof fit
-ax.loglog(freq, fit_pre_sim, "--", c=c_pre, lw=2, label=lab_pre_saw)
-ax.loglog(freq, fit_seiz_sim, "--", c=c_seiz, lw=2, label=lab_seiz_saw)
-ax.loglog(freq, fit_post_sim, "--", c=c_post, lw=2, label=lab_post_saw)
+ax.loglog(freq, fit_pre_sim, "--", c=c_pre4, lw=2, label=lab_pre_saw)
+ax.loglog(freq, fit_seiz_sim, "--", c=c_seiz4, lw=2, label=lab_seiz_saw)
+ax.loglog(freq, fit_post_sim, "--", c=c_post4, lw=2, label=lab_post_saw)
 
 # =============================================================================
 # # Plot ground truth
@@ -332,8 +321,8 @@ y_minor = mpl.ticker.LogLocator(subs=np.arange(0, 1, 0.1), numticks=10)
 ax.yaxis.set_minor_locator(y_minor)
 
 plt.tight_layout()
-plt.savefig(fig_path + fig_name + ".pdf", bbox_inches="tight")
-plt.savefig(fig_path + fig_name + ".png", dpi=1000, bbox_inches="tight")
+plt.savefig(fig_path + "Fig4.pdf", bbox_inches="tight")
+plt.savefig(fig_path + "Fig4.png", dpi=1000, bbox_inches="tight")
 plt.show()
 
 
@@ -360,59 +349,59 @@ fig, axes = plt.subplots(2, 2,  figsize=[fig_width, 7], sharex=True)
 ax = axes[0, 0]
 
 fm_emp.plot(plt_log=True, ax=ax)
-ax.set_ylabel("Fooof default parameters", fontsize=label_fontsize)
-ax.set_title("Empirical seizure", fontsize=label_fontsize)
+ax.set_ylabel("Fooof default parameters", fontsize=legend_fontsize2)
+ax.set_title("Empirical seizure", fontsize=legend_fontsize2)
 ax.set_xlabel("")
 yticks = ax.get_yticks()
-ax.set_yticklabels(yticks, fontsize=tick_fontsize)
+ax.set_yticklabels(yticks, fontsize=legend_fontsize2)
 handles, labels = ax.get_legend_handles_labels()
 labels[-1] += fr" $\beta=${fm_emp.aperiodic_params_[1]:.2f}"
-ax.legend(handles, labels, fontsize=legend_fontsize)
+ax.legend(handles, labels, fontsize=legend_fontsize2)
 ax.text(s="a", **panel_labels, transform=ax.transAxes)
 
 ax = axes[0, 1]
 
 fm_sim.plot(plt_log=True, ax=ax)
-ax.set_title("Simulated seizure", fontsize=label_fontsize)
+ax.set_title("Simulated seizure", fontsize=legend_fontsize2)
 ax.set_ylabel("")
 ax.set_xlabel("")
 yticks = ax.get_yticks()
-ax.set_yticklabels(yticks, fontsize=tick_fontsize)
+ax.set_yticklabels(yticks, fontsize=legend_fontsize2)
 handles, labels = ax.get_legend_handles_labels()
 labels[-1] += fr" $\beta=${fm_sim.aperiodic_params_[1]:.2f}"
-ax.legend(handles[-1:], labels[-1:], fontsize=legend_fontsize)
+ax.legend(handles[-1:], labels[-1:], fontsize=legend_fontsize2)
 ax.text(s="b", **panel_labels, transform=ax.transAxes)
 
 ax = axes[1, 0]
 
 fm_emp_tuned.plot(plt_log=True, ax=ax)
-ax.set_ylabel("Fooof tuned parameters", fontsize=label_fontsize)
+ax.set_ylabel("Fooof tuned parameters", fontsize=legend_fontsize2)
 handles, labels = ax.get_legend_handles_labels()
 labels[-1] += fr" $\beta=${fm_emp_tuned.aperiodic_params_[1]:.2f}"
-ax.legend(handles[-1:], labels[-1:], fontsize=legend_fontsize)
+ax.legend(handles[-1:], labels[-1:], fontsize=legend_fontsize2)
 xticks = ax.get_xticks()
 yticks = ax.get_yticks()
-ax.set_xticklabels(xticks, fontsize=tick_fontsize)
-ax.set_yticklabels(yticks, fontsize=tick_fontsize)
-ax.set_xlabel("log(Frequency)", fontsize=label_fontsize)
+ax.set_xticklabels(xticks, fontsize=legend_fontsize2)
+ax.set_yticklabels(yticks, fontsize=legend_fontsize2)
+ax.set_xlabel("log(Frequency)", fontsize=legend_fontsize2)
 ax.text(s="c", **panel_labels, transform=ax.transAxes)
 
 ax = axes[1, 1]
 
 fm_sim_tuned.plot(plt_log=True, ax=ax)
-ax.set_xlabel("log(Frequency)", fontsize=label_fontsize)
+ax.set_xlabel("log(Frequency)", fontsize=legend_fontsize2)
 ax.set_ylabel("")
 xticks = ax.get_xticks()
-ax.set_xticklabels(xticks, fontsize=tick_fontsize)
+ax.set_xticklabels(xticks, fontsize=legend_fontsize2)
 yticks = ax.get_yticks()
-ax.set_yticklabels(yticks, fontsize=tick_fontsize)
+ax.set_yticklabels(yticks, fontsize=legend_fontsize2)
 handles, labels = ax.get_legend_handles_labels()
 labels[-1] += fr" $\beta=$={fm_sim_tuned.aperiodic_params_[1]:.2f}"
-ax.legend(handles[-1:], labels[-1:], fontsize=legend_fontsize)
+ax.legend(handles[-1:], labels[-1:], fontsize=legend_fontsize2)
 ax.text(s="d", **panel_labels, transform=ax.transAxes)
 
-plt.savefig(fig_path + fig_name + "_SuppMat.pdf", bbox_inches="tight")
-plt.savefig(fig_path + fig_name + "_SuppMat.png", dpi=1000,
+plt.savefig(fig_path + "Fig4_SuppMat.pdf", bbox_inches="tight")
+plt.savefig(fig_path + "Fig4_SuppMat.png", dpi=1000,
             bbox_inches="tight")
 
 # %%

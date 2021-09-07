@@ -5,6 +5,7 @@ import matplotlib as mpl
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import mne
+import yaml
 import numpy as np
 import scipy.signal as sig
 from fooof import FOOOF
@@ -13,41 +14,21 @@ from scipy.stats import pearsonr
 
 from utils import elec_phys_signal
 
-# %% Plot params
+# %% Load params and make directory
 
-# Save Path
-fig_path = "../paper_figures/"
-fig_name = "Fig3_Crossing"
-Path(fig_path).mkdir(parents=True, exist_ok=True)
+# Load params
+yaml_file = open('params.yml')
+parsed_yaml_file = yaml.load(yaml_file, Loader=yaml.FullLoader)
+globals().update(parsed_yaml_file)
 
-# Colors
-# a)
-c_sim = "k"
-c_error = "r"
-c_range1 = "b"
-c_range2 = "g"
-c_range3 = "y"
-
-# b)
-c_real = "purple"
-c_fit1 = c_real
-c_fit2 = "c"
-c_fit3 = "lime"
-c_fit4 = "orange"
-
-# c)
-c_low = "deepskyblue"
-c_med = "limegreen"
-c_high = "#ff7f00"
-c_ground = "grey"
-
+Path(fig_path).mkdir(parents=True, exist_ok=True)  # make directory
 
 # %% a) Simulate Signal with Three Oscillations and Fit
 
 # Signal params
-srate = 2400
-nperseg = srate
-welch_params = dict(fs=srate, nperseg=nperseg)
+sample_rate = 2400
+nperseg = sample_rate
+welch_params = dict(fs=sample_rate, nperseg=nperseg)
 
 # fit in all frequency ranges from 1 to 80...
 lower_fitting_borders = range(1, 80)
@@ -84,7 +65,7 @@ for low in lower_fitting_borders:
     error = np.abs(sim_exponent - exp)
     fit_errors.append(error)
 
-error_plot = (lower_fitting_borders, fit_errors, c_error)
+error_plot = (lower_fitting_borders, fit_errors, c_error3)
 
 # %% b) Load real data and fit fooof different freq ranges
 
@@ -102,8 +83,8 @@ filter_params = {"freqs": np.arange(50, 601, 50),
 sub10.notch_filter(**filter_params)
 
 # Convert to numpy and calc PSD
-start = int(0.5*srate)  # artefacts in beginning and end
-stop = int(185*srate)
+start = int(0.5*sample_rate)  # artefacts in beginning and end
+stop = int(185*sample_rate)
 sub10 = sub10.get_data(start=start, stop=stop)[0]
 freq, spec10 = sig.welch(sub10, **welch_params)
 
@@ -112,7 +93,7 @@ filt = (freq <= 600)
 freq = freq[filt]
 spec10 = spec10[filt]
 
-plot_psd_spec10 = (freq, spec10, c_real)
+plot_psd_spec10 = (freq, spec10, c_real_3)
 
 # Set common 1/f fitting ranges
 frange1 = (1, 95)
@@ -129,10 +110,10 @@ fooof_params3 = dict(max_n_peaks=max_n_peaks, verbose=False)
 fooof_params4 = dict(peak_width_limits=peak_width_limits, verbose=False)
 
 # Combine
-fit_params = [(frange1, fooof_params1, c_fit1),
-              (frange2, fooof_params2, c_fit2),
-              (frange3, fooof_params3, c_fit3),
-              (frange4, fooof_params4, c_fit4)]
+fit_params = [(frange1, fooof_params1, c_fit1_3),
+              (frange2, fooof_params2, c_fit2_3),
+              (frange3, fooof_params3, c_fit3_3),
+              (frange4, fooof_params4, c_fit4_3)]
 
 # Fit for different ranges
 fit_ranges = []
@@ -174,9 +155,9 @@ alpha = (12, 1.7, 3)
 low_beta = (18, 2, 2)
 high_beta = (27, 20, 6)
 gamma = (50, 6, 15)
-HFO = (360, 20, 60)
+hfo = (360, 20, 60)
 
-oscillations = (alpha, low_beta, high_beta, gamma, HFO)
+oscillations = (alpha, low_beta, high_beta, gamma, hfo)
 
 # Delta Oscillations
 delta_freq = 2
@@ -226,9 +207,9 @@ psd_high /= np.median(psd_high[plateau])
 
 # Create tuples for plotting
 plot_psd_spec10_adj = (freq, spec10_adj)
-plot_psd_low = (freq, psd_low, c_low)
-plot_psd_med = (freq, psd_med, c_med)
-plot_psd_high = (freq, psd_high, c_high)
+plot_psd_low = (freq, psd_low, c_low_3)
+plot_psd_med = (freq, psd_med, c_med_3)
+plot_psd_high = (freq, psd_high, c_high_3)
 
 # Summarize
 psd_delta_vary = [plot_psd_low, plot_psd_med, plot_psd_high]
@@ -277,7 +258,7 @@ ap_fit_high = gen_aperiodic(fm_high.freqs, fm_high.aperiodic_params_)
 
 # Create tuples for plotting
 plot_fit_spec10 = (fm_LFP.freqs, 10**ap_fit_LFP, ":")
-plot_aperiodic = (freq, psd_aperiodic, c_ground)
+plot_aperiodic = (freq, psd_aperiodic, c_ground_3)
 plot_fit_low = (fm_low.freqs, 10**ap_fit_low, "--")
 plot_fit_med = (fm_med.freqs, 10**ap_fit_med, "--")
 plot_fit_high = (fm_high.freqs, 10**ap_fit_high, "--")
@@ -285,34 +266,27 @@ plot_fit_high = (fm_high.freqs, 10**ap_fit_high, "--")
 # Summarize
 psd_delta_fits = [plot_fit_low, plot_fit_med, plot_fit_high]
 
-spec10_kwargs = dict(c=c_real, lw=2)
+spec10_kwargs = dict(c=c_real_3, lw=2)
 aperiodic_kwargs = dict(lw=.5)
-low_kwargs = dict(c=c_low, lw=2)
-med_kwargs = dict(c=c_med, lw=2)
-high_kwargs = dict(c=c_high, lw=2)
+low_kwargs = dict(c=c_low_3, lw=2)
+med_kwargs = dict(c=c_med_3, lw=2)
+high_kwargs = dict(c=c_high_3, lw=2)
 
 # Summarize
 delta_kwargs = [low_kwargs, med_kwargs, high_kwargs]
-colors_c = [c_low, c_med, c_high]
+colors_c = [c_low_3, c_med_3, c_high_3]
 
 # %% Plot settings
 
-fig_width = 6.85  # inches
-panel_fontsize = 12
-legend_fontsize = 9
-label_fontsize = 9
-tick_fontsize = 9
-annotation_fontsize = 9
-
-mpl.rcParams['xtick.labelsize'] = tick_fontsize
-mpl.rcParams['ytick.labelsize'] = tick_fontsize
-mpl.rcParams['axes.labelsize'] = label_fontsize
-mpl.rcParams['legend.fontsize'] = legend_fontsize
+mpl.rcParams['xtick.labelsize'] = legend_fontsize3
+mpl.rcParams['ytick.labelsize'] = legend_fontsize3
+mpl.rcParams['axes.labelsize'] = legend_fontsize3
+mpl.rcParams['legend.fontsize'] = legend_fontsize3
 mpl.rcParams["axes.spines.right"] = False
 mpl.rcParams["axes.spines.top"] = False
 mpl.rcParams["font.size"] = 14
 
-abc = dict(x=0, y=1.04, fontsize=panel_fontsize,
+abc = dict(x=0, y=1.04, fontsize=panel_fontsize3,
            fontdict=dict(fontweight="bold"))
 
 # a)
@@ -331,8 +305,8 @@ xlim_a = (1, 100)
 axes_a1 = dict(xticklabels=xticklabels_a1, yticks=yticks_a1, ylim=ylim_a1,
                yticklabels=yticklabels_a1, xlim=xlim_a)
 freqs123 = [freq1, freq2, freq3]
-colors123 = [c_range1, c_range2, c_range3]
-text_dic = dict(x=100, ha="right", fontsize=annotation_fontsize)
+colors123 = [c_range1_3, c_range2_3, c_range3_3]
+text_dic = dict(x=100, ha="right", fontsize=legend_fontsize3)
 
 # a2
 xticks_a2 = [1, 10, 100]
@@ -414,7 +388,7 @@ c_axes = [ax4, ax5, ax6]
 
 # a)
 ax = ax1  # a1
-ax.loglog(freq_a, full_psd, c_sim)  # Plot sim
+ax.loglog(freq_a, full_psd, c_sim3)  # Plot sim
 
 # Annotate fitting ranges
 vline_dic = dict(ls="--", clip_on=False, alpha=0.3)
@@ -528,8 +502,8 @@ for i, ax in enumerate(c_axes):
 leg = ax_leg.legend(handles, labels, **leg_c)
 leg.set_in_layout(False)
 
-plt.savefig(fig_path + fig_name + ".pdf", bbox_inches="tight")
-plt.savefig(fig_path + fig_name + ".png", dpi=1000, bbox_inches="tight")
+plt.savefig(fig_path + "Fig3.pdf", bbox_inches="tight")
+plt.savefig(fig_path + "Fig3.png", dpi=1000, bbox_inches="tight")
 plt.show()
 
 # %% Plot Supp Mat b)
@@ -539,18 +513,18 @@ for i in range(4):
     ax = axes[0, i]
     kwargs = dict(add_legend=False,
                   aperiodic_kwargs=dict(color=fit_params[i][2], alpha=1),
-                  data_kwargs=dict(color=c_real))
+                  data_kwargs=dict(color=c_real_3))
     title = f"{fit_params[i][0][0]}-{fit_params[i][0][1]}Hz"
     fooof_fits[i].plot(ax=ax, plt_log=True, **kwargs)
-    ax.set_title(title, fontsize=panel_fontsize)
+    ax.set_title(title, fontsize=panel_fontsize3)
     xlabel = ax.get_xlabel()
     ylabel = ax.get_ylabel()
     xticks = np.round(ax.get_xticks(), 1)
     yticks = np.round(ax.get_yticks(), 1)
-    ax.set_xticklabels(xticks, fontsize=tick_fontsize)
-    ax.set_yticklabels(yticks, fontsize=tick_fontsize)
-    ax.set_xlabel(xlabel, fontsize=tick_fontsize)
-    ax.set_ylabel(ylabel, fontsize=tick_fontsize)
+    ax.set_xticklabels(xticks, fontsize=legend_fontsize3)
+    ax.set_yticklabels(yticks, fontsize=legend_fontsize3)
+    ax.set_xlabel(xlabel, fontsize=legend_fontsize3)
+    ax.set_ylabel(ylabel, fontsize=legend_fontsize3)
     ax.spines['right'].set_visible(True)
     ax.spines['top'].set_visible(True)
     if i > 0:
@@ -566,13 +540,13 @@ for i in range(4):
     ylabel = ax.get_ylabel()
     xticks = np.round(ax.get_xticks(), 1)
     yticks = np.round(ax.get_yticks(), 1)
-    ax.set_xticklabels(xticks, fontsize=tick_fontsize)
-    ax.set_yticklabels(yticks, fontsize=tick_fontsize)
-    ax.set_xlabel(xlabel, fontsize=tick_fontsize)
-    ax.set_ylabel(ylabel, fontsize=tick_fontsize)
+    ax.set_xticklabels(xticks, fontsize=legend_fontsize3)
+    ax.set_yticklabels(yticks, fontsize=legend_fontsize3)
+    ax.set_xlabel(xlabel, fontsize=legend_fontsize3)
+    ax.set_ylabel(ylabel, fontsize=legend_fontsize3)
 plt.tight_layout()
-plt.savefig(fig_path + fig_name + "_SuppB.png", dpi=1000, bbox_inches="tight")
-plt.savefig(fig_path + fig_name + "_SuppB.pdf", bbox_inches="tight")
+plt.savefig(fig_path + "Fig3_SuppB.png", dpi=1000, bbox_inches="tight")
+plt.savefig(fig_path + "Fig3_SuppB.pdf", bbox_inches="tight")
 plt.show()
 
 
@@ -595,15 +569,15 @@ m, b = np.polyfit(delta_power, y_intercepts, 1)
 
 # Plot
 fig, ax = plt.subplots(1, 1, figsize=[3, 3])
-ax.scatter(delta_power, y_intercepts, c=[c_low, c_med, c_high])
+ax.scatter(delta_power, y_intercepts, c=[c_low_3, c_med_3, c_high_3])
 ax.plot(delta_power, m*np.array(delta_power) + b,
         label=f"r={r_corr:.2f}, p={p_val:.2f}")
 ax.set(xlabel="Simulated Delta Power [a.u.]",
        ylabel="fooof fit y-intercept [a.u.]")
 ax.set_title("Delta power correlates with y-intercept")
 ax.legend(title="Pearson correlation")
-plt.savefig(fig_path + fig_name + "_SuppC.png", dpi=1000, bbox_inches="tight")
-plt.savefig(fig_path + fig_name + "_SuppC.pdf", bbox_inches="tight")
+plt.savefig(fig_path + "Fig3_SuppC.png", dpi=1000, bbox_inches="tight")
+plt.savefig(fig_path + "Fig3_SuppC.pdf", bbox_inches="tight")
 plt.show()
 # %%
 

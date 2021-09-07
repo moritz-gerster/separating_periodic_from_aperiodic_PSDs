@@ -18,7 +18,7 @@ except ImportError:
 def elec_phys_signal(exponent: float,
                      periodic_params: List[Tuple[float, float, float]] = None,
                      nlv: float = None,
-                     highpass: bool = False,  # in Fig1 highpass=False
+                     highpass: bool = False,
                      sample_rate: float = 2400,
                      duration: float = 180,
                      seed: int = 1):
@@ -28,31 +28,31 @@ def elec_phys_signal(exponent: float,
 
     Parameters
     ----------
-    exponent : float, optional
-        Aperiodic 1/f exponent. The default is 1.
-    periodic_params : list of tuples, optional
-        Oscillations parameters as list of tuples in form
-        [(frequency, amplitude, width), (frequency, amplitude, width)] for
-        two oscillations.
-        The default is None.
+    exponent : float
+        Aperiodic 1/f exponent.
+    periodic_params : list of tuples
+        Oscillations parameters as list of tuples in form of
+                [(center_frequency1, peak_amplitude1, peak_width1),
+                (center_frequency2, peak_amplitude2, peak_width2)]
+        for two oscillations.
     nlv : float, optional
         Level of white noise. The default is None.
-    highpass : int, optional
-        The order of the butterworth highpass filter. The default is 4. If None
-        no filter will be applied.
+    highpass : bool, optional
+        Whether to apply a 4th order butterworth highpass filter at 1Hz.
+        The default is False.
     sample_rate : float, optional
-        Sample rate of the signal. The default is 2400.
+        Sample rate of the signal. The default is 2400Hz.
     duration : float, optional
-        Duration of the signal in seconds. The default is 180.
+        Duration of the signal in seconds. The default is 180s.
     seed : int, optional
         Seed for reproducability. The default is 1.
 
     Returns
     -------
-    noise : ndarray
-        Colored noise without oscillations.
-    noise_osc : ndarray
-        Colored noise with oscillations.
+    aperiodic_signal : ndarray
+        Aperiodic 1/f activitiy without oscillations.
+    full_signal : ndarray
+        Aperiodic 1/f activitiy with added oscillations.
     """
     if seed:
         np.random.seed(seed)
@@ -81,29 +81,29 @@ def elec_phys_signal(exponent: float,
             amps_osc += amp_osc * amp_dist
 
     # Create colored noise time series from amplitudes
-    noise = irfft(amps)
-    noise_osc = irfft(amps_osc)
+    aperiodic_signal = irfft(amps)
+    full_signal = irfft(amps_osc)
 
     # Add white noise
     if nlv:
         w_noise = np.random.normal(scale=nlv, size=n_samples-2)
-        noise += w_noise
-        noise_osc += w_noise
+        aperiodic_signal += w_noise
+        full_signal += w_noise
 
     # Highpass filter
     if highpass:
         sos = sig.butter(4, 1, btype="hp", fs=sample_rate, output='sos')
-        noise = sig.sosfilt(sos, noise)
-        noise_osc = sig.sosfilt(sos, noise_osc)
+        aperiodic_signal = sig.sosfilt(sos, aperiodic_signal)
+        full_signal = sig.sosfilt(sos, full_signal)
 
-    return noise, noise_osc
+    return aperiodic_signal, full_signal
 
 
 def detect_plateau_onset(freq, psd, f_start, f_range=50, thresh=0.05,
                          step=1, reverse=False,
                          ff_kwargs=dict(verbose=False, max_n_peaks=1)):
     """
-    Detect the plateau of a power spectrum where the slope a < thresh.
+    Detect the plateau of a power spectrum with 1/f exponent beta < threshold.
 
     Parameters
     ----------
@@ -122,19 +122,19 @@ def detect_plateau_onset(freq, psd, f_start, f_range=50, thresh=0.05,
         Threshold for plateau. The default is 0.05.
     step : int, optional
         Step of loop over fitting range. The default is 1 which might take
-        unneccessarily long computation time for maximum precision.
+        unneccessarily long computation time, but yields maximum precision.
     reverse : bool, optional
         If True, start at high frequencies and detect the end of a pleateau.
         The default is False.
     ff_kwargs : dict, optional
-        Fooof fitting keywords.
-        The default is dict(verbose=False, max_n_peaks=1). There shouldn't be
-        peaks close to the plateau but fitting at least one peak is a good
-        idea for power line noise.
+        Fooof fitting keywordarguments.
+        The default is dict(verbose=False, max_n_peaks=1).
+        max_n_peaks=1: There shouldn't be peaks close to the plateau but
+        fitting at least one peak is a good idea for power line noise.
 
     Returns
     -------
-    n_start : int
+    n_start : float
         Start frequency of plateau.
         If reverse=True, end frequency of plateau.
     """
@@ -163,9 +163,9 @@ def annotate_range(ax, xmin, xmax, height, ylow=None, yhigh=None,
     ax : matplotlib.axes._subplots.AxesSubplot
         Ax to draw the lines.
     xmin : float
-        X-range minimum.
+        x-range minimum.
     xmax : float
-        X-range maximum.
+        x-range maximum.
     height : float
         Position on y-axis of range.
     ylow : float, optional
@@ -174,13 +174,26 @@ def annotate_range(ax, xmin, xmax, height, ylow=None, yhigh=None,
     yhigh : float, optional
         Position on y-axis to connect the vertical lines. If None, no vertical
         lines are drawn. The default is None.
-    annotate_pos : bool, optional
+    annotate_pos : str, int, float, or NoneType, optional
         Where to annotate.
-    annotate : bool, optional
-        The kind of annotation.
-        "diff": Print range.
-        "log-diff": Print range and logrange.
+        "below": annotate below the frequency range
+        "left": annotate left of the frequency range
+        int of float: height of the annotation text in relation to freq range.
+    annotation : str
+        The kind of annotation. For example for xmin=10Hz and xmax=30Hz:
+        "diff": Print range -> "20Hz"
+        "log-diff":                      -> r"$\Delta f=20 Hz\n"
+                                            r"$\Delta f_{log}=0.48"
+        "log-diff_unit":                 -> r"$\Delta f=20 Hz\n"
+                                            r"$\Delta f_{log}=0.48 log(Hz)"
+        "log-diff_short":                ->  "f=20 Hz\n"
+                                             "f_{log}=0.48 log(Hz)"
+        "log-diff_veryshort"             ->  "f=20\n"
+                                             "f_{log}=0.48"
+        else:                            ->  "10Hz-30Hz"
         else: Print range1-range2
+    annotation_fontsize: str
+        Fontsize of the annotation text.
 
     Returns
     -------
@@ -266,7 +279,7 @@ def calc_error(signal, lower_fitting_borders, upper_fitting_border,
 
 
 def calc_psd(x, fs=1.0, nperseg=None, axis=-1, average='mean', **kwargs):
-    """Kommt noch."""
+    """Calculate PSD excluding nan-segments in time series."""
     if average == 'mean':
         def average(x):
             return np.nanmean(x, axis=-1)
@@ -291,7 +304,7 @@ def irasa(data, sf=None, ch_names=None, band=(1, 30),
           1.65, 1.7, 1.75, 1.8, 1.85, 1.9], return_fit=True, win_sec=4,
           reject_bad_segs=True,
           kwargs_welch=dict(average='mean', window='hann')):
-    r"""
+    """
     Function modified from https://github.com/raphaelvallat/yasa/.
 
     Separate the aperiodic (= fractal, or 1/f) and oscillatory component
@@ -429,7 +442,7 @@ def irasa(data, sf=None, ch_names=None, band=(1, 30),
 
     # Calculate the original PSD over the whole data
     # ==========================================================================
-    #   CHANGED TO ALLOW NAN SEGMENTS
+    #   MG: CHANGED TO ALLOW NAN SEGMENTS
     freqs, psd = calc_psd(data, sf, nperseg=win, **kwargs_welch)
     # ==========================================================================
 
@@ -445,7 +458,7 @@ def irasa(data, sf=None, ch_names=None, band=(1, 30),
         data_down = sig.resample_poly(data, down, up, axis=-1)
         # Calculate the PSD using same params as original
         # ======================================================================
-        # CHANGED TO ALLOW NAN SEGMENTS
+        # MG: CHANGED TO ALLOW NAN SEGMENTS
         freqs_up, psd_up = calc_psd(data_up, h * sf, nperseg=win,
                                     **kwargs_welch)
         freqs_dw, psd_dw = calc_psd(data_down, sf / h, nperseg=win,
@@ -475,13 +488,13 @@ def irasa(data, sf=None, ch_names=None, band=(1, 30),
         def func(t, a, b):
             # See https://github.com/fooof-tools/fooof
             # ==================================================================
-            # CORRECTED: NP.LOG -> NP.LOG10
+            # MG: CORRECTED: NP.LOG -> NP.LOG10
             return a + np.log10(t**b)
             # ==================================================================
 
         for y in np.atleast_2d(psd_aperiodic):
             # ==================================================================
-            # CORRECTED: NP.LOG -> NP.LOG10
+            # MG: CORRECTED: NP.LOG -> NP.LOG10
             y_log = np.log10(y)
             # ==================================================================
             # Note that here we define bounds for the slope but not for the

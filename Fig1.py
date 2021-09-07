@@ -6,6 +6,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.signal as sig
+import yaml
 from fooof.plts.spectra import plot_spectrum
 from fooof.sim.gen import gen_aperiodic
 
@@ -17,41 +18,15 @@ try:
 except ImportError:
     trange = range
 
-# %% Plot params
 
-# Save Path
-fig_path = "../paper_figures/"
-fig_name = "Fig1_Intro"
-Path(fig_path).mkdir(parents=True, exist_ok=True)
+# %% Load params and make directory
 
-# Sizes
-fig_width = 6.85  # inches
-panel_fontsize = 7
-legend_fontsize = 5
+# Load params
+yaml_file = open('params.yml')
+parsed_yaml_file = yaml.load(yaml_file, Loader=yaml.FullLoader)
+globals().update(parsed_yaml_file)
 
-# Colors
-c_sim = "k"
-c_ap = "#ff7f00"
-c_osc = "#4daf4a"
-c_fit = "#377eb8"
-c_h1 = "c"
-c_h2 = "y"
-c_h3 = "#984ea3"
-c_tresh = "#999999"
-c_flat = "#f781bf"
-c_box = (.9, .9, .9)
-
-# Linestyles
-ls_box = (0, (5, 7))
-ls_box = "-"
-ls_fit = (0, (3, 3))
-
-# Linewidths
-lw_fit = 2
-lw_ap = 3
-lw_IR = 1
-lw_PSD = 1
-lw_fooof = 1.5
+Path(fig_path).mkdir(parents=True, exist_ok=True)  # make directory
 
 # %% Simulate signal
 
@@ -168,22 +143,21 @@ psd_median = np.median(psds_resampled, axis=0)
 
 def input_series(ax, duration=1, step=sample_rate//100):
     """Create dummy time series signal."""
-    # Create 10Hz time series with little 1/f for illustration
     time = np.arange(0, len(full_signal)/sample_rate, 1/sample_rate)
     time_series = np.sin(2 * np.pi * peak_center_freq * time)
-    time_series += .01 * aperiodic_signal  # add 1/f
+    time_series += .01 * aperiodic_signal  # add some 1/f
     mask = [(time >= duration) & (time <= 2*duration)]
 
     ax.plot(time[mask][::step],
             time_series[mask][::step],
-            c_sim, lw=lw_PSD, label="Signal")
+            c_sim1, lw=1, label="Signal")
     ax.set(xticks=[], yticks=[], xticklabels=[], yticklabels=[])
     ax.axis("off")
 
 
 def input_psd(ax):
     """Plot input PSD."""
-    ax.loglog(freqs_fooof, psd_full_fooof, c_sim, lw=lw_PSD, label="PSD")
+    ax.loglog(freqs_fooof, psd_full_fooof, c_sim1, lw=1, label="PSD")
     ax.set(xticks=[], yticks=[], xticklabels=[], yticklabels=[])
     ax.set_yticks([], minor=True)
     ax.set_xticks([], minor=True)
@@ -195,10 +169,10 @@ def input_psd(ax):
 def fooof_1(ax, ybottom=1):
     """Plot initial fooof fit."""
     plot_spectrum(fm.freqs, 10**fm.power_spectrum, log_freqs=False,
-                  lw=lw_fooof, color=c_sim, ax=ax)
+                  lw=1.5, color=c_sim1, ax=ax)
     plot_spectrum(fm.freqs, 10**init_ap_fit, log_freqs=False,
-                  label='Initial Fit', color=c_fit, lw=lw_fit, alpha=1,
-                  ls=ls_fit, ax=ax)
+                  label='Initial Fit', color=c_fit1, lw=2, alpha=1,
+                  ls=(0, (3, 3)), ax=ax)
     ax.grid(False)
     ax.set_yscale("log")
     ax.set_xscale("log")
@@ -217,7 +191,7 @@ def fooof_1(ax, ybottom=1):
 def fooof_2(ax, yscale=1.5, ybottom=1):
     """Plot flattended spectrum."""
     plot_spectrum(fm.freqs, init_flat_spec, log_freqs=False,
-                  label='Flattened PSD', lw=lw_fooof, color=c_flat, ax=ax)
+                  label='Flattened PSD', lw=1.5, color=c_flat1, ax=ax)
     ax.set_xscale("log")
     ax.grid(False)
     ax.axis("off")
@@ -237,12 +211,12 @@ def fooof_2(ax, yscale=1.5, ybottom=1):
 
 def fooof_3(ax, ylim=None):
     """Plot fooof Gauss fits."""
-    plot_annotated_peak_search_MG(fm, 0, ax, lw=lw_fooof,
+    plot_annotated_peak_search_MG(fm, 0, ax, lw=1.5,
                                   markersize=10,
-                                  c_flat=c_flat, c_gauss=c_osc,
-                                  c_thresh=c_tresh, label_flat=None,
+                                  c_flat=c_flat1, c_gauss=c_osc1,
+                                  c_thresh=c_tresh1, label_flat=None,
                                   label_rthresh=None,
-                                  anno_rthresh_font=legend_fontsize)
+                                  anno_rthresh_font=legend_fontsize1)
     ax.set_xscale("log")
     ax.grid(False)
     ax.axis("off")
@@ -260,10 +234,10 @@ def fooof_3(ax, ylim=None):
 
 def fooof_4(ax, ylim=None, ybottom=1):
     """Plot fooof Gauss fit removal."""
-    plot_annotated_peak_search_MG(fm, 1, ax, lw=lw_fooof,
-                                  markersize=10,
-                                  c_flat=c_flat, c_gauss=c_osc,
-                                  c_thresh=c_tresh, anno_rthresh_font=None)
+    plot_annotated_peak_search_MG(fm, 1, ax,
+                                  lw=1.5, markersize=10,
+                                  c_flat=c_flat1, c_gauss=c_osc1,
+                                  c_thresh=c_tresh1, anno_rthresh_font=None)
     ax.set_xscale("log")
     ax.grid(False)
     ax.axis("off")
@@ -275,10 +249,10 @@ def fooof_4(ax, ylim=None, ybottom=1):
 def aperiodic_fit(ax, ybottom=1):
     """Plot final aperiodic fit."""
     plot_spectrum(fm.freqs, 10**fm._spectrum_peak_rm, log_freqs=False,
-                  label='Aperiodic PSD', color=c_ap, lw=lw_ap, ax=ax)
+                  label='Aperiodic PSD', color=c_ap1, lw=3, ax=ax)
     plot_spectrum(fm.freqs, 10**fm._ap_fit, log_freqs=False,
-                  label='Aperiodic Fit', lw=lw_fit,
-                  color=c_fit, alpha=1, ls=ls_fit, ax=ax)
+                  label='Aperiodic Fit', lw=2,
+                  color=c_fit1, alpha=1, ls=(0, (3, 3)), ax=ax)
     ax.set_yscale("log")
     ax.set_xscale("log")
     ax.grid(False)
@@ -296,10 +270,10 @@ def aperiodic_fit(ax, ybottom=1):
 
 def IRASA_res1(ax, ybottom=None, ytop=None):
     """Plot IRASA resampling h1."""
-    ax.loglog(freqs_irasa, psds_up[0], c_h1, lw=lw_IR)
-    ax.loglog(freqs_irasa, psd_full_irasa, c_sim, lw=lw_PSD, ls="--",
+    ax.loglog(freqs_irasa, psds_up[0], c_h1_1, lw=1)
+    ax.loglog(freqs_irasa, psd_full_irasa, c_sim1, lw=1, ls="--",
               label=rf"$h={hset[0]:.1f}$")
-    ax.loglog(freqs_irasa, psds_dw[0], c_h1, lw=lw_IR,
+    ax.loglog(freqs_irasa, psds_dw[0], c_h1_1, lw=1,
               label=rf"$h=\frac{{{1}}}{{{hset[0]:.1f}}}$")
     ax.spines["right"].set_visible(False)
     ax.spines["left"].set_visible(False)
@@ -310,9 +284,9 @@ def IRASA_res1(ax, ybottom=None, ytop=None):
     ax.set_xticks([], minor=True)
     ax.patch.set_visible(False)
     ax.set_ylabel("Resampled\nPSD pairs", labelpad=-12, y=.4,
-                  fontsize=legend_fontsize)
+                  fontsize=legend_fontsize1)
     ax.set_title(f"h={hset[0]:.1f}",
-                 y=.65, fontsize=legend_fontsize)
+                 y=.65, fontsize=legend_fontsize1)
     ymin, ymax = ax.get_ylim()
     if ybottom and not ytop:
         ax.set_ylim((ymin/ybottom, ymax))
@@ -324,10 +298,10 @@ def IRASA_res1(ax, ybottom=None, ytop=None):
 
 def IRASA_res2(ax, ybottom=None, ytop=None):
     """Plot IRASA resampling h2."""
-    ax.loglog(freqs_irasa, psd_full_irasa, c_sim, lw=lw_PSD, ls="--")
-    ax.loglog(freqs_irasa, psds_up[1], c_h2, lw=lw_IR,
+    ax.loglog(freqs_irasa, psd_full_irasa, c_sim1, lw=1, ls="--")
+    ax.loglog(freqs_irasa, psds_up[1], c_h2_1, lw=1,
               label=rf"$h={hset[1]:.1f}$")
-    ax.loglog(freqs_irasa, psds_dw[1], c_h2, lw=lw_IR,
+    ax.loglog(freqs_irasa, psds_dw[1], c_h2_1, lw=1,
               label=rf"$h=\frac{{{1}}}{{{hset[1]:.1f}}}$")
     ax.spines["right"].set_visible(False)
     ax.spines["left"].set_visible(False)
@@ -338,7 +312,7 @@ def IRASA_res2(ax, ybottom=None, ytop=None):
     ax.set_xticks([], minor=True)
     ax.patch.set_visible(False)
     ax.set_title(f"h={hset[1]:.1f}",
-                 y=.65, fontsize=legend_fontsize)
+                 y=.65, fontsize=legend_fontsize1)
     ymin, ymax = ax.get_ylim()
     if ybottom and not ytop:
         ax.set_ylim((ymin/ybottom, ymax))
@@ -350,13 +324,13 @@ def IRASA_res2(ax, ybottom=None, ytop=None):
 
 def IRASA_res3(ax, ybottom=None, ytop=None):
     """Plot IRASA resampling h3."""
-    ax.loglog(freqs_irasa, psds_up[2], c_h3, lw=lw_IR,
+    ax.loglog(freqs_irasa, psds_up[2], c_h3_1, lw=1,
               label=rf"$h={hset[2]:.0f}$")
-    ax.loglog(freqs_irasa, psd_full_irasa, c_sim, lw=lw_PSD, ls="--")
-    ax.loglog(freqs_irasa, psds_dw[2], c_h3, lw=lw_IR,
+    ax.loglog(freqs_irasa, psd_full_irasa, c_sim1, lw=1, ls="--")
+    ax.loglog(freqs_irasa, psds_dw[2], c_h3_1, lw=1,
               label=rf"$h=\frac{{{1}}}{{{hset[2]:.0f}}}$")
     ax.set_title(f"h={hset[2]:.0f}",
-                 y=.65, fontsize=legend_fontsize)
+                 y=.65, fontsize=legend_fontsize1)
     ax.spines["right"].set_visible(False)
     ax.spines["left"].set_visible(False)
     ax.spines["top"].set_visible(False)
@@ -376,8 +350,8 @@ def IRASA_res3(ax, ybottom=None, ytop=None):
 
 def IRASA_mean1(ax, ybottom=None, lw_median=.1):
     """Plot IRASA geometric mean h1."""
-    ax.loglog(freqs_irasa, psd_full_irasa, c_sim, lw=lw_PSD, ls="--")
-    ax.loglog(freqs_irasa, psds_resampled[0], c_h1, lw=lw_IR,
+    ax.loglog(freqs_irasa, psd_full_irasa, c_sim1, lw=1, ls="--")
+    ax.loglog(freqs_irasa, psds_resampled[0], c_h1_1, lw=1,
               label=f"h={hset[i]}")
     ax.spines["right"].set_visible(False)
     ax.spines["left"].set_linewidth(lw_median)
@@ -388,7 +362,7 @@ def IRASA_mean1(ax, ybottom=None, lw_median=.1):
     ax.set_xticks([], minor=True)
     ax.patch.set_visible(False)
     ax.set_ylabel("Geometric\nmean", labelpad=-12, y=.5,
-                  fontsize=legend_fontsize)
+                  fontsize=legend_fontsize1)
     if ybottom:
         ymin, ymax = ax.get_ylim()
         ax.set_ylim((ymin/ybottom, ymax))
@@ -396,8 +370,8 @@ def IRASA_mean1(ax, ybottom=None, lw_median=.1):
 
 def IRASA_mean2(ax, ybottom=None, lw_median=.1):
     """Plot IRASA geometric mean h2."""
-    ax.loglog(freqs_irasa, psd_full_irasa, c_sim, lw=lw_PSD, ls="--")
-    ax.loglog(freqs_irasa, psds_resampled[1], c_h2, lw=lw_IR,
+    ax.loglog(freqs_irasa, psd_full_irasa, c_sim1, lw=1, ls="--")
+    ax.loglog(freqs_irasa, psds_resampled[1], c_h2_1, lw=1,
               label=f"h={hset[i]}")
     ax.spines["right"].set_visible(False)
     ax.spines["left"].set_visible(False)
@@ -414,8 +388,8 @@ def IRASA_mean2(ax, ybottom=None, lw_median=.1):
 
 def IRASA_mean3(ax, ybottom=None, lw_median=.1):
     """Plot IRASA geometric mean h3."""
-    ax.loglog(freqs_irasa, psd_full_irasa, c_sim, lw=lw_PSD, ls="--")
-    ax.loglog(freqs_irasa, psds_resampled[2],  c_h3, lw=lw_IR,
+    ax.loglog(freqs_irasa, psd_full_irasa, c_sim1, lw=1, ls="--")
+    ax.loglog(freqs_irasa, psds_resampled[2],  c_h3_1, lw=1,
               label=f"h={hset[i]}")
     ax.spines["right"].set_linewidth(lw_median)
     ax.spines["left"].set_visible(False)
@@ -431,21 +405,21 @@ def IRASA_mean3(ax, ybottom=None, lw_median=.1):
     freq = 5
     ax.annotate(f"{freq}Hz     ",
                 xy=(freq, psd_full_irasa[freqs_irasa == freq][0]),
-                xytext=(freq, ymin*.9), fontsize=legend_fontsize, ha="center",
+                xytext=(freq, ymin*.9), fontsize=legend_fontsize1, ha="center",
                 arrowprops=dict(arrowstyle="-", lw=1, ls=":", shrinkA=0))
     freq = 10
     ax.annotate(f"{freq}Hz",
                 xy=(freq, psd_full_irasa[freqs_irasa == freq][0]),
-                xytext=(freq, ymin*.9), fontsize=legend_fontsize, ha="center",
+                xytext=(freq, ymin*.9), fontsize=legend_fontsize1, ha="center",
                 arrowprops=dict(arrowstyle="-", lw=1, ls=":", shrinkA=0))
     freq = 20
     ax.annotate(f"       {freq}Hz",
                 xy=(freq, psd_full_irasa[freqs_irasa == freq][0]),
-                xytext=(freq, ymin*.9), fontsize=legend_fontsize, ha="center",
+                xytext=(freq, ymin*.9), fontsize=legend_fontsize1, ha="center",
                 arrowprops=dict(arrowstyle="-", lw=1, ls=":", shrinkA=0))
 
 
-def make_frame(ax, c, title=None, lw_box=0, **kwargs):
+def make_frame(ax, c, title=None, lw_box=0, ls_box="-", **kwargs):
     """Make plotting frames."""
     ax = fig.add_subplot(ax, **kwargs)
     ax.tick_params(axis='both', which='both', bottom=0, left=0,
@@ -468,8 +442,8 @@ def make_frame(ax, c, title=None, lw_box=0, **kwargs):
 # %% Plot settings
 
 # Mpl settings
-mpl.rcParams['font.size'] = panel_fontsize
-mpl.rcParams['legend.fontsize'] = legend_fontsize
+mpl.rcParams['font.size'] = panel_fontsize1
+mpl.rcParams['legend.fontsize'] = legend_fontsize1
 mpl.rcParams["axes.spines.right"] = True
 mpl.rcParams["axes.spines.top"] = True
 mpl.rcParams["axes.spines.left"] = True
@@ -494,13 +468,13 @@ gs = fig.add_gridspec(nrows=2, ncols=3,
 
 # Input gridspec
 gs_input = gs[:, 0].subgridspec(2, 1)
-input_frame = make_frame(gs_input[:], c_box, title="Input")
+input_frame = make_frame(gs_input[:], c_box1, title="Input")
 inp_margins = dict(xmargin=.4, ymargin=.4)
 ax_inp_ser = fig.add_subplot(gs_input[0], **inp_margins)
 ax_inp_PSD = fig.add_subplot(gs_input[1], **inp_margins)
 
 # IRASA algorithm gridspec
-irasa_frame = make_frame(gs[0, 1], c_box, title="IRASA")
+irasa_frame = make_frame(gs[0, 1], c_box1, title="IRASA")
 gs_IRASA = gs[0, 1].subgridspec(2, 3, hspace=0, wspace=0)
 IR_margins = dict(xmargin=.5, ymargin=.4)
 gs_IR11 = fig.add_subplot(gs_IRASA[0, 0], **IR_margins)
@@ -512,7 +486,7 @@ gs_IR32 = fig.add_subplot(gs_IRASA[1, 2], **IR_margins)
 
 # fooof gridspecs
 gs_fooof = gs[1, 1].subgridspec(1, 2, width_ratios=[2, 1])
-fooof_frame = make_frame(gs_fooof[:, :], c_box, title="FOOOF")
+fooof_frame = make_frame(gs_fooof[:, :], c_box1, title="FOOOF")
 
 gs_fooof1 = gs_fooof[0].subgridspec(1, 2, hspace=0)
 fooof_margins = dict(xmargin=.4, ymargin=.6)
@@ -526,7 +500,7 @@ ax_fooof4 = fig.add_subplot(gs_fooof2[1], **fooof_margins)
 
 # Output gridspec
 gs_output = gs[:, 2].subgridspec(3, 1, height_ratios=[1, 3, 1])
-output_frame = make_frame(gs_output[1], c_box, title="Output")
+output_frame = make_frame(gs_output[1], c_box1, title="Output")
 our_margins = dict(xmargin=.4, ymargin=.3)
 ap = fig.add_subplot(gs_output[1], **our_margins)
 
@@ -549,7 +523,7 @@ fooof_4(ax_fooof4, ylim)
 aperiodic_fit(ap, ybottom=2)
 
 # Panel labels
-panel_dic = dict(fontweight="bold", fontsize=panel_fontsize,
+panel_dic = dict(fontweight="bold", fontsize=panel_fontsize1,
                  x=.03, y=.97, va="top")
 ax_inp_ser.text(s="a", transform=ax_inp_ser.transAxes, **panel_dic)
 gs_IR11.text(s="b", transform=gs_IR11.transAxes, **panel_dic)
@@ -566,7 +540,7 @@ ax_inp_ser.annotate(text="", xy=(.5, -.2),
                     xycoords='axes fraction',
                     annotation_clip=False, arrowprops=arr_props)
 ax_inp_ser.text(s="PSD", x=.6, y=-.11, transform=ax_inp_ser.transAxes,
-                fontsize=legend_fontsize)
+                fontsize=legend_fontsize1)
 
 
 ax_fooof1.annotate(text="", xy=(-.1, .5),
@@ -590,13 +564,13 @@ ax_fooof3.annotate(text="", xy=(.85, -.4),
 ax_fooof3.text(s="Subtract\npeak\nfrom PSD",
                x=1.05, y=.5,
                transform=ax_fooof3.transAxes,
-               fontsize=legend_fontsize, va="top")
+               fontsize=legend_fontsize1, va="top")
 ax_fooof4.annotate(text="", xy=(.12, 1),
                    xytext=(.12, .6),
                    xycoords='axes fraction',
                    annotation_clip=False, arrowprops=arr_props_round2)
 ax_fooof4.text(s="repeat", x=.15, y=.85, transform=ax_fooof4.transAxes,
-               fontsize=legend_fontsize, va="top")
+               fontsize=legend_fontsize1, va="top")
 
 
 gs_IR11.annotate(text="", xy=(-.1, .5),
@@ -636,7 +610,7 @@ gs_IR32.annotate(text="", xy=(1.45, .5),
 gs_IR32.text(s="median",
              x=1.05, y=.7,
              va="top",
-             fontsize=legend_fontsize,
+             fontsize=legend_fontsize1,
              transform=gs_IR32.transAxes)
 ax_fooof3.annotate(text="", xy=(1.5, .6),
                    xytext=(1.05, .6),
@@ -644,8 +618,8 @@ ax_fooof3.annotate(text="", xy=(1.5, .6),
                    annotation_clip=False,
                    arrowprops=arr_props)
 
-plt.savefig(fig_path + fig_name + ".pdf", bbox_inches="tight")
-plt.savefig(fig_path + fig_name + ".png", dpi=1000, bbox_inches="tight")
+plt.savefig(fig_path + "Fig1.pdf", bbox_inches="tight")
+plt.savefig(fig_path + "Fig1.png", dpi=1000, bbox_inches="tight")
 plt.show()
 
 # %%
