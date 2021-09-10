@@ -172,17 +172,17 @@ fit_post_sim_osc, lab_post_saw_osc = IRASA_fit(saw_post, freq_range, "post")
 
 # %% Plot settings
 
-mpl.rcParams['xtick.labelsize'] = legend_fontsize7
-mpl.rcParams['ytick.labelsize'] = legend_fontsize7
-mpl.rcParams['axes.labelsize'] = legend_fontsize7
-mpl.rcParams['legend.fontsize'] = legend_fontsize7
+mpl.rcParams['xtick.labelsize'] = legend_fontsize
+mpl.rcParams['ytick.labelsize'] = legend_fontsize
+mpl.rcParams['axes.labelsize'] = legend_fontsize
+mpl.rcParams['legend.fontsize'] = legend_fontsize
 mpl.rcParams["axes.spines.right"] = False
 mpl.rcParams["axes.spines.top"] = False
 
 # Tick params
 ticks_time = dict(length=6, width=1.5)
 ticks_psd = dict(length=4, width=1)
-panel_labels = dict(x=0, y=1.02, fontsize=panel_fontsize7,
+panel_labels = dict(x=0, y=1.02, fontsize=panel_fontsize,
                     fontdict=dict(fontweight="bold"))
 
 # a1
@@ -246,9 +246,9 @@ xy_post = (start_post, ymin)
 width = seiz_len_samples / sample_rate
 
 # Add colored rectangles
-rect_EEG_pre_params = dict(xy=xy_pre, width=width, color=c_pre7, **rect)
-rect_EEG_seiz_params = dict(xy=xy_seiz, width=width, color=c_seiz7, **rect)
-rect_EEG_post_params = dict(xy=xy_post, width=width, color=c_post7, **rect)
+rect_EEG_pre_params = dict(xy=xy_pre, width=width, color=c_pre, **rect)
+rect_EEG_seiz_params = dict(xy=xy_seiz, width=width, color=c_seiz, **rect)
+rect_EEG_post_params = dict(xy=xy_post, width=width, color=c_post, **rect)
 
 
 def add_rectangles(ax):
@@ -270,7 +270,7 @@ fig, axes = plt.subplots(3, 2, figsize=[fig_width, 7], sharex="col",
 # a1
 # Plot EEG seizure
 ax = axes[0, 0]
-ax.plot(time_full, data_full, c=c_empirical7, lw=1)
+ax.plot(time_full, data_full, c=c_real, lw=1)
 add_rectangles(ax)
 
 # Set axes
@@ -282,14 +282,14 @@ ax.text(s="a", **panel_labels, transform=ax.transAxes)
 # a2
 # Plot EEG PSD
 ax = axes[0, 1]
-ax.loglog(freq, psd_EEG_pre, c_pre7, lw=2)
-ax.loglog(freq, psd_EEG_seiz, c_seiz7, lw=2)
-ax.loglog(freq, psd_EEG_post, c_post7, lw=2)
+ax.loglog(freq, psd_EEG_pre, c_pre, lw=2)
+ax.loglog(freq, psd_EEG_seiz, c_seiz, lw=2)
+ax.loglog(freq, psd_EEG_post, c_post, lw=2)
 
 # Plot EEG fooof fit
-ax.loglog(freq, fit_pre_eeg, "--", c=c_pre7, lw=2, label=lab_pre_eeg)
-ax.loglog(freq, fit_seiz_eeg, "--", c=c_seiz7, lw=2, label=lab_seiz_eeg)
-ax.loglog(freq, fit_post_eeg, "--", c=c_post7, lw=2, label=lab_post_eeg)
+ax.loglog(freq, fit_pre_eeg, "--", c=c_pre, lw=2, label=lab_pre_eeg)
+ax.loglog(freq, fit_seiz_eeg, "--", c=c_seiz, lw=2, label=lab_seiz_eeg)
+ax.loglog(freq, fit_post_eeg, "--", c=c_post, lw=2, label=lab_post_eeg)
 
 # Set axes
 ax.set(**axes_a2)
@@ -302,7 +302,7 @@ ax.tick_params(**ticks_psd)
 # b1
 # Sawtooth Time Series
 ax = axes[1, 0]
-ax.plot(time_full, noise_saw, c=c_sim7, lw=1)
+ax.plot(time_full, noise_saw, c=c_sim, lw=1)
 add_rectangles(ax)
 
 # Set axes
@@ -314,14 +314,14 @@ ax.text(s="b", **panel_labels, transform=ax.transAxes)
 # b2
 # Plot saw PSD
 ax = axes[1, 1]
-ax.loglog(freq, psd_saw_pre, c_pre7, lw=2)
-ax.loglog(freq, psd_saw_seiz, c_seiz7, lw=2)
-ax.loglog(freq, psd_saw_post, c_post7, lw=2)
+ax.loglog(freq, psd_saw_pre, c_pre, lw=2)
+ax.loglog(freq, psd_saw_seiz, c_seiz, lw=2)
+ax.loglog(freq, psd_saw_post, c_post, lw=2)
 
 # Plot Saw fooof fit
-ax.loglog(freq, fit_pre_sim, "--", c=c_pre7, lw=2, label=lab_pre_saw)
-ax.loglog(freq, fit_seiz_sim, "--", c=c_seiz7, lw=2, label=lab_seiz_saw)
-ax.loglog(freq, fit_post_sim, "--", c=c_post7, lw=2, label=lab_post_saw)
+ax.loglog(freq, fit_pre_sim, "--", c=c_pre, lw=2, label=lab_pre_saw)
+ax.loglog(freq, fit_seiz_sim, "--", c=c_seiz, lw=2, label=lab_seiz_saw)
+ax.loglog(freq, fit_post_sim, "--", c=c_post, lw=2, label=lab_post_saw)
 
 # Set axes
 ax.set(**axes_b2)
@@ -334,7 +334,7 @@ ax.yaxis.set_minor_locator(y_minor)
 # c1
 # Sawtooth Time Series + Alpha Beta
 ax = axes[2, 0]
-ax.plot(time_full, noise_saw_osc, c=c_sim7, lw=1)
+ax.plot(time_full, noise_saw_osc, c=c_sim, lw=1)
 add_rectangles(ax)
 
 # Set axes
@@ -346,14 +346,14 @@ ax.text(s="c", **panel_labels, transform=ax.transAxes)
 # c2
 # Plot saw PSD
 ax = axes[2, 1]
-ax.loglog(freq, psd_saw_osc_pre, c_pre7, lw=2)
-ax.loglog(freq, psd_saw_osc_seiz, c_seiz7, lw=2)
-ax.loglog(freq, psd_saw_osc_post, c_post7, lw=2)
+ax.loglog(freq, psd_saw_osc_pre, c_pre, lw=2)
+ax.loglog(freq, psd_saw_osc_seiz, c_seiz, lw=2)
+ax.loglog(freq, psd_saw_osc_post, c_post, lw=2)
 
 # Plot Saw fooof fit
-ax.loglog(freq, fit_pre_sim_osc, "--", c=c_pre7, lw=2, label=lab_pre_saw_osc)
-ax.loglog(freq, fit_seiz_sim_osc, "--", c=c_seiz7, lw=2, label=lab_seiz_saw_osc)
-ax.loglog(freq, fit_post_sim_osc, "--", c=c_post7, lw=2, label=lab_post_saw_osc)
+ax.loglog(freq, fit_pre_sim_osc, "--", c=c_pre, lw=2, label=lab_pre_saw_osc)
+ax.loglog(freq, fit_seiz_sim_osc, "--", c=c_seiz, lw=2, label=lab_seiz_saw_osc)
+ax.loglog(freq, fit_post_sim_osc, "--", c=c_post, lw=2, label=lab_post_saw_osc)
 
 # Set axes
 ax.set(**axes_b2)
@@ -491,25 +491,25 @@ ax[2, 2].legend()
 ax[2, 2].set_xlabel("Frequency [Hz]")
 
 # Add colored rectangles
-ax[0, 0].patch.set_facecolor(c_pre7)
+ax[0, 0].patch.set_facecolor(c_pre)
 ax[0, 0].patch.set_alpha(rect["alpha"])
-ax[1, 0].patch.set_facecolor(c_pre7)
+ax[1, 0].patch.set_facecolor(c_pre)
 ax[1, 0].patch.set_alpha(rect["alpha"])
-ax[2, 0].patch.set_facecolor(c_pre7)
+ax[2, 0].patch.set_facecolor(c_pre)
 ax[2, 0].patch.set_alpha(rect["alpha"])
 
-ax[0, 1].patch.set_facecolor(c_seiz7)
+ax[0, 1].patch.set_facecolor(c_seiz)
 ax[0, 1].patch.set_alpha(rect["alpha"])
-ax[1, 1].patch.set_facecolor(c_seiz7)
+ax[1, 1].patch.set_facecolor(c_seiz)
 ax[1, 1].patch.set_alpha(rect["alpha"])
-ax[2, 1].patch.set_facecolor(c_seiz7)
+ax[2, 1].patch.set_facecolor(c_seiz)
 ax[2, 1].patch.set_alpha(rect["alpha"])
 
-ax[0, 2].patch.set_facecolor(c_post7)
+ax[0, 2].patch.set_facecolor(c_post)
 ax[0, 2].patch.set_alpha(rect["alpha"])
-ax[1, 2].patch.set_facecolor(c_post7)
+ax[1, 2].patch.set_facecolor(c_post)
 ax[1, 2].patch.set_alpha(rect["alpha"])
-ax[2, 2].patch.set_facecolor(c_post7)
+ax[2, 2].patch.set_facecolor(c_post)
 ax[2, 2].patch.set_alpha(rect["alpha"])
 
 plt.tight_layout()

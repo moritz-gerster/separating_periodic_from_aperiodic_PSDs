@@ -1,133 +1,57 @@
 
-# Paths
-fig_path: "../paper_figures/"
-
 # Plot params
+fig_path: "../paper_figures/"
 fig_width: 6.85 # inches
+panel_fontsize: 12
+legend_fontsize: 9
+annotation_fontsize: 7.5
 
-# Sizes
-panel_fontsize1: 7
-legend_fontsize1: 5
-panel_fontsize2: 12
-legend_fontsize2: 9
-panel_fontsize3: 12
-legend_fontsize3: 9
-panel_fontsize2: 12
-legend_fontsize2: 9
-panel_fontsize5: 12
-legend_fontsize5: 9
-annotation_fontsize5: 7.5
-panel_fontsize6: 12
-legend_fontsize6: 9
-annotation_fontsize6: 7.5
-panel_fontsize7: 12
-legend_fontsize7: 9
-panel_fontsize8: 12
+# Colors all
+c_sim: "k"
+c_h1: "c"
+c_h2: "y"
+c_h3: "m"
+c_noise: "darkgray"
+c_real: "purple"
+c_low: "deepskyblue"
+c_med: "limegreen"
+c_high: "#ff7f00"
+c_ground: "grey"
+c_error: "r"
+c_range1: "b"
+c_range2: "g"
+c_range3: "y"
+c_ap: "grey"
+c_pre: "c"
+c_seiz: "r"
+c_post: "y"
 
-# Colors
-c_sim1: "k"
-c_ap1: "#ff7f00"
-c_osc1: "#4daf4a"
-c_fit1: "#377eb8"
-c_h1_1: "c"
-c_h2_1: "y"
-c_h3_1: "#984ea3"
-c_tresh1: "#999999"
-c_flat1: "#f781bf"
-c_box1: [.9, .9, .9]
+# Colors 1
+c_aperiodic: "#ff7f00"
+c_osc: "#4daf4a"
+c_fit: "#377eb8"
+c_thresh: "#999999"
+c_flat: "#f781bf"
+c_box: [.9, .9, .9]
 
+# Colors 2 a)
+c_fits: ["limegreen", "r", "r", "r"]
 
+# Colors 3 b)
+c_fit_fooof1: "purple"
+c_fit_fooof2: "c"
+c_fit_fooof3: "lime"
+c_fit_fooof4: "orange"
 
-# Colors
-# a)
-c_sim2: "k"
-c_fits2: ["limegreen", "r", "r", "r"]
-c_noise2: "darkgray"
-c_ground_a2: "k"
+# Colors 5
+c_fooof: "deepskyblue"
+h_colors: ["g", "C1", "orangered"]
 
-# b)
-c_real2: "purple"
+# Colors 6 Supp
+c_ap_real1: "C1"
+c_ap_real2: "C2"
 
-# c)
-c_low2: "deepskyblue"
-c_med2: "limegreen"
-c_high2: "#ff7f00"
-
-c_ground2: "grey"
-
-# Colors
-# a)
-c_sim3: "k"
-c_error3: "r"
-c_range1_3: "b"
-c_range2_3: "g"
-c_range3_3: "y"
-
-# b)
-c_real_3: "purple"
-c_fit1_3: "purple"
-c_fit2_3: "c"
-c_fit3_3: "lime"
-c_fit4_3: "orange"
-
-# c)
-c_low_3: "deepskyblue"
-c_med_3: "limegreen"
-c_high_3: "#ff7f00"
-c_ground_3: "grey"
-
-# Colors
-c_empirical4: "purple"
-c_sim4: "k"
-c_pre4: "c"
-c_seiz4: "r"
-c_post4: "y"
-
-# Colors
-# a)
-c_sim5: "k"
-c_error5: "r"
-c_noise5: "darkgray"
-c_range1_5: "b"
-c_range2_5: "g"
-c_range3_5: "y"
-c_ap_5: "grey"
-
-# b)
-c_real_5: "purple"
-
-# c)
-c_fooof_5: "deepskyblue"
-c_IRASA1_5: "g"
-c_IRASA2_5: "C1"
-c_IRASA3_5: "orangered"
-
-# Colors
-# a)
-c_sim6: "k"
-c_error6: "r"
-c_ap6: "grey"
-colors123_6: ["b", "g", "y"]
-
-# b)
-c_IRASA1_6: "c"
-c_IRASA2_6: "m"
-c_IRASA3_6: "y"
-
-# Supp. Mat.
-c_real_6: "purple"
-c_IRASA_real1_6: "C1"
-c_IRASA_real2_6: "C2"
-
-# Colors
-c_empirical7: "purple"
-c_sim7: "k"
-c_pre7: "c"
-c_seiz7: "r"
-c_post7: "y"
-
-# Colors
-c_empirical8: "purple"
-c_straight8: "r--"
-c_fooof8: "b--"
-c_low8: "g--"
+# Colors 8
+c_fit_straight: "r--"
+c_fit_fooof: "b--"
+c_fit_irasa: "g--"

@@ -1,4 +1,6 @@
 # %%
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import mne
 import numpy as np
@@ -130,23 +132,23 @@ ap_irasa_fit_sub9 = gen_aperiodic(freq_I,
                                   np.array([irasa_offset_sub9,
                                             exponent_irasa_sub9]))
 
-PSD_plot_sub5 = freq, PSD_sub5, c_empirical8
-PSD_plot_sub9 = freq, PSD_sub9, c_empirical8
+PSD_plot_sub5 = freq, PSD_sub5, c_real
+PSD_plot_sub9 = freq, PSD_sub9, c_real
 
-fooof_plot_sub5 = fm_sub5.freqs, 10**ap_fooof_fit_sub5, c_fooof8
-fooof_plot_sub9 = fm_sub9.freqs, 10**ap_fooof_fit_sub9, c_fooof8
+fooof_plot_sub5 = fm_sub5.freqs, 10**ap_fooof_fit_sub5, c_fit_fooof
+fooof_plot_sub9 = fm_sub9.freqs, 10**ap_fooof_fit_sub9, c_fit_fooof
 
-straight_plot_sub5 = fm_sub5.freqs, 10**ap_straight_fit_sub5, c_straight8
-straight_plot_sub9 = fm_sub9.freqs, 10**ap_straight_fit_sub9, c_straight8
+straight_plot_sub5 = fm_sub5.freqs, 10**ap_straight_fit_sub5, c_fit_straight
+straight_plot_sub9 = fm_sub9.freqs, 10**ap_straight_fit_sub9, c_fit_straight
 
-irasa_plot_sub5 = freq_I, 10**ap_irasa_fit_sub5, c_low8
-irasa_plot_sub9 = freq_I, 10**ap_irasa_fit_sub9, c_low8
+irasa_plot_sub5 = freq_I, 10**ap_irasa_fit_sub5, c_fit_irasa
+irasa_plot_sub9 = freq_I, 10**ap_irasa_fit_sub9, c_fit_irasa
 
 # %% Fig Params
 
-panel_labels = dict(x=0, y=1.02, fontsize=panel_fontsize8,
+panel_labels = dict(x=0, y=1.02, fontsize=panel_fontsize,
                     fontdict=dict(fontweight="bold"))
-panel_description = dict(x=0, y=1.02, fontsize=panel_fontsize8)
+panel_description = dict(x=0, y=1.02, fontsize=panel_fontsize)
 
 # %% Plot
 

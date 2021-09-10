@@ -77,9 +77,9 @@ plateau_sim = (freq >= plateau_onset_sim)
 ground_truth = gen_aperiodic(freq, np.array([0, sim_exponent]))
 
 # %% Plot params a)
-plot_sim = (freq[signal_sim], psd_sim[signal_sim], c_sim2)
-plot_plateau = (freq[plateau_sim], psd_sim[plateau_sim], c_noise2)
-plot_ground = (freq, 10**ground_truth, c_ground_a2)
+plot_sim = (freq[signal_sim], psd_sim[signal_sim], c_sim)
+plot_plateau = (freq[plateau_sim], psd_sim[plateau_sim], c_noise)
+plot_ground = (freq, 10**ground_truth, c_sim)
 
 # plot limits, ticks, and labels
 xlim_a = (1, 600)
@@ -103,14 +103,14 @@ for i, lim in enumerate(upper_fit_limits):
     fit = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
     label = fr"1-{lim}Hz $\beta=${exp:.2f}"
     plot_fit = fm.freqs, 10**fit, "-"
-    dic_fit = dict(c=c_fits2[i], lw=2, label=label)
+    dic_fit = dict(c=c_fits[i], lw=2, label=label)
 
     # annotate x-crossing
     vline = lim, ylim_a[0], 10**fit[-1]
     plot_fits.append(plot_fit)
     dic_fits.append(dic_fit)
     vlines.append(vline)
-dic_line = dict(color=c_sim2, linestyle=":", lw=.3)
+dic_line = dict(color=c_sim, linestyle=":", lw=.3)
 
 # %% Plot params b)
 
@@ -122,9 +122,9 @@ signal_sub9 = (freq <= plateau_onset_sub9)
 plateau_sub9 = (freq >= plateau_onset_sub9)
 
 # Prepare plot
-plot_sub9 = (freq, psd_sub9, c_real2)
-plot_sub9_signal = (freq[signal_sub9], psd_sub9[signal_sub9], c_real2)
-plot_sub9_plateau = (freq[plateau_sub9], psd_sub9[plateau_sub9], c_noise2)
+plot_sub9 = (freq, psd_sub9, c_real)
+plot_sub9_signal = (freq[signal_sub9], psd_sub9[signal_sub9], c_real)
+plot_sub9_plateau = (freq[plateau_sub9], psd_sub9[plateau_sub9], c_noise)
 
 # Get Oscillation coordinates sub9
 peak_center_freq1 = 23
@@ -137,24 +137,24 @@ plateau_height = psd_sub9[freq == plateau_onset_sub9]
 
 # Create lines, arrows, and text to annotate noise floor
 line_peak1 = dict(x=peak_center_freq1, ymin=plateau_height*0.8,
-                  ymax=peak_height1, color=c_sim2, linestyle="--", lw=.5)
+                  ymax=peak_height1, color=c_sim, linestyle="--", lw=.5)
 
 line_peak2 = dict(x=peak_center_freq2, ymin=plateau_height*0.8,
-                  ymax=peak_height2, color=c_sim2, linestyle="--", lw=.5)
+                  ymax=peak_height2, color=c_sim, linestyle="--", lw=.5)
 
 arrow1 = dict(text="",
               xy=(plateau_onset_sub9, plateau_height*0.8),
               xytext=(peak_center_freq1, plateau_height*0.8),
-              arrowprops=dict(arrowstyle="->", color=c_sim2, lw=1))
+              arrowprops=dict(arrowstyle="->", color=c_sim, lw=1))
 arrow2 = dict(text="",
               xy=(plateau_onset_sub9, plateau_height*0.8),
               xytext=(peak_center_freq2, plateau_height*0.8),
-              arrowprops=dict(arrowstyle="->", color=c_sim2, lw=1))
+              arrowprops=dict(arrowstyle="->", color=c_sim, lw=1))
 
 plateau_line9 = dict(text="",
                      xy=(plateau_onset_sub9, plateau_height*0.86),
                      xytext=(plateau_onset_sub9, plateau_height*.5),
-                     arrowprops=dict(arrowstyle="-", color=c_sim2, lw=2))
+                     arrowprops=dict(arrowstyle="-", color=c_sim, lw=2))
 
 
 plateau_txt9 = dict(text=f"{plateau_onset_sub9}Hz",
@@ -267,26 +267,26 @@ ap_fit15 = gen_aperiodic(fm15.freqs, fm15.aperiodic_params_)
 ap_fit2 = gen_aperiodic(fm2.freqs, fm2.aperiodic_params_)
 ap_fit_sub9 = gen_aperiodic(fm_sub9.freqs, fm_sub9.aperiodic_params_)
 
-fit1 = fm1.freqs, 10**ap_fit1, c_low2
-fit15 = fm15.freqs, 10**ap_fit15, c_med2
-fit2 = fm2.freqs, 10**ap_fit2, c_high2
-fit_sub9 = fm_sub9.freqs, 10**ap_fit_sub9, c_real2
+fit1 = fm1.freqs, 10**ap_fit1, c_low
+fit15 = fm15.freqs, 10**ap_fit15, c_med
+fit2 = fm2.freqs, 10**ap_fit2, c_high
+fit_sub9 = fm_sub9.freqs, 10**ap_fit_sub9, c_real
 
 psd_plateau_fits = [fit1, fit15, fit2]
 
 spec9_fit_label = fr"fooof LFP $\beta=${exp_sub9:.2f}"
 
 # % Plot params c)
-plot_sub9 = (freq, psd_sub9, c_real2)
-plot_peak1 = (freq, psd_signal1, c_low2)
-plot_peak15 = (freq, psd_signal15, c_med2)
-plot_peak2 = (freq, psd_signal2, c_high2)
+plot_sub9 = (freq, psd_sub9, c_real)
+plot_peak1 = (freq, psd_signal1, c_low)
+plot_peak15 = (freq, psd_signal15, c_med)
+plot_peak2 = (freq, psd_signal2, c_high)
 
 # Summarize
 psd_plateau_vary = [plot_peak1, plot_peak15, plot_peak2]
-plot_plateau1 = (freq, psd_aperiodic1, c_ground2)
-plot_plateau15 = (freq, psd_aperiodic15, c_ground2)
-plot_plateau2 = (freq, psd_aperiodic2, c_ground2)
+plot_plateau1 = (freq, psd_aperiodic1, c_ground)
+plot_plateau15 = (freq, psd_aperiodic15, c_ground)
+plot_plateau2 = (freq, psd_aperiodic2, c_ground)
 
 xlim_c = (1, 825)
 xlabel_c = "Frequency in Hz"
@@ -317,18 +317,18 @@ plot_delta_high = (freqs_fill, psd_aperiodic2[freq_mask_fill_area],
 
 # Summarize
 delta_power = [plot_delta_low, plot_delta_med, plot_delta_high]
-colors_c = [c_low2, c_med2, c_high2]
+colors_c = [c_low, c_med, c_high]
 
 # %% Plot Params
 
-mpl.rcParams['xtick.labelsize'] = legend_fontsize2
-mpl.rcParams['ytick.labelsize'] = legend_fontsize2
-mpl.rcParams['axes.labelsize'] = legend_fontsize2
-mpl.rcParams['legend.fontsize'] = legend_fontsize2
+mpl.rcParams['xtick.labelsize'] = legend_fontsize
+mpl.rcParams['ytick.labelsize'] = legend_fontsize
+mpl.rcParams['axes.labelsize'] = legend_fontsize
+mpl.rcParams['legend.fontsize'] = legend_fontsize
 mpl.rcParams["axes.spines.right"] = False
 mpl.rcParams["axes.spines.top"] = False
 
-panel_labels = dict(x=0, y=1.01, fontsize=panel_fontsize2,
+panel_labels = dict(x=0, y=1.01, fontsize=panel_fontsize,
                     fontdict=dict(fontweight="bold"))
 
 line_fit = dict(lw=2, ls=":", zorder=5)
@@ -398,7 +398,7 @@ ax.annotate(**arrow2)
 
 # Annotate plateau start
 ax.annotate(**plateau_line9)
-ax.annotate(**plateau_txt9, fontsize=legend_fontsize2)
+ax.annotate(**plateau_txt9, fontsize=legend_fontsize)
 
 # Set axes
 ax.set(**axes_b)
