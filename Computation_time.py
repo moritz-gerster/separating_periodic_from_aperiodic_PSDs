@@ -100,3 +100,5 @@ freq, psd_sub = sig.welch(sub, **welch_params)
 
 fm = FOOOFGroup(verbose=False)
 fm.fit(freq, psd_sub, band)
+
+# %%

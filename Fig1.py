@@ -489,7 +489,7 @@ gs_IR32 = fig.add_subplot(gs_IRASA[1, 2], **IR_margins)
 
 # fooof gridspecs
 gs_fooof = gs[1, 1].subgridspec(1, 2, width_ratios=[2, 1])
-fooof_frame = make_frame(gs_fooof[:, :], c_box, title="FOOOF")
+fooof_frame = make_frame(gs_fooof[:, :], c_box, title="fooof")
 
 gs_fooof1 = gs_fooof[0].subgridspec(1, 2, hspace=0)
 fooof_margins = dict(xmargin=.4, ymargin=.6)

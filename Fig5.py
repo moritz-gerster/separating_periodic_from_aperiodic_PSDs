@@ -120,7 +120,7 @@ for h_max, color in zip(h_maxima, h_colors):
     IR_offset = IR_fit["Intercept"][0]
 
     IR_fit = gen_aperiodic(freq_IR, (IR_offset, IR_slope))
-    label = fr"$\beta$(h$\leq${h_max:2})={IR_slope:.2f}"
+    label = r"$\beta(h_{max}$="f"{h_max:2})={IR_slope:.2f}"
     IR_kwargs = dict(label=label)
     plot_IRASA = (freq_IR, 10**IR_fit, color)
     IR_fit_plot_args_b.append(plot_IRASA)
@@ -185,7 +185,7 @@ for h_max, color in zip(h_maxima, h_colors):
     IR_fit = gen_aperiodic(freq_IR, (IR_offset, IR_slope))
 
     # Pack for plotting
-    label = fr"$\beta$(h$\leq${h_max:2})={IR_slope:.2f}"
+    label = r"$\beta(h_{max}$="f"{h_max:2})={IR_slope:.2f}"
     IR_kwargs = dict(label=label, lw=2)
     plot_IRASA = (freq_IR, 10**IR_fit, color)
     IR_fit_plot_args_c.append(plot_IRASA)
@@ -276,9 +276,9 @@ IR_slope_low = -fit_res_low["Slope"][0]
 IR_slope_high = -fit_res_high["Slope"][0]
 IR_slope_low_eff = -fit_res_low_eff["Slope"][0]
 
-label_low = fr"$\beta$(h$\leq${h_max})={IR_slope_low:.2f}"
-label_high = fr"$\beta$(h$\leq${h_max})={IR_slope_high:.2f}"
-label_low_eff = fr"$\beta$(h$\leq${h_max})={IR_slope_low_eff:.2f}"
+label_low = r"$\beta(h_{max}$="f"{h_max})={IR_slope_low:.2f}"
+label_high = r"$\beta(h_{max}$="f"{h_max})={IR_slope_high:.2f}"
+label_low_eff = r"$\beta(h_{max}$="f"{h_max})={IR_slope_low_eff:.2f}"
 
 IR_offset_low = fit_res_low["Intercept"][0]
 IR_offset_high = fit_res_high["Intercept"][0]
