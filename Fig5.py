@@ -14,11 +14,6 @@ from fooof.sim.gen import gen_aperiodic
 from utils import (annotate_range, calc_error, detect_plateau_onset, irasa,
                    elec_phys_signal)
 
-try:
-    from tqdm import trange
-except ImportError:
-    trange = range
-
 # %% Load params and make directory
 
 # Load params

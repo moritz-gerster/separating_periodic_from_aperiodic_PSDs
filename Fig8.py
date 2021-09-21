@@ -11,7 +11,6 @@ from mne.time_frequency import psd_welch
 
 from utils import annotate_range, irasa, detect_plateau_onset
 
-supp = False
 # %% Load params and make directory
 
 # Load params

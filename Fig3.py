@@ -580,5 +580,3 @@ plt.savefig(fig_path + "Fig3_SuppC.png", dpi=1000, bbox_inches="tight")
 plt.savefig(fig_path + "Fig3_SuppC.pdf", bbox_inches="tight")
 plt.show()
 # %%
-
-# %%

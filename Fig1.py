@@ -1,23 +1,18 @@
 # %%
 import fractions
+import warnings
 from pathlib import Path
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-import yaml
 import scipy.signal as sig
+import yaml
 from fooof.plts.spectra import plot_spectrum
 from fooof.sim.gen import gen_aperiodic
 
 from fooof_modified import FOOOF, plot_annotated_peak_search_MG
 from utils import elec_phys_signal, irasa
-
-try:
-    from tqdm import trange
-except ImportError:
-    trange = range
-
 
 # %% Load params and make directory
 
@@ -60,23 +55,23 @@ freqs_fooof, psd_full_fooof = sig.welch(full_signal, **welch_params_fooof)
 freqs_irasa, psd_full_irasa = sig.welch(full_signal, **welch_params_irasa)
 
 # Filter
-freq_mask_fooof = (freqs_fooof >= 3) & (freqs_fooof <= 30)
+highpass = 3
+lowpass = 30
+freq_mask_fooof = (freqs_fooof >= highpass) & (freqs_fooof <= lowpass)
 freqs_fooof = freqs_fooof[freq_mask_fooof]
 psd_full_fooof = psd_full_fooof[freq_mask_fooof]
 
-freq_mask_irasa = (freqs_irasa >= 3) & (freqs_irasa <= 30)
+freq_mask_irasa = (freqs_irasa >= highpass) & (freqs_irasa <= lowpass)
 freqs_irasa = freqs_irasa[freq_mask_irasa]
 psd_full_irasa = psd_full_irasa[freq_mask_irasa]
 
 
 # %% Calc fooof
 
-# Set whether to plot in log-log space
-plt_log = True
-freq_range = (1, 100)
+freq_range = (highpass, lowpass)
 
 fm = FOOOF(max_n_peaks=1, verbose=False)  # use default settings
-fm.add_data(freqs_fooof, psd_full_fooof, freq_range)
+fm.add_data(freqs_fooof, psd_full_fooof)
 
 # Fit the power spectrum model
 fm.fit(freqs_fooof, psd_full_fooof, freq_range)
@@ -103,12 +98,6 @@ IRASA = irasa(data=full_signal, **irasa_params)
 freqs_irasa_full, psd_ap, psd_osc, params = IRASA
 
 psd_ap, psd_osc = psd_ap[0], psd_osc[0]
-
-IR_offset = params["Intercept"][0]
-IR_exponent = -params["Slope"][0]
-
-psd_fit = gen_aperiodic(freqs_irasa_full, (IR_offset, IR_exponent))
-
 
 window_samples = welch_params_irasa["nperseg"]
 psds_resampled = np.zeros((len(hset), *psd_full_irasa.shape))
@@ -461,6 +450,8 @@ arr_props_round2 = dict(facecolor='k', width=.00001, headwidth=1.7,
                         headlength=1.7, shrink=0,
                         connectionstyle="arc3,rad=-.3",
                         lw=.1, ls=(0, (10, 10)))
+
+warnings.filterwarnings("ignore")
 
 # %% Plot
 fig = plt.figure(figsize=(fig_width, 3.5))

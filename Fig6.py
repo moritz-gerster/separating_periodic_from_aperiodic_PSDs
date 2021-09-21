@@ -31,31 +31,31 @@ def calc_error(signal):
 def calc_peak_width(freq: np.array, psd: np.array, ground_truth: np.array,
                     freq_range: (int, int) = (1, 100),
                     threshold: float = .001) -> (float, float):
-    # """
-    # Calculate peak width as start- and endpoints from aperiodic ground truth.
+    """
+    Calculate peak width as start- and endpoints from aperiodic ground truth.
 
-    # Parameters
-    # ----------
-    # freq : ndarray
-    #     Freq array.
-    # psd : ndarray
-    #     PSD array including oscillation peaks.
-    # ground_truth : ndarray
-    #     Aperiodic ground truth excluding oscillations peaks.
-    # freq_range : tuple of floats, optional
-    #     Range to detect the peak. Multi-peak estimation is not supported.
-    #     The default is (1, 100).
-    # threshold : float, optional
-    #     Threshold for deviation from ground truth as percentage of peak
-    #     maximum. The default is .001.
+    Parameters
+    ----------
+    freq : ndarray
+        Freq array.
+    psd : ndarray
+        PSD array including oscillation peaks.
+    ground_truth : ndarray
+        Aperiodic ground truth excluding oscillations peaks.
+    freq_range : tuple of floats, optional
+        Range to detect the peak. Multi-peak estimation is not supported.
+        The default is (1, 100).
+    threshold : float, optional
+        Threshold for deviation from ground truth as percentage of peak
+        maximum. The default is .001.
 
-    # Returns
-    # -------
-    # freq_start : float
-    #     Frequency of peak start.
-    # freq_end : float
-    #     Frequency of peak end.
-    # """
+    Returns
+    -------
+    freq_start : float
+        Frequency of peak start.
+    freq_end : float
+        Frequency of peak end.
+    """
     # select range for difference calculation
     mask = (freq > freq_range[0]) & (freq < freq_range[1])
     psd_diff = np.abs(psd - ground_truth)[mask]
