@@ -235,75 +235,81 @@ psd_sub = psd_sub[filt]
 
 # %% d) Calc IRASA
 
+# Frequency ranges to apply
 band_low = (1, 30)
 band_high = (30, 45)
 
-h_max = 3
-win_sec = 4
+h_max = 3  # maxiumum resampling factor
+win_sec = 4  # window length
+
+# Calc freq ranges based on resampling factor
 f_min_low = band_low[0] / h_max
 f_max_low = band_low[1] * h_max
 f_min_high = band_high[0] / h_max
 f_max_high = band_high[1] * h_max
 f_step = 1 / win_sec
 
+# Evaluated freq range
 band_low_eff = (band_low[0] * h_max, band_low[1] / h_max)
 
-N_h = len(np.arange(1.1, 1.9, 0.05))
-hset = np.linspace(1.1, h_max, N_h)
+N_h = len(np.arange(1.1, 1.9, 0.05))  # number of resampling factors
+hset = np.linspace(1.1, h_max, N_h)  # h-set (list of resampling factors)
 
+# Apply IRASA
 IRASA_low = irasa(data=sub, sf=sample_rate, band=band_low, hset=hset)
 IRASA_high = irasa(data=sub, sf=sample_rate, band=band_high, hset=hset)
 IRASA_low_eff = irasa(data=sub, sf=sample_rate, band=band_low_eff, hset=hset)
 
-freq_low, psd_ap_low, psd_osc_low, fit_res_low = IRASA_low
-freq_high, psd_ap_high, psd_osc_high, fit_res_high = IRASA_high
-freq_low_eff, psd_ap_low_eff, psd_osc_low_eff, fit_res_low_eff = IRASA_low_eff
+# Extract results
+freq_low, _, _, fit_res_low = IRASA_low
+freq_high, _, _, fit_res_high = IRASA_high
+_, _, _, fit_res_low_eff = IRASA_low_eff
 
-psd_ap_low = psd_ap_low[0]
-psd_osc_low = psd_osc_low[0]
-psd_ap_high = psd_ap_high[0]
-psd_osc_high = psd_osc_high[0]
+# Extract exponents
+IR_exponent_low = -fit_res_low["Slope"][0]
+IR_exponent_high = -fit_res_high["Slope"][0]
+IR_exponent_low_eff = -fit_res_low_eff["Slope"][0]
 
-psd_ap_low_eff = psd_ap_low_eff[0]
-psd_osc_low_eff = psd_osc_low_eff[0]
-
-IR_slope_low = -fit_res_low["Slope"][0]
-IR_slope_high = -fit_res_high["Slope"][0]
-IR_slope_low_eff = -fit_res_low_eff["Slope"][0]
-
-label_low = r"$\beta(h_{max}$="f"{h_max})={IR_slope_low:.2f}"
-label_high = r"$\beta(h_{max}$="f"{h_max})={IR_slope_high:.2f}"
-label_low_eff = r"$\beta(h_{max}$="f"{h_max})={IR_slope_low_eff:.2f}"
-
+# Extract y-intercepts
 IR_offset_low = fit_res_low["Intercept"][0]
 IR_offset_high = fit_res_high["Intercept"][0]
 IR_offset_low_eff = fit_res_low_eff["Intercept"][0]
 
-IR_fit_low = gen_aperiodic(freq_low, (IR_offset_low,
-                                      IR_slope_low))
-IR_fit_high = gen_aperiodic(freq_high, (IR_offset_high,
-                                        IR_slope_high))
-IR_fit_low_eff = gen_aperiodic(freq_low_eff, (IR_offset_low_eff,
-                                              IR_slope_low_eff))
+# Extract plot labels
+label_low = r"$\beta(h_{max}$="f"{h_max})={IR_exponent_low:.2f}"
+label_high = r"$\beta(h_{max}$="f"{h_max})={IR_exponent_high:.2f}"
+label_low_eff = r"$\beta(h_{max}$="f"{h_max})={IR_exponent_low_eff:.2f}"
 
+# Generate 1/f based on fit result of fit range
+IR_fit_low = gen_aperiodic(freq_low, (IR_offset_low,
+                                      IR_exponent_low))
+IR_fit_high = gen_aperiodic(freq_high, (IR_offset_high,
+                                        IR_exponent_high))
+
+# Pack lines for plotting
 plot_IRASA_low = (freq_low, 10**IR_fit_low, h_colors[0])
 plot_IRASA_high = (freq_high, 10**IR_fit_high, h_colors[0])
-plot_IRASA_low_eff = (freq_low_eff, 10**IR_fit_low_eff, h_colors[0])
 
+# Evaluated/effective frequency ranges
+
+# Freq arrays
 freq_IR_eff_low = np.arange(f_min_low, f_max_low, f_step)
 freq_IR_eff_high = np.arange(f_min_high, f_max_high, f_step)
 freq_IR_eff_low_eff = np.arange(band_low[0], band_low[1], f_step)
 
+# Generate 1/f based on fit result of evaluated freq range
 IR_fit_eff_low = gen_aperiodic(freq_IR_eff_low,
-                               (IR_offset_low, IR_slope_low))
+                               (IR_offset_low, IR_exponent_low))
 IR_fit_eff_high = gen_aperiodic(freq_IR_eff_high,
-                                (IR_offset_high, IR_slope_high))
+                                (IR_offset_high, IR_exponent_high))
 IR_fit_eff_low_eff = gen_aperiodic(freq_IR_eff_low_eff,
-                                   (IR_offset_low_eff, IR_slope_low_eff))
+                                   (IR_offset_low_eff, IR_exponent_low_eff))
 
+# Filter in freq range of interest
 mask_eff1 = (freq_IR_eff_low <= band_low[0])
 mask_eff2 = (freq_IR_eff_low >= band_low[1])
 
+# Pack lines for plotting
 plot_IRASA_eff_low1 = (freq_IR_eff_low[mask_eff1],
                        10**IR_fit_eff_low[mask_eff1],
                        h_colors[0])
@@ -317,6 +323,7 @@ plot_IRASA_eff_low_eff = (freq_IR_eff_low_eff,
                           10**IR_fit_eff_low_eff,
                           h_colors[0])
 
+# Compare IRASA to fooof for both freq ranges
 fm.fit(freq, psd_sub, band_low)
 fit = gen_aperiodic(fm.freqs, fm.aperiodic_params_)
 label = rf"$\beta(fooof)$={fm.aperiodic_params_[1]:.2f}"

@@ -715,12 +715,7 @@ plt.show()
 # %% Supp. Material: Real data
 
 # %% Real data
-
 path = "../data/Fig6/"
-
-highpass = .3  # Hz
-lowpass = 600  # Hz
-
 fname_MEG = "Subj016_ON_1_raw.fif"
 fname_LFP = "Subj016_OFF_001_STN_r+s_raw.fif"
 
@@ -776,7 +771,8 @@ h_max2 = 25
 
 # doesn't matter that shorter band makes more sence, this is topic of fig4
 band = (1, 100)
-
+highpass = .3  # Hz
+lowpass = 600  # Hz
 band_h1 = (highpass * h_max1, lowpass / h_max1)
 band_h2 = (highpass * h_max2, lowpass / h_max2)
 
@@ -793,7 +789,7 @@ IRASA_l_h1 = irasa(LFP_raw, **irasa_params1)
 IRASA_m_h2 = irasa(MEG_raw[1], **irasa_params2)
 IRASA_l_h2 = irasa(LFP_raw, **irasa_params2)
 
-freq_I_h1, aperiodic_s_h1, periodic_s_h1, params_small_h1 = IRASA_s_h1
+freq_I_h1, aperiodic_s_h1, periodic_s_h1, _ = IRASA_s_h1
 _, aperiodic_m_h1, periodic_m_h1, params_m_h1 = IRASA_m_h1
 _, aperiodic_l_h1, periodic_l_h1, params_l_h1 = IRASA_l_h1
 freq_I_h2, aperiodic_m_h2, periodic_m_h2, params_m_h2 = IRASA_m_h2
@@ -813,11 +809,10 @@ IRASA_l_h1_long = irasa(LFP_raw, **irasa_params1)
 IRASA_m_h2_long = irasa(MEG_raw[1], **irasa_params2)
 IRASA_l_h2_long = irasa(LFP_raw, **irasa_params2)
 
-(freq_I_long, aperiodic_m_h1_long,
- periodic_med_h1_long, params_m_h1_long) = IRASA_m_h1_long
-_, aperiodic_l_h1_long, periodic_l_h1_long, params_l_h1_long = IRASA_l_h1_long
-_, aperiodic_m_h2_long, periodic_m_h2_long, params_m_h2_long = IRASA_m_h2_long
-_, ap_l_h2_long, periodic_l_h2_long, params_l_h2_long = IRASA_l_h2_long
+freq_I_long, aperiodic_m_h1_long, _, _ = IRASA_m_h1_long
+_, aperiodic_l_h1_long, _, _ = IRASA_l_h1_long
+_, aperiodic_m_h2_long, _, _ = IRASA_m_h2_long
+_, ap_l_h2_long, _, _ = IRASA_l_h2_long
 
 plot_ap_m_h1_long = (freq_I_long, aperiodic_m_h1_long[0], c_ap_real1)
 plot_ap_l_h1_long = (freq_I_long, aperiodic_l_h1_long[0], c_ap_real1)

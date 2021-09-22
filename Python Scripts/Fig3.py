@@ -1,13 +1,14 @@
 # %%
+import warnings
 from pathlib import Path
 
 import matplotlib as mpl
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import mne
-import yaml
 import numpy as np
 import scipy.signal as sig
+import yaml
 from fooof import FOOOF
 from fooof.sim.gen import gen_aperiodic
 from scipy.stats import pearsonr
@@ -162,9 +163,10 @@ oscillations = (alpha, low_beta, high_beta, gamma, hfo)
 # Delta Oscillations
 delta_freq = 2
 delta_width = 6
-low_delta = (delta_freq, 0, delta_width)
-med_delta = (delta_freq, 1.9, delta_width)
-high_delta = (delta_freq, 3.8, delta_width)
+delta_amp1, delta_amp2, delta_amp3 = 0, 1.9, 3.8
+low_delta = (delta_freq, delta_amp1, delta_width)
+med_delta = (delta_freq, delta_amp2, delta_width)
+high_delta = (delta_freq, delta_amp3, delta_width)
 
 osc_params_low = [low_delta, *oscillations]
 osc_params_med = [med_delta, *oscillations]

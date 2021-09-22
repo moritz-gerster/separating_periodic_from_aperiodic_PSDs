@@ -278,12 +278,12 @@ spec9_fit_label = fr"fooof LFP $\beta=${exp_sub9:.2f}"
 
 # % Plot params c)
 plot_sub9 = (freq, psd_sub9, c_real)
-plot_peak1 = (freq, psd_signal1, c_low)
-plot_peak15 = (freq, psd_signal15, c_med)
-plot_peak2 = (freq, psd_signal2, c_high)
+plot_signal1 = (freq, psd_signal1, c_low)
+plot_signal15 = (freq, psd_signal15, c_med)
+plot_signal2 = (freq, psd_signal2, c_high)
 
 # Summarize
-psd_plateau_vary = [plot_peak1, plot_peak15, plot_peak2]
+psd_plateau_vary = [plot_signal1, plot_signal15, plot_signal2]
 plot_plateau1 = (freq, psd_aperiodic1, c_ground)
 plot_plateau15 = (freq, psd_aperiodic15, c_ground)
 plot_plateau2 = (freq, psd_aperiodic2, c_ground)
