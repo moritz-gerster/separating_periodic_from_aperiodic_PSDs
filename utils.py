@@ -154,7 +154,7 @@ def detect_plateau_onset(freq, psd, f_start, f_range=50, thresh=0.05,
 
 def annotate_range(ax, xmin, xmax, height, ylow=None, yhigh=None,
                    annotate_pos=None, annotation="log-diff",
-                   annotation_fontsize=7):
+                   annotation_fontsize=7, box_alpha=0):
     """
     Annotate fitting range or peak width.
 
@@ -178,7 +178,7 @@ def annotate_range(ax, xmin, xmax, height, ylow=None, yhigh=None,
         Where to annotate.
         "below": annotate below the frequency range
         "left": annotate left of the frequency range
-        int of float: height of the annotation text in relation to freq range.
+        int or float: height of the annotation text in relation to freq range.
     annotation : str
         The kind of annotation. For example for xmin=10Hz and xmax=30Hz:
         "diff": Print range -> "20Hz"
@@ -194,6 +194,9 @@ def annotate_range(ax, xmin, xmax, height, ylow=None, yhigh=None,
         else: Print range1-range2
     annotation_fontsize: str
         Fontsize of the annotation text.
+    box_alpha : float, optional
+        The transparency of the box behind the annotation. box_alpha=1
+        draws a white rectangle behind the text.
 
     Returns
     -------
@@ -201,17 +204,17 @@ def annotate_range(ax, xmin, xmax, height, ylow=None, yhigh=None,
 
     """
     text_pos = 10**((np.log10(xmin) + np.log10(xmax)) / 2)
-    box_alpha = 1
+    # box_alpha = 1
     ha = "center"
     text_height = height
     if annotate_pos == "below":
         text_height = 1.5e-1 * height
-        box_alpha = 0
+        # box_alpha = 0
     elif isinstance(annotate_pos, (int, float)):
         text_height *= annotate_pos
-        box_alpha = 0
+        # box_alpha = 0
     elif annotate_pos == "left":
-        box_alpha = 0
+        # box_alpha = 0
         ha = "right"
         text_pos = xmin * .9
 
