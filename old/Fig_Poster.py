@@ -1,4 +1,7 @@
 # %%
+import sys
+sys.path.append("/Users/moritzgerster/Documents/Code/Aperiodic_methods/code/")
+
 import matplotlib.pyplot as plt
 import mne
 import numpy as np
@@ -7,8 +10,6 @@ from fooof.sim.gen import gen_aperiodic
 from mne.time_frequency import psd_welch
 
 from utils import irasa
-
-supp = False
 # %% Parameters b)
 
 srate_pd = 2400
@@ -21,8 +22,8 @@ c_low = "g--"
 
 
 # Paths
-data_path = "../data/Fig8/"
-fig_path = "../paper_figures/"
+data_path = "../../data/Fig8/"
+fig_path = "../../paper_figures/"
 fig_name = "Fig_Poster"
 
 fooof_params = dict(verbose=False, peak_width_limits=(0.5, 150))
@@ -200,5 +201,69 @@ plt.show()
 
 
 # %%
+# %% Plot
+
+
+spec5_real = freq, spec5, "w"
+spec9_real = freq, spec9, "w"
+
+spec5_fooof = fm5.freqs, 10**fm5_fooof, "#8DC63F"
+spec9_fooof = fm9.freqs, 10**fm9_fooof, "#8DC63F"
+
+
+fig, ax = plt.subplots(1, 2, figsize=(fig_width, 3))
+
+
+# log
+ax[0].loglog(*spec5_real, lw=2, label="MEG")
+ax[1].loglog(*spec9_real, lw=2, label="LFP")
+
+# Fooof fit
+ax[0].loglog(*spec5_fooof, lw=4, label=rf"$\beta$={a5_fooof:.2f}")
+ax[1].loglog(*spec9_fooof, lw=4, label=rf"$\beta$={a9_fooof:.2f}")
+ax[0].axes.get_xaxis().set_visible(False)
+ax[1].axes.get_xaxis().set_visible(False)
+ax[0].axes.get_yaxis().set_visible(False)
+ax[1].axes.get_yaxis().set_visible(False)
+# ax[0].axis("off")
+# ax[1].axis("off")
+
+for axes in ax.flatten():
+    axes.spines["top"].set_visible(False)
+    axes.spines["right"].set_visible(False)
+    axes.spines["bottom"].set_visible(False)
+    axes.spines["left"].set_visible(False)
+    # axes.legend(loc=1)
+
+# Legend
+handles, labels = ax[0].get_legend_handles_labels()
+leg1 = ax[0].legend(handles, labels, fontsize=15, frameon=False, loc=3)
+leg1.get_frame().set_alpha(None)
+leg1.get_frame().set_facecolor((1, 1, 1, 0))
+for text in leg1.get_texts():
+    text.set_color("#FBE2A3")
+
+handles, labels = ax[1].get_legend_handles_labels()
+leg2 = ax[1].legend(handles, labels, fontsize=15, frameon=False, loc=3)
+leg2.get_frame().set_alpha(None)
+leg2.get_frame().set_facecolor((1, 1, 1, 0))
+for text in leg2.get_texts():
+    text.set_color("#FBE2A3")
+
+xlim5 = ax[0].get_xlim()
+xlim9 = ax[1].get_xlim()
+ax[0].set(xlabel="Frequency [Hz]",
+          ylabel="PSD", xlim=(-50, xlim5[1]))
+ax[1].set(xlabel="Frequency [Hz]",
+          ylabel=None, xlim=(-50, xlim9[1]))
+# ax[0].text(s="a", **panel_labels, transform=ax[0].transAxes)
+# ax[1].text(s="b", **panel_labels, transform=ax[1].transAxes)
+
+plt.tight_layout()
+plt.savefig(fig_path + fig_name + "noBackgr.pdf", transparent=True,
+            bbox_inches="tight")
+plt.savefig(fig_path + fig_name + "noBackgr.png", dpi=1000, bbox_inches="tight",
+            transparent=True)
+plt.show()
 
 # %%
