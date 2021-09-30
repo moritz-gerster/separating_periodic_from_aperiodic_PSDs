@@ -3,7 +3,7 @@
 fig_path: "../paper_figures/"
 fig_width: 6.85 # inches
 panel_fontsize: 12
-legend_fontsize: 9
+legend_fontsize: 8
 annotation_fontsize: 7.5
 
 # Colors all
