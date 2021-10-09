@@ -20,3 +20,23 @@ In this article, we scrutinize two frequently used methods, FOOOF and IRASA, tha
 
 #### Figure 1
 ![Fig1](https://user-images.githubusercontent.com/45031224/136661949-bf33a4af-832f-450b-b9bc-d410729ee35f.png)
+#### Figure 2
+![Fig2](https://user-images.githubusercontent.com/45031224/136662000-c795386f-c54c-40d9-b89b-95509fa618fb.png)
+
+#### Figure 3
+![Fig3](https://user-images.githubusercontent.com/45031224/136662003-bf32fb77-a9b9-400a-b472-9daca911a0f0.png)
+
+#### Figure 4
+
+![Fig4](https://user-images.githubusercontent.com/45031224/136662007-a1ef4cad-b90f-4519-be02-511168f0d9d7.png)
+
+#### Figure 5
+
+![Fig5](https://user-images.githubusercontent.com/45031224/136662010-dd9e46b5-88e5-4d81-848c-ade800d05bf5.png)
+
+#### Figure 6
+![Fig6](https://user-images.githubusercontent.com/45031224/136662011-8d915f5c-ce1a-45c2-9bd2-655936c68a17.png)
+#### Figure 7
+![Fig7](https://user-images.githubusercontent.com/45031224/136662016-b0a1f5d7-c603-44bb-9f78-24c3face961f.png)
+#### Figure 8
+![Fig8](https://user-images.githubusercontent.com/45031224/136662019-6fb6557e-6b00-49cd-9b06-2037d762a003.png)
