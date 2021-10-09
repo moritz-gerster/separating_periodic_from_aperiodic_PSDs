@@ -5,10 +5,9 @@
 - FigX.pynb: Code to reproduce figure X from the article
 - environment.yml: YAML file to create conda environment
 - fooof_modified.py: [fooof](https://github.com/fooof-tools/fooof) functions modfied for visualization
-- utils.py: helper functions
 - params.yml: Plot parameters for all figures
 - requirements.txt: Conda requirements to run code
+- utils.py: helper functions
 
-
-Simulation data is created by the figure notebooks.
+Simulation data is created by the figure notebooks.\n
 Patient data cannot be published due to patient privacy restrictions.
