@@ -9,5 +9,5 @@
 - requirements.txt: Conda requirements to run code
 - utils.py: helper functions
 
-Simulation data is created by the figure notebooks.\n
-Patient data cannot be published due to patient privacy restrictions.
+Simulation data is created by the figure notebooks.
+Patient data cannot be published due to patient data privacy restrictions.
