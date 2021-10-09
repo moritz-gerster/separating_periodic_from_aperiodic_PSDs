@@ -19,6 +19,4 @@ Electrophysiological power spectra typically consist of two components: An aperi
 In this article, we scrutinize two frequently used methods, FOOOF and IRASA, that are commonly used to separate the periodic from the aperiodic component. We evaluate these methods using diverse spectra obtained with electroencephalography (EEG), magnetoencephalography (MEG), and local field potential (LFP) recordings relating to three independent research groups. Each method and each dataset poses distinct challenges for the extraction of both spectral parts. The specific spectral features hindering the periodic and aperiodic separation are highlighted by simulations of power spectra emphasizing these features. Through comparison with the simulation parameters defined a priori, the parameterization error of each method is quantified. Based on the real and simulated power spectra, we evaluate the advantages of both methods, discuss common challenges, note which spectral features impede the separation, assess the computational costs, and propose recommendations on how to use them. 
 
 #### Figure 1
-[Fig1.pdf](https://github.com/moritz-gerster/separating_periodic_from_aperiodic_PSDs/files/7315804/Fig1.pdf)
-
-
+![Fig1](https://user-images.githubusercontent.com/45031224/136661949-bf33a4af-832f-450b-b9bc-d410729ee35f.png)
