@@ -1,7 +1,5 @@
 # Separating neural oscillations from aperiodic 1/f activity: challenges and recommendations 
-#### Moritz Gerster, Gunnar Waterstraat, Vladimir Litvak, Klaus Lehnertz, Alfons Schnitzler, Esther Florin, Gabriel Curio, and Vadim Nikulin
-#### bioRxiv 2021.10.15.464483; doi: https://doi.org/10.1101/2021.10.15.464483
-#### [Link to the preprint](https://doi.org/10.1101/2021.10.15.464483)
+#### Moritz Gerster, Gunnar Waterstraat, Vladimir Litvak, Klaus Lehnertz, Alfons Schnitzler, Esther Florin, Gabriel Curio, and Vadim Nikulin, bioRxiv 2021.10.15.464483; doi: https://doi.org/10.1101/2021.10.15.464483
 
 - Computation_time.pynb: Code to compare computation time between FOOOF and IRASA
 - FigX.pynb: Code to reproduce figure X from the article
