@@ -1,7 +1,6 @@
 # Separating neural oscillations from aperiodic 1/f activity: challenges and recommendations 
-.. image:: https://www.repostatus.org/badges/latest/active.svg
-   :alt: Project Status: Active – The project has reached a stable, usable state and is being actively developed.
-   :target: https://www.repostatus.org/#active
+.. |ProjectStatus| image:: http://www.repostatus.org/badges/latest/active.svg
+.. _ProjectStatus: https://www.repostatus.org/#active
 #### Moritz Gerster, Gunnar Waterstraat, Vladimir Litvak, Klaus Lehnertz, Alfons Schnitzler, Esther Florin, Gabriel Curio, and Vadim Nikulin, bioRxiv 2021.10.15.464483; doi: https://doi.org/10.1101/2021.10.15.464483
 
 #### Files:
