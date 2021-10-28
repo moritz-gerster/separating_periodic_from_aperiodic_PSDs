@@ -5,10 +5,10 @@
 - [Computation_time.ipynb](/Computation_time.ipynb): Code to compare computation time between FOOOF and IRASA
 - FigX.pynb: Code to reproduce figure X from the article
 - [environment.yml](environment.yml): YAML file to create conda environment
-- fooof_modified.py: [fooof](https://github.com/fooof-tools/fooof) functions modfied for visualization
-- params.yml: Plot parameters for all figures
-- requirements.txt: Conda requirements to run code
-- utils.py: helper functions
+- [fooof_modified.py](fooof_modified.py): [fooof](https://github.com/fooof-tools/fooof) functions modfied for visualization
+- [params.yml](params.yml): Plot parameters for all figures
+- [requirements.txt](requirements.txt): Conda requirements to run code
+- [utils.py](utils.py): helper functions
 
 Simulation data is created by the figure notebooks.
 Patient data cannot be published due to patient data privacy restrictions.
