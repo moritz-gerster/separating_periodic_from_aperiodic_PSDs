@@ -23,8 +23,7 @@ def elec_phys_signal(exponent: float,
                      duration: float = 180,
                      seed: int = 1):
     """
-    MAKE NEW
-    Generate colored noise with optionally added oscillations.
+    Generate 1/f noise with optionally added oscillations.
 
     Parameters
     ----------
