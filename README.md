@@ -1,4 +1,4 @@
-[![DOI](https://img.shields.io/badge/paper-nn10.1038-informational.svg)](https://doi.org/10.1101/2021.10.15.464483)
+[![DOI](https://img.shields.io/badge/Preprint-Gerster%20et%20al.%202021-brightgreen)](https://doi.org/10.1101/2021.10.15.464483)
 
 # Separating neural oscillations from aperiodic 1/f activity: challenges and recommendations 
 **Moritz Gerster**, Gunnar Waterstraat, Vladimir Litvak, Klaus Lehnertz, Alfons Schnitzler, Esther Florin, Gabriel Curio, and Vadim Nikulin, bioRxiv 2021.10.15.464483; doi: https://doi.org/10.1101/2021.10.15.464483
