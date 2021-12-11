@@ -31,7 +31,7 @@ In this article, we scrutinize two frequently used methods, FOOOF and IRASA, tha
 ![Fig3](https://user-images.githubusercontent.com/45031224/136662003-bf32fb77-a9b9-400a-b472-9daca911a0f0.png)
 #### Figure 4: Many overlapping peaks hinder proper 1/f estimation
 ![Fig4](https://user-images.githubusercontent.com/45031224/136662007-a1ef4cad-b90f-4519-be02-511168f0d9d7.png)
-#### Figure 5
+#### Figure 5: The evaluated frequency range is larger than the fitting range
 ![Fig5](https://user-images.githubusercontent.com/45031224/136662010-dd9e46b5-88e5-4d81-848c-ade800d05bf5.png)
 #### Figure 6: Broad peak widths require large resampling rates
 ![Fig6](https://user-images.githubusercontent.com/45031224/136662011-8d915f5c-ce1a-45c2-9bd2-655936c68a17.png)
