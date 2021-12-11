@@ -29,7 +29,7 @@ In this article, we scrutinize two frequently used methods, FOOOF and IRASA, tha
 ![Fig2](https://user-images.githubusercontent.com/45031224/136662000-c795386f-c54c-40d9-b89b-95509fa618fb.png)
 #### Figure 3: The estimated 1/f exponent depends on the fitting range
 ![Fig3](https://user-images.githubusercontent.com/45031224/136662003-bf32fb77-a9b9-400a-b472-9daca911a0f0.png)
-#### Figure 4
+#### Figure 4: Many overlapping peaks hinder proper 1/f estimation
 ![Fig4](https://user-images.githubusercontent.com/45031224/136662007-a1ef4cad-b90f-4519-be02-511168f0d9d7.png)
 #### Figure 5
 ![Fig5](https://user-images.githubusercontent.com/45031224/136662010-dd9e46b5-88e5-4d81-848c-ade800d05bf5.png)
