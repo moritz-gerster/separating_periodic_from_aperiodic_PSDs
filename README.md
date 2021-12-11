@@ -25,7 +25,7 @@ In this article, we scrutinize two frequently used methods, FOOOF and IRASA, tha
 
 #### Figure 1: How the two examined alogrithms work
 ![Fig1](https://user-images.githubusercontent.com/45031224/136661949-bf33a4af-832f-450b-b9bc-d410729ee35f.png)
-#### Figure 2
+#### Figure 2: The high frequency plateau disrupts the 1/f power law and hinders proper 1/f-exponent estimation
 ![Fig2](https://user-images.githubusercontent.com/45031224/136662000-c795386f-c54c-40d9-b89b-95509fa618fb.png)
 #### Figure 3
 ![Fig3](https://user-images.githubusercontent.com/45031224/136662003-bf32fb77-a9b9-400a-b472-9daca911a0f0.png)
