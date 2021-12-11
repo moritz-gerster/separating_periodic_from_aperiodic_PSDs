@@ -37,5 +37,5 @@ In this article, we scrutinize two frequently used methods, FOOOF and IRASA, tha
 ![Fig6](https://user-images.githubusercontent.com/45031224/136662011-8d915f5c-ce1a-45c2-9bd2-655936c68a17.png)
 #### Figure 7: Many overlapping peaks hinder proper 1/f estimation
 ![Fig7](https://user-images.githubusercontent.com/45031224/136662016-b0a1f5d7-c603-44bb-9f78-24c3face961f.png)
-#### Figure 8
+#### Figure 8: Some PSDs are easy to fit, some are very challenging
 ![Fig8](https://user-images.githubusercontent.com/45031224/136662019-6fb6557e-6b00-49cd-9b06-2037d762a003.png)
