@@ -33,7 +33,7 @@ In this article, we scrutinize two frequently used methods, FOOOF and IRASA, tha
 ![Fig4](https://user-images.githubusercontent.com/45031224/136662007-a1ef4cad-b90f-4519-be02-511168f0d9d7.png)
 #### Figure 5
 ![Fig5](https://user-images.githubusercontent.com/45031224/136662010-dd9e46b5-88e5-4d81-848c-ade800d05bf5.png)
-#### Figure 6
+#### Figure 6: Broad peak widths require large resampling rates
 ![Fig6](https://user-images.githubusercontent.com/45031224/136662011-8d915f5c-ce1a-45c2-9bd2-655936c68a17.png)
 #### Figure 7
 ![Fig7](https://user-images.githubusercontent.com/45031224/136662016-b0a1f5d7-c603-44bb-9f78-24c3face961f.png)
