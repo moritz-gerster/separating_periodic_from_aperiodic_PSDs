@@ -28,7 +28,7 @@ In this article, we scrutinize two frequently used methods, FOOOF and IRASA, tha
 #### Figure 2: The high frequency plateau disrupts the 1/f power law and hinders proper 1/f-exponent estimation
 ![Fig2](https://user-images.githubusercontent.com/45031224/136662000-c795386f-c54c-40d9-b89b-95509fa618fb.png)
 #### Figure 3: The estimated 1/f exponent depends on the fitting range
-![Fig3](https://user-images.githubusercontent.com/45031224/136662003-bf32fb77-a9b9-400a-b472-9daca911a0f0.png)
+![Fig3](https://user-images.githubusercontent.com/45031224/159687422-aeb03725-e386-412d-8160-84bf585b6c52.png)
 #### Figure 4: Many overlapping peaks hinder proper 1/f estimation
 ![Fig4](https://user-images.githubusercontent.com/45031224/136662007-a1ef4cad-b90f-4519-be02-511168f0d9d7.png)
 #### Figure 5: The evaluated frequency range is larger than the fitting range
