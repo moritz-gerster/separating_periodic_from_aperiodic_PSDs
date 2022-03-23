@@ -11,7 +11,7 @@
 - [environment.yml](environment.yml): YAML file to create conda environment
 - [fooof_modified.py](fooof_modified.py): [fooof](https://github.com/fooof-tools/fooof) functions modfied for visualization
 - [params.yml](params.yml): Plot parameters for all figures
-- [requirements.txt](requirements.txt): Conda requirements to run code
+- [requirements.txt](requirements.txt): Pip requirements
 - [utils.py](utils.py): helper functions
 
 Simulation data is created by the figure notebooks.
