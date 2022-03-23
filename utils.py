@@ -218,7 +218,7 @@ def annotate_range(ax, xmin, xmax, height, ylow=None, yhigh=None,
         text_pos = xmin * .9
 
     # Plot Values
-    arrow_dic = dict(text="", xy=(xmin, height), xytext=(xmax, height),
+    arrow_dic = dict(s="", xy=(xmin, height), xytext=(xmax, height),
                      arrowprops=dict(arrowstyle="|-|, widthA=.3, widthB=.3",
                                      shrinkA=0, shrinkB=0))
     anno_dic = dict(ha=ha, va="center", bbox=dict(fc="white", ec="none",
@@ -289,9 +289,10 @@ def calc_psd(x, fs=1.0, nperseg=None, axis=-1, average='mean', **kwargs):
         def average(x):
             return (np.nanmedian(x, axis=-1) /
                     sig.spectral._median_bias(x.shape[-1]))
-    f, t, csd = sig.spectral._spectral_helper(x, x,
-                                              fs=fs, nperseg=nperseg,
-                                              axis=-1, mode='psd', **kwargs)
+    f, t, csd = sig._spectral_py._spectral_helper(x, x,
+                                                  fs=fs, nperseg=nperseg,
+                                                  axis=-1, mode='psd',
+                                                  **kwargs)
     # calculate the requested average
     try:
         csd_mean = average(csd)
