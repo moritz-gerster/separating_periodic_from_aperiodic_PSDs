@@ -1,5 +1,5 @@
 [![DOI](https://img.shields.io/badge/Preprint-Gerster%20et%20al.%202021-brightgreen)](https://doi.org/10.1101/2021.10.15.464483)
-[![DOI](https://img.shields.io/badge/python-3.8-blue)]
+![DOI](https://img.shields.io/badge/python-3.8-blue)
 [![PyPI license](https://img.shields.io/pypi/l/ansicolortags.svg)](https://pypi.python.org/pypi/ansicolortags/)
 
 # Separating neural oscillations from aperiodic 1/f activity: challenges and recommendations 
